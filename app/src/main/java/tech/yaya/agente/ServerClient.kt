@@ -2,7 +2,6 @@ package tech.yaya.agente
 
 import android.content.Context
 import android.util.Log
-import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -34,8 +33,7 @@ object ServerClient {
         ctx: Context,
         path: String,
         body: JSONObject,
-        bearer: Boolean,
-        adminKey: String? = null
+        bearer: Boolean
     ): JSONObject? {
         return try {
             val conn = URL(Prefs.serverUrl(ctx) + path).openConnection() as HttpURLConnection
@@ -49,7 +47,6 @@ object ServerClient {
             if (bearer) conn.setRequestProperty(
                 "Authorization", "Bearer " + Prefs.deviceToken(ctx)
             )
-            adminKey?.let { conn.setRequestProperty("X-Admin-Key", it) }
             conn.outputStream.use { it.write(body.toString().toByteArray()) }
             val code = conn.responseCode
             val text = (if (code in 200..299) conn.inputStream else conn.errorStream)
@@ -65,14 +62,17 @@ object ServerClient {
         }
     }
 
-    /** Customer message in, agent reply out. Null = server unreachable/error. */
+    /**
+     * Customer message in, agent reply out. Null = server unreachable/error.
+     * The conversation history lives server-side and is not sent from here —
+     * a client-supplied history was a way to put words in the agent's mouth.
+     */
     fun executeAction(ctx: Context, peer: String, message: String): JSONObject? =
         post(
             ctx, "/api/execute_action",
             JSONObject()
                 .put("phoneNumber", peer)
-                .put("message", message)
-                .put("conversationHistory", JSONArray()),
+                .put("message", message),
             bearer = true
         )
 
@@ -145,6 +145,11 @@ object ServerClient {
             bearer = true
         )
 
+    /**
+     * Registers the business and returns its device token. No admin key: the
+     * ops key has no business inside a client binary, and the server no longer
+     * accepts it in place of the app key.
+     */
     fun onboardBusiness(
         ctx: Context, name: String, industry: String, ownerPhone: String
     ): JSONObject? =
@@ -154,7 +159,6 @@ object ServerClient {
                 .put("businessName", name)
                 .put("industry", industry)
                 .put("ownerPhone", ownerPhone),
-            bearer = false,
-            adminKey = Prefs.adminKey(ctx)
+            bearer = false
         )
 }

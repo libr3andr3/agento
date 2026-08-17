@@ -27,7 +27,15 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Shrinking does not make APP_KEY secret — nothing in a client
+            // binary can be — but it removes the trivial `strings`-and-read
+            // path, and a release build should be minified regardless.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 

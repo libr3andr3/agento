@@ -28,6 +28,7 @@
     <string name="server_status_connected">✓ Your agent is connected</string>
     <string name="server_status_off">Your agent isn\'t created yet — create one to start</string>
     <string name="server_url_title">Server (advanced)</string>
+    <string name="server_url_must_be_https">The address must start with https:// — not saved.</string>
     <string name="server_error">Couldn\'t connect. Check your internet and try again.</string>
 
     <string name="onboarding_title">My business</string>

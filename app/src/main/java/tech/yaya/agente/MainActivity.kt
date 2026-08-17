@@ -12,6 +12,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -139,8 +140,12 @@ class MainActivity : AppCompatActivity() {
             .setTitle(R.string.server_url_title)
             .setView(input)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                Prefs.setServerUrl(this, input.text.toString())
-                refresh()
+                if (Prefs.setServerUrl(this, input.text.toString())) {
+                    refresh()
+                } else {
+                    Toast.makeText(this, R.string.server_url_must_be_https, Toast.LENGTH_LONG)
+                        .show()
+                }
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()

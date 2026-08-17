@@ -47,20 +47,39 @@ object Prefs {
 
     private const val DEFAULT_SERVER = "https://api.agente.ceo"
 
-    fun setServerUrl(ctx: Context, url: String) =
-        sp(ctx).edit().putString("server_url", url.trim().trimEnd('/')).apply()
+    /**
+     * Rejects anything that isn't HTTPS and reports whether it took the value.
+     * The device token, every customer conversation, and the payment feed all
+     * travel this URL; a plain-HTTP endpoint puts them on the wire in the clear
+     * and lets a network attacker rewrite the replies the business sends.
+     */
+    fun setServerUrl(ctx: Context, url: String): Boolean {
+        val clean = url.trim().trimEnd('/')
+        if (!clean.startsWith("https://") || clean.length <= "https://".length) return false
+        sp(ctx).edit().putString("server_url", clean).apply()
+        return true
+    }
 
-    fun deviceToken(ctx: Context): String = sp(ctx).getString("device_token", "") ?: ""
+    private const val KEY_DEVICE_TOKEN = "device_token_enc"
+    private const val LEGACY_DEVICE_TOKEN = "device_token"
+
+    /**
+     * The device bearer token, encrypted at rest under the Android Keystore.
+     * Older installs wrote it in plaintext, so the legacy key is migrated on
+     * first read and then deleted — an upgrade must not un-pair anyone.
+     */
+    fun deviceToken(ctx: Context): String {
+        val store = sp(ctx)
+        SecureStore.migratePlaintext(store, LEGACY_DEVICE_TOKEN, KEY_DEVICE_TOKEN)
+        return SecureStore.getString(store, KEY_DEVICE_TOKEN) ?: ""
+    }
+
     fun setDeviceToken(ctx: Context, t: String) =
-        sp(ctx).edit().putString("device_token", t).apply()
+        SecureStore.putString(sp(ctx), KEY_DEVICE_TOKEN, t)
 
     fun businessId(ctx: Context): String = sp(ctx).getString("business_id", "") ?: ""
     fun setBusinessId(ctx: Context, id: String) =
         sp(ctx).edit().putString("business_id", id).apply()
-
-    /** Demo only: the bootstrap key for /onboard_business lives client-side. */
-    fun adminKey(ctx: Context): String =
-        sp(ctx).getString("admin_key", "agente-admin-dev") ?: "agente-admin-dev"
 
     /** Agent mode = registered business + reachable server; else canned replies. */
     fun serverConfigured(ctx: Context) = deviceToken(ctx).isNotEmpty()
