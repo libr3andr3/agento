@@ -1,0 +1,15 @@
+# Fallback vertical for businesses no specialized bundle fits yet.
+# Gap events from generic clients are the raw material for new bundles.
+bundle: generic
+version: 1
+extends: core
+fields:
+  staffCount:
+    type: "int"
+    ask_in_onboarding: true
+    question_es: "¿Cuántas personas atienden?"
+tools:
+  - check_availability
+  - book_appointment
+  - collect_payment
+  - handle_cancellation

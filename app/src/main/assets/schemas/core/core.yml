@@ -1,0 +1,36 @@
+# Layer 0: core — fields every business has, regardless of vertical.
+# Never edited per-client. Bundles extend it; client patches override values.
+version: 1
+defaults:
+  slotDuration: 30
+  cancellationNoticeMins: 60
+  maxAdvanceBookingDays: 30
+  walkInsAllowed: true
+  paymentMethod: atVisit          # upfront | atVisit | yape
+  bookingDeposit: null            # fixed soles to reserve; null = no deposit
+fields:
+  businessHours:
+    type: "map[day -> range]"
+    ask_in_onboarding: true
+    question_es: "¿Qué días y en qué horario atienden?"
+  pricing:
+    type: "map[service -> money]"
+    ask_in_onboarding: true
+    question_es: "¿Qué servicios ofrecen y cuánto cuesta cada uno?"
+  paymentMethod:
+    type: "enum[upfront|atVisit|yape]"
+    ask_in_onboarding: true
+    question_es: "¿Cobran por adelantado, en la visita, o por Yape/Plin?"
+  bookingDeposit:
+    type: "money | null"
+    ask_in_onboarding: true
+    question_es: "¿Piden un adelanto fijo para reservar? ¿De cuánto?"
+  cancellationNoticeMins:
+    type: "minutes"
+    ask_in_onboarding: false
+  maxAdvanceBookingDays:
+    type: "days"
+    ask_in_onboarding: false
+  walkInsAllowed:
+    type: "bool"
+    ask_in_onboarding: false

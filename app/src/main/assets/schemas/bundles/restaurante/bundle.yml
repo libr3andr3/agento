@@ -1,0 +1,23 @@
+bundle: restaurante
+version: 1
+extends: core
+defaults:
+  slotDuration: 90
+  walkInsAllowed: true
+fields:
+  tableCount:
+    type: "int"
+    ask_in_onboarding: true
+    question_es: "¿Cuántas mesas tienen para reservas?"
+  deliveryAvailable:
+    type: "bool"
+    ask_in_onboarding: true
+    question_es: "¿Hacen delivery?"
+  deliveryZones:
+    type: "map[zone -> price]"
+    ask_in_onboarding: false
+tools:
+  - check_availability
+  - book_appointment
+  - collect_payment
+  - handle_cancellation

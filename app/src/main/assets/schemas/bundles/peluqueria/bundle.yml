@@ -1,0 +1,27 @@
+bundle: peluqueria
+defaults:
+  slotDuration: 45
+extends: core
+fields:
+  deliveryZones:
+    ask_in_onboarding: true
+    question_es: ¿Atienden a domicilio? ¿A qué zonas y cuánto cobran por el traslado?
+    type: map[zone -> price]
+  slotDuration:
+    ask_in_onboarding: true
+    question_es: ¿Cuánto dura una cita normalmente?
+    type: minutes
+  staffCount:
+    ask_in_onboarding: true
+    question_es: ¿Cuántas personas atienden en el salón?
+    type: int
+  staffSpecialties:
+    ask_in_onboarding: true
+    question_es: ¿Cada quien hace de todo, o tienen especialidades?
+    type: map[person -> list[specialty]]
+tools:
+- check_availability
+- book_appointment
+- collect_payment
+- handle_cancellation
+version: 2
