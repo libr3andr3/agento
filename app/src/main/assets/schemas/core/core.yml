@@ -29,6 +29,10 @@ fields:
     type: "{zones: map[district -> money], default: money, coverage: string, freeAt: [keyword]}"
     ask_in_onboarding: true
     question_es: "¿Hacen delivery? ¿Cuánto cobran según la zona, hasta dónde llegan, y hay puntos de entrega gratis?"
+  requireEmail:
+    type: "bool"
+    ask_in_onboarding: false
+    question_es: "¿Necesitas el correo del cliente para agendar? (reuniones virtuales, confirmaciones por email)"
   paymentMethod:
     type: "enum[upfront|atVisit|yape]"
     ask_in_onboarding: true
