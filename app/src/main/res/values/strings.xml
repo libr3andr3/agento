@@ -121,4 +121,20 @@
     <string name="trial_expired_alert">Tu semana gratis terminó. El agente dejó de responder a tus clientes — escríbenos para continuar.</string>
     <string name="status_trial_expired">Prueba terminada — el agente no responde</string>
     <string name="status_trial_days">%1$s · Gratis: %2$d días</string>
+    <!-- Phone verification (OTP) + talk-to-sales -->
+    <string name="verify_sending">Enviando código de verificación…</string>
+    <string name="verify_sent">Código enviado por WhatsApp a %1$s</string>
+    <string name="verify_skipped">Verificación no disponible — continuando</string>
+    <string name="verify_bad_phone">Número inválido — incluye el código de país (+51…)</string>
+    <string name="verify_throttled">Demasiados intentos — espera un momento y vuelve a intentar</string>
+    <string name="verify_title">Verifica tu número</string>
+    <string name="verify_message">Te enviamos un código de 6 dígitos por WhatsApp a %1$s</string>
+    <string name="verify_code_hint">Código de 6 dígitos</string>
+    <string name="verify_confirm">Verificar</string>
+    <string name="verify_resend">Reenviar</string>
+    <string name="verify_ok">Número verificado</string>
+    <string name="verify_wrong_code">Código incorrecto</string>
+    <string name="trial_banner_text">Tu semana gratis terminó — el agente dejó de responder</string>
+    <string name="trial_talk_to_sales">💬 Hablar con ventas</string>
+    <string name="trial_sales_message">Hola! Mi semana gratis de agento para %1$s terminó y quiero continuar con el servicio.</string>
 </resources>

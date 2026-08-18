@@ -29,12 +29,15 @@ object ServerClient {
      */
     val IO_EXECUTOR: ExecutorService = Executors.newCachedThreadPool()
 
-    private fun post(
+    /** HTTP status + parsed body (null body = network failure or bad JSON). */
+    data class Response(val code: Int, val json: JSONObject?)
+
+    private fun postRaw(
         ctx: Context,
         path: String,
         body: JSONObject,
         bearer: Boolean
-    ): JSONObject? {
+    ): Response {
         return try {
             val conn = URL(Prefs.serverUrl(ctx) + path).openConnection() as HttpURLConnection
             conn.requestMethod = "POST"
@@ -51,15 +54,22 @@ object ServerClient {
             val code = conn.responseCode
             val text = (if (code in 200..299) conn.inputStream else conn.errorStream)
                 ?.bufferedReader()?.readText() ?: ""
-            if (code in 200..299) JSONObject(text)
-            else {
-                Log.w(TAG, "POST $path -> $code: $text")
-                null
-            }
+            if (code !in 200..299) Log.w(TAG, "POST $path -> $code: $text")
+            Response(code, runCatching { JSONObject(text) }.getOrNull())
         } catch (e: Exception) {
             Log.w(TAG, "POST $path failed", e)
-            null
+            Response(0, null)
         }
+    }
+
+    private fun post(
+        ctx: Context,
+        path: String,
+        body: JSONObject,
+        bearer: Boolean
+    ): JSONObject? {
+        val r = postRaw(ctx, path, body, bearer)
+        return if (r.code in 200..299) r.json else null
     }
 
     /**
@@ -146,19 +156,37 @@ object ServerClient {
         )
 
     /**
+     * Asks the server to WhatsApp a 6-digit code to the owner's phone.
+     * The status code is the answer: 200 sent, 503 verification not deployed
+     * (register without it), 429 throttled, 400 bad phone, 0 unreachable.
+     */
+    fun verifyStart(ctx: Context, phone: String): Int =
+        postRaw(ctx, "/api/verify/start", JSONObject().put("phone", phone), bearer = false).code
+
+    /** Null unless the code was right; the proof rides in "verificationToken". */
+    fun verifyCheck(ctx: Context, phone: String, code: String): JSONObject? =
+        post(
+            ctx, "/api/verify/check",
+            JSONObject().put("phone", phone).put("code", code),
+            bearer = false
+        )
+
+    /**
      * Registers the business and returns its device token. No admin key: the
      * ops key has no business inside a client binary, and the server no longer
      * accepts it in place of the app key.
      */
     fun onboardBusiness(
-        ctx: Context, name: String, industry: String, ownerPhone: String
+        ctx: Context, name: String, industry: String, ownerPhone: String,
+        verificationToken: String? = null
     ): JSONObject? =
         post(
             ctx, "/api/onboard_business",
             JSONObject()
                 .put("businessName", name)
                 .put("industry", industry)
-                .put("ownerPhone", ownerPhone),
+                .put("ownerPhone", ownerPhone)
+                .apply { verificationToken?.let { put("verificationToken", it) } },
             bearer = false
         )
 }

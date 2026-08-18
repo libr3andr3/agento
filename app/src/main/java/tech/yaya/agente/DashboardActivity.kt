@@ -3,6 +3,7 @@ package tech.yaya.agente
 import android.content.ComponentName
 import android.content.Intent
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.text.format.DateUtils
@@ -138,11 +139,31 @@ class DashboardActivity : AppCompatActivity() {
     /** Last trial payload from the server; null until the first good fetch. */
     private var trial: JSONObject? = null
 
+    /** The trial-over banner: explain + hand the owner straight to sales. */
+    private fun refreshTrialBanner() {
+        val t = trial
+        val expired = t != null && !t.optBoolean("active", true)
+        val banner = findViewById<View>(R.id.trial_banner)
+        banner.visibility = if (expired) View.VISIBLE else View.GONE
+        if (!expired) return
+        val sales = t?.optString("salesPhone")?.filter { it.isDigit() } ?: ""
+        findViewById<View>(R.id.sales_button).setOnClickListener {
+            if (sales.isEmpty()) return@setOnClickListener
+            val msg = Uri.encode(getString(R.string.trial_sales_message,
+                businessName.text.toString()))
+            // wa.me opens the chat in whichever WhatsApp app is installed;
+            // the browser fallback covers phones with neither.
+            startActivity(Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://wa.me/$sales?text=$msg")))
+        }
+    }
+
     /** The truth row: is the agent actually able to answer right now? */
     private fun refreshStatus(fetchOk: Boolean) {
         val alive = hasNotificationAccess() && Prefs.isEnabled(this)
         agentSwitch.isChecked = alive
         offBanner.visibility = if (alive) View.GONE else View.VISIBLE
+        refreshTrialBanner()
         val t = trial
         when {
             !alive -> {

@@ -107,16 +107,96 @@ class OnboardingActivity : AppCompatActivity() {
             if (industry.text.isBlank()) { industry.error = getString(R.string.reg_error_empty); ok = false }
             if (!ok) return@setOnClickListener
             dialog.dismiss()
-            register(name.text.toString().trim(), industry.text.toString().trim(),
-                     phone.text.toString().trim())
+            startVerification(name.text.toString().trim(), industry.text.toString().trim(),
+                              phone.text.toString().trim())
         }
     }
 
-    private fun register(name: String, industry: String, phone: String) {
+    // ------------------------------------------------- phone verification (OTP)
+
+    /**
+     * WhatsApps a 6-digit code to the owner's phone before registering. The
+     * status code decides the path: 503 means the server isn't enforcing
+     * verification, so registration proceeds without it — the flow degrades
+     * instead of bricking onboarding when the OTP bridge is down.
+     */
+    private fun startVerification(name: String, industry: String, phone: String) {
+        setBusy(true)
+        append("⏳ ${getString(R.string.verify_sending)}")
+        ServerClient.EXECUTOR.execute {
+            val code = ServerClient.verifyStart(this, phone)
+            runOnUiThread {
+                setBusy(false)
+                when (code) {
+                    200 -> {
+                        replaceLast("📲 ${getString(R.string.verify_sent, phone)}")
+                        showCodeDialog(name, industry, phone)
+                    }
+                    503 -> {
+                        replaceLast("ℹ️ ${getString(R.string.verify_skipped)}")
+                        register(name, industry, phone, token = null)
+                    }
+                    400 -> {
+                        replaceLast("⚠️ ${getString(R.string.verify_bad_phone)}")
+                        showRegistrationDialog()
+                    }
+                    429 -> replaceLast("⚠️ ${getString(R.string.verify_throttled)}")
+                    else -> replaceLast("⚠️ ${getString(R.string.server_error)}")
+                }
+            }
+        }
+    }
+
+    private fun showCodeDialog(name: String, industry: String, phone: String) {
+        val input = EditText(this).apply {
+            hint = getString(R.string.verify_code_hint)
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+        }
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.verify_title)
+            .setMessage(getString(R.string.verify_message, phone))
+            .setView(LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(48, 16, 48, 0)
+                addView(input)
+            })
+            .setCancelable(false)
+            .setPositiveButton(R.string.verify_confirm, null) // validated below
+            .setNeutralButton(R.string.verify_resend) { _, _ ->
+                startVerification(name, industry, phone)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+        dialog.show()
+        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val typed = input.text.toString().trim()
+            if (typed.length != 6) {
+                input.error = getString(R.string.verify_code_hint)
+                return@setOnClickListener
+            }
+            setBusy(true)
+            ServerClient.EXECUTOR.execute {
+                val resp = ServerClient.verifyCheck(this, phone, typed)
+                val token = resp?.optString("verificationToken")?.takeIf { it.isNotEmpty() }
+                runOnUiThread {
+                    setBusy(false)
+                    if (token != null) {
+                        dialog.dismiss()
+                        append("✅ ${getString(R.string.verify_ok)}")
+                        register(name, industry, phone, token)
+                    } else {
+                        input.error = getString(R.string.verify_wrong_code)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun register(name: String, industry: String, phone: String, token: String?) {
         setBusy(true)
         append("⏳ ${getString(R.string.reg_registering)}")
         ServerClient.EXECUTOR.execute {
-            val resp = ServerClient.onboardBusiness(this, name, industry, phone)
+            val resp = ServerClient.onboardBusiness(this, name, industry, phone, token)
             runOnUiThread {
                 setBusy(false)
                 if (resp == null) {
