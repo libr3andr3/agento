@@ -408,6 +408,12 @@ class RegistrationActivity : AppCompatActivity() {
                 if (deviceToken.isNotEmpty()) {
                     Prefs.setDeviceToken(this, deviceToken)
                     Prefs.setBusinessId(this, resp!!.optString("businessId"))
+                    // The interview's opening line rides the registration
+                    // response; without seeding it the chat opened silent and
+                    // the owner stared at an agent that never spoke first.
+                    resp.optString("conversationStarterMessage")
+                        .takeIf { it.isNotBlank() }
+                        ?.let { Prefs.setChatTranscript(this, "🟢 $it") }
                     startActivity(Intent(this, OnboardingActivity::class.java))
                     overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
                     finish()

@@ -12,9 +12,13 @@ import android.graphics.Matrix
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Base64
@@ -52,18 +56,44 @@ class OnboardingActivity : AppCompatActivity() {
     companion object {
         private const val RC_CATALOG_CAMERA = 72
         private const val RC_CATALOG_GALLERY = 73
+        private const val RC_VOICE_LISTEN = 74
         /** Longest edge for uploaded catalog photos. */
         private const val MAX_PHOTO_EDGE = 1600
         /** Transcript role markers — also the on-disk serialization prefixes. */
         private const val OWNER_PREFIX = "🧑 "
         private const val AGENT_PREFIX = "🟢 "
+        /** Chat-UI prefs — OUR file, never Prefs.kt (see BOUNDARIES.md). */
+        private const val UI_PREFS = "agente_chat_ui"
+        private const val KEY_VOICE_MODE = "voice_mode_on"
+        /** Recognizer locales: Peruvian Spanish first, LatAm Spanish fallback. */
+        private const val LOCALE_PRIMARY = "es-PE"
+        private const val LOCALE_FALLBACK = "es-419"
+        /** Beat before auto-listening when a reply arrived without TTS audio. */
+        private const val LISTEN_AFTER_TEXT_MS = 1100L
+        /** Longer beat on open — the owner is still reading the seeded greeting. */
+        private const val LISTEN_ON_OPEN_MS = 1600L
     }
 
     // ------------------------------------------------------------- chat model
 
     private enum class Role { OWNER, AGENT, SYSTEM }
 
-    private class Msg(var role: Role, var text: String, var failed: Boolean = false)
+    /** [pending] = live speech partial: muted bubble, never persisted. */
+    private class Msg(
+        var role: Role,
+        var text: String,
+        var failed: Boolean = false,
+        var pending: Boolean = false
+    )
+
+    /**
+     * Hands-free loop states. SPEAKING (agent TTS playing) → on completion →
+     * LISTENING (SpeechRecognizer, partials in a muted owner bubble) → final
+     * result → THINKING (message in flight, typing dots) → reply → SPEAKING.
+     * Any recognizer error or user action drops to IDLE (strip hidden); the
+     * loop then waits for the next agent reply or an explicit tap.
+     */
+    private enum class VoiceState { IDLE, SPEAKING, LISTENING, THINKING }
 
     private val msgs = mutableListOf<Msg>()
     private var typing = false
@@ -75,16 +105,37 @@ class OnboardingActivity : AppCompatActivity() {
     private lateinit var micButton: MaterialButton
     private lateinit var cameraButton: MaterialButton
     private lateinit var replayButton: MaterialButton
+    private lateinit var voiceToggle: MaterialButton
     private lateinit var recordBar: View
     private lateinit var recordDot: TextView
     private lateinit var recordTimer: TextView
+    private lateinit var voiceStrip: View
+    private lateinit var voiceDot: TextView
+    private lateinit var voiceLabel: TextView
 
     private var recorder: MediaRecorder? = null
     private var player: MediaPlayer? = null
     private var recordStart = 0L
     private val timerHandler = Handler(Looper.getMainLooper())
+    private val voiceHandler = Handler(Looper.getMainLooper())
     private var recordPulse: ObjectAnimator? = null
+    private var statusPulse: ObjectAnimator? = null
     private var pendingDone = false
+
+    // --- voice-mode state machine ---
+    private var voiceState = VoiceState.IDLE
+    private var voiceModeOn = false
+    private var voiceCapable = false
+    private var interviewDone = false
+    private var speech: SpeechRecognizer? = null
+    private var speechOnDevice = false
+    private var forceCloudRecognizer = false
+    private var triedCloudForLocale = false
+    private var busyRetryUsed = false
+    private var voiceLocale = LOCALE_PRIMARY
+    private var pendingVoiceMsg: Msg? = null
+    private val uiPrefs by lazy { getSharedPreferences(UI_PREFS, MODE_PRIVATE) }
+
     private val voiceFile: File by lazy { File(cacheDir, "voice.m4a") }
     private val replyWav: File by lazy { File(cacheDir, "reply.wav") }
     private val photoFile: File by lazy { File(cacheDir, "catalog.jpg") }
@@ -107,9 +158,13 @@ class OnboardingActivity : AppCompatActivity() {
         micButton = findViewById(R.id.chat_mic)
         cameraButton = findViewById(R.id.chat_camera)
         replayButton = findViewById(R.id.chat_replay)
+        voiceToggle = findViewById(R.id.chat_voice_toggle)
         recordBar = findViewById(R.id.record_bar)
         recordDot = findViewById(R.id.record_dot)
         recordTimer = findViewById(R.id.record_timer)
+        voiceStrip = findViewById(R.id.voice_strip)
+        voiceDot = findViewById(R.id.voice_dot)
+        voiceLabel = findViewById(R.id.voice_label)
 
         adapter = ChatAdapter()
         recycler.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
@@ -119,6 +174,17 @@ class OnboardingActivity : AppCompatActivity() {
         micButton.setOnClickListener { toggleRecording() }
         cameraButton.setOnClickListener { showPhotoSourceDialog() }
         replayButton.setOnClickListener { replayLast() }
+        voiceToggle.setOnClickListener { setVoiceMode(!voiceModeOn) }
+        // Barge-in lite: tap the strip while the agent talks → answer now.
+        voiceStrip.setOnClickListener {
+            if (voiceState == VoiceState.SPEAKING) startVoiceListening()
+        }
+
+        // Voice mode: default ON while the recognizer exists; a persisted user
+        // choice wins. No recognizer → silently text-only, never a crash.
+        voiceCapable = SpeechRecognizer.isRecognitionAvailable(this)
+        voiceModeOn = voiceCapable && uiPrefs.getBoolean(KEY_VOICE_MODE, true)
+        updateVoiceToggle()
 
         // Restore the transcript so an interrupted owner never sees a blank chat.
         Prefs.chatTranscript(this)?.let { stored ->
@@ -126,8 +192,21 @@ class OnboardingActivity : AppCompatActivity() {
             adapter.notifyDataSetChanged()
             scrollToBottom(smooth = false)
         }
-        if (msgs.isEmpty()) {
-            addParsed(getString(R.string.onboarding_resume_hint))
+        val transcriptBlank = msgs.isEmpty()
+        if (!voiceCapable) {
+            val line = getString(R.string.voice_unavailable)
+            if (msgs.none { it.text == line }) addMsg(Role.SYSTEM, line)
+        }
+        if (transcriptBlank) {
+            // Safety net: never open onto a silent agent — kick the interview
+            // ourselves, invisibly (no owner bubble for the "hola").
+            kickInterview()
+        } else if (voiceModeOn && msgs.lastOrNull()?.role == Role.AGENT && !replyWav.exists()) {
+            // Seeded greeting with no TTS: give the owner a beat to read it,
+            // then open the mic — the loop must begin without a tap.
+            voiceHandler.postDelayed({
+                if (voiceState == VoiceState.IDLE && !typing) startVoiceListening()
+            }, LISTEN_ON_OPEN_MS)
         }
     }
 
@@ -152,7 +231,8 @@ class OnboardingActivity : AppCompatActivity() {
     }
 
     private fun persist() {
-        val serialized = msgs.joinToString("\n\n") {
+        // Pending speech partials are ephemeral — never written to disk.
+        val serialized = msgs.filter { !it.pending }.joinToString("\n\n") {
             when (it.role) {
                 Role.OWNER -> OWNER_PREFIX + it.text
                 Role.AGENT -> AGENT_PREFIX + it.text
@@ -195,6 +275,7 @@ class OnboardingActivity : AppCompatActivity() {
         typing = true
         adapter.notifyItemInserted(msgs.size)
         scrollToBottom()
+        if (voiceModeOn && !interviewDone) setVoiceStatus(VoiceState.THINKING)
     }
 
     private fun hideTyping() {
@@ -224,6 +305,7 @@ class OnboardingActivity : AppCompatActivity() {
     private fun send() {
         val text = input.text.toString().trim()
         if (text.isEmpty()) return
+        interruptVoiceLoop() // typing wins over any TTS/recognizer in progress
         val mine = addMsg(Role.OWNER, text)
         showTyping()
         setBusy(true)
@@ -240,6 +322,7 @@ class OnboardingActivity : AppCompatActivity() {
     /** "Reintentar" on a failed bubble — resends that exact text. */
     private fun resend(m: Msg) {
         if (!sendButton.isEnabled) return // a send is already in flight
+        interruptVoiceLoop()
         changeMsg(m) { it.failed = false }
         showTyping()
         setBusy(true)
@@ -256,6 +339,7 @@ class OnboardingActivity : AppCompatActivity() {
             stopRecordingAndSend()
             return
         }
+        interruptVoiceLoop() // push-to-talk takes the mic from the loop
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -324,6 +408,18 @@ class OnboardingActivity : AppCompatActivity() {
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == RC_VOICE_LISTEN) {
+            // First hands-free listen. Grant → open the mic; denial → text
+            // mode, no nagging dialog (session-only, so a later grant can
+            // bring voice back without digging through settings).
+            if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
+                startVoiceListening()
+            } else {
+                setVoiceMode(false, persistChoice = false)
+                addSystemLineOnce(getString(R.string.voice_perm_denied))
+            }
+            return
+        }
         if (requestCode != 71) return
         if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
             toggleRecording()
@@ -369,26 +465,46 @@ class OnboardingActivity : AppCompatActivity() {
         }
     }
 
-    private fun replayLast() {
-        if (!replyWav.exists()) return
-        try {
+    /**
+     * Play the last reply wav. In voice mode this is the SPEAKING leg of the
+     * hands-free loop: playback completion opens the mic automatically.
+     * @return true if playback actually started.
+     */
+    private fun replayLast(): Boolean {
+        if (!replyWav.exists()) return false
+        if (voiceState == VoiceState.LISTENING) cancelVoiceListening()
+        return try {
             player?.release()
             player = MediaPlayer().apply {
-                setDataSource(replyWav.absolutePath); prepare(); start()
+                setDataSource(replyWav.absolutePath)
+                setOnCompletionListener {
+                    if (voiceState == VoiceState.SPEAKING) {
+                        if (voiceModeOn && !interviewDone) startVoiceListening()
+                        else setVoiceStatus(VoiceState.IDLE)
+                    }
+                }
+                prepare(); start()
             }
+            if (voiceModeOn) setVoiceStatus(VoiceState.SPEAKING)
+            true
         } catch (_: Exception) {
+            setVoiceStatus(VoiceState.IDLE)
             Toast.makeText(this, getString(R.string.audio_error), Toast.LENGTH_SHORT).show()
+            false
         }
     }
 
-    private fun playIfPresent(resp: org.json.JSONObject) {
-        val b64 = resp.optString("audioBase64").takeIf { it.isNotEmpty() && it != "null" } ?: return
-        try {
+    /** @return true if agent TTS audio started playing (loop continues there). */
+    private fun playIfPresent(resp: org.json.JSONObject): Boolean {
+        val b64 = resp.optString("audioBase64").takeIf { it.isNotEmpty() && it != "null" }
+            ?: return false
+        return try {
             replyWav.writeBytes(Base64.decode(b64, Base64.DEFAULT))
             replayButton.visibility = View.VISIBLE
             replayLast()
         } catch (_: Exception) {
             Toast.makeText(this, getString(R.string.audio_error), Toast.LENGTH_SHORT).show()
+            false
         }
     }
 
@@ -575,6 +691,7 @@ class OnboardingActivity : AppCompatActivity() {
         setBusy(false)
         hideTyping()
         if (resp == null) {
+            setVoiceStatus(VoiceState.IDLE) // loop stops; the user acts next
             if (retryTarget != null) {
                 changeMsg(retryTarget) { it.failed = true }
             } else {
@@ -583,10 +700,345 @@ class OnboardingActivity : AppCompatActivity() {
             return
         }
         addMsg(Role.AGENT, resp.optString("agentResponse"))
-        playIfPresent(resp)
-        if (resp.optString("action") == "finish_onboarding") {
+        val finishing = resp.optString("action") == "finish_onboarding"
+        if (finishing) interviewDone = true // audio still plays; loop stops
+        val audioStarted = playIfPresent(resp)
+        if (finishing) {
+            setVoiceStatus(VoiceState.IDLE)
             addMsg(Role.SYSTEM, "✅ ${getString(R.string.onboarding_saved)}")
             showDoneSheet()
+        } else if (!audioStarted) {
+            setVoiceStatus(VoiceState.IDLE)
+            if (voiceModeOn) {
+                // Reply without TTS: a beat to read it, then open the mic —
+                // the loop must not die just because audio was missing.
+                voiceHandler.postDelayed({
+                    if (voiceState == VoiceState.IDLE && recorder == null && !typing) {
+                        startVoiceListening()
+                    }
+                }, LISTEN_AFTER_TEXT_MS)
+            }
+        }
+    }
+
+    // ------------------------------------------------- hands-free voice loop
+
+    /** Flip voice mode. [persistChoice] false = session-only (perm denials). */
+    private fun setVoiceMode(on: Boolean, persistChoice: Boolean = true) {
+        voiceModeOn = on && voiceCapable
+        if (persistChoice) uiPrefs.edit().putBoolean(KEY_VOICE_MODE, voiceModeOn).apply()
+        if (!voiceModeOn) interruptVoiceLoop() // silence everything, instantly
+        updateVoiceToggle()
+    }
+
+    private fun updateVoiceToggle() {
+        voiceToggle.visibility = if (voiceCapable) View.VISIBLE else View.GONE
+        voiceToggle.text = getString(
+            if (voiceModeOn) R.string.chat_voice_on_glyph else R.string.chat_voice_off_glyph
+        )
+        voiceToggle.contentDescription = getString(
+            if (voiceModeOn) R.string.chat_a11y_voice_mute else R.string.chat_a11y_voice_unmute
+        )
+    }
+
+    /** Stop TTS playback + recognizer, drop any partial bubble → IDLE. */
+    private fun interruptVoiceLoop() {
+        voiceHandler.removeCallbacksAndMessages(null)
+        player?.release(); player = null
+        cancelVoiceListening()
+        if (voiceState != VoiceState.IDLE) setVoiceStatus(VoiceState.IDLE)
+    }
+
+    private fun cancelVoiceListening() {
+        if (voiceState == VoiceState.LISTENING) {
+            try { speech?.cancel() } catch (_: Exception) {}
+            setVoiceStatus(VoiceState.IDLE)
+        }
+        discardPendingVoice()
+    }
+
+    /**
+     * Lazily build the recognizer: on-device engine when the OS offers one
+     * (API 31+), else the default service asked to EXTRA_PREFER_OFFLINE.
+     */
+    private fun ensureRecognizer(): SpeechRecognizer? {
+        speech?.let { return it }
+        val onDevice = !forceCloudRecognizer &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            SpeechRecognizer.isOnDeviceRecognitionAvailable(this)
+        val r = try {
+            if (onDevice) SpeechRecognizer.createOnDeviceSpeechRecognizer(this)
+            else SpeechRecognizer.createSpeechRecognizer(this)
+        } catch (_: Exception) {
+            return null
+        }
+        speechOnDevice = onDevice
+        r.setRecognitionListener(recognitionListener)
+        speech = r
+        return r
+    }
+
+    /** LISTENING leg: free-form Spanish, offline-preferred, partials on. */
+    private fun startVoiceListening() {
+        if (!voiceModeOn || !voiceCapable || interviewDone) return
+        if (recorder != null || voiceState == VoiceState.LISTENING) return
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(Manifest.permission.RECORD_AUDIO), RC_VOICE_LISTEN
+            )
+            return
+        }
+        val rec = ensureRecognizer()
+        if (rec == null) {
+            voiceCapable = false
+            setVoiceMode(false, persistChoice = false)
+            addSystemLineOnce(getString(R.string.voice_unavailable))
+            return
+        }
+        player?.release(); player = null
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            .putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, voiceLocale)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, voiceLocale)
+            .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            .putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+            .putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
+        setVoiceStatus(VoiceState.LISTENING)
+        try {
+            rec.startListening(intent)
+        } catch (_: Exception) {
+            setVoiceStatus(VoiceState.IDLE)
+            addSystemLineOnce(getString(R.string.voice_not_heard))
+        }
+    }
+
+    /** Live partial → muted owner bubble that solidifies on the final result. */
+    private fun showVoicePartial(text: String) {
+        val m = pendingVoiceMsg
+        if (m == null) {
+            val nm = Msg(Role.OWNER, text, pending = true)
+            pendingVoiceMsg = nm
+            msgs.add(nm)
+            adapter.notifyItemInserted(msgs.size - 1)
+        } else {
+            m.text = text
+            val i = msgs.indexOf(m)
+            if (i >= 0) adapter.notifyItemChanged(i)
+        }
+        scrollToBottom()
+    }
+
+    private fun discardPendingVoice() {
+        val m = pendingVoiceMsg ?: return
+        pendingVoiceMsg = null
+        val i = msgs.indexOf(m)
+        if (i >= 0) {
+            msgs.removeAt(i)
+            adapter.notifyItemRemoved(i)
+        }
+    }
+
+    /** Final transcript: solidify the bubble, send through onboardingMessage. */
+    private fun sendVoiceFinal(text: String) {
+        val m = pendingVoiceMsg
+        pendingVoiceMsg = null
+        val target: Msg = if (m != null) {
+            changeMsg(m) { it.pending = false; it.text = text }
+            m
+        } else {
+            addMsg(Role.OWNER, text)
+        }
+        showTyping()
+        setBusy(true)
+        ServerClient.EXECUTOR.execute {
+            val resp = ServerClient.onboardingMessage(this, text)
+            runOnUiThread { handleAgentResponse(resp, retryTarget = target) }
+        }
+    }
+
+    /** Silence/no-match: gentle status, loop stops until the user acts. */
+    private fun stopLoopGently() {
+        discardPendingVoice()
+        setVoiceStatus(VoiceState.IDLE)
+        addSystemLineOnce(getString(R.string.voice_not_heard))
+    }
+
+    /** es-PE → es-419 → (on-device only) default service → give up politely. */
+    private fun retryWithFallbackLocale() {
+        discardPendingVoice()
+        setVoiceStatus(VoiceState.IDLE)
+        when {
+            voiceLocale == LOCALE_PRIMARY -> {
+                voiceLocale = LOCALE_FALLBACK
+                startVoiceListening()
+            }
+            speechOnDevice && !triedCloudForLocale -> {
+                triedCloudForLocale = true
+                forceCloudRecognizer = true
+                speech?.destroy(); speech = null
+                voiceLocale = LOCALE_PRIMARY
+                startVoiceListening()
+            }
+            else -> {
+                setVoiceMode(false, persistChoice = false)
+                addSystemLineOnce(getString(R.string.voice_lang_unavailable))
+            }
+        }
+    }
+
+    /** One quiet status line, never repeated back-to-back. */
+    private fun addSystemLineOnce(text: String) {
+        if (msgs.lastOrNull()?.text == text) return
+        addMsg(Role.SYSTEM, text)
+    }
+
+    private val recognitionListener = object : RecognitionListener {
+        override fun onReadyForSpeech(params: Bundle?) { busyRetryUsed = false }
+        override fun onBeginningOfSpeech() {}
+        override fun onRmsChanged(rmsdB: Float) {}
+        override fun onBufferReceived(buffer: ByteArray?) {}
+        override fun onEndOfSpeech() {}
+        override fun onEvent(eventType: Int, params: Bundle?) {}
+
+        override fun onPartialResults(partialResults: Bundle?) {
+            if (voiceState != VoiceState.LISTENING) return
+            val stable = partialResults
+                ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                ?.firstOrNull().orEmpty()
+            val unstable = partialResults
+                ?.getStringArrayList("android.speech.extra.UNSTABLE_TEXT")
+                ?.firstOrNull().orEmpty()
+            val text = (stable + unstable).trim()
+            if (text.isNotEmpty()) showVoicePartial(text)
+        }
+
+        override fun onResults(results: Bundle?) {
+            if (voiceState != VoiceState.LISTENING) return // stale after cancel
+            val text = results
+                ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                ?.firstOrNull()?.trim().orEmpty()
+            if (text.isEmpty()) stopLoopGently() else sendVoiceFinal(text)
+        }
+
+        override fun onError(error: Int) {
+            if (voiceState != VoiceState.LISTENING) return // stale after cancel
+            when (error) {
+                SpeechRecognizer.ERROR_NO_MATCH,
+                SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> stopLoopGently()
+                SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED,
+                SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> retryWithFallbackLocale()
+                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
+                    discardPendingVoice()
+                    setVoiceMode(false, persistChoice = false)
+                    addSystemLineOnce(getString(R.string.voice_perm_denied))
+                }
+                SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> {
+                    // Wedged service: rebuild once per listen, else stop gently.
+                    discardPendingVoice()
+                    setVoiceStatus(VoiceState.IDLE)
+                    speech?.destroy(); speech = null
+                    if (!busyRetryUsed) {
+                        busyRetryUsed = true
+                        startVoiceListening()
+                    } else {
+                        stopLoopGently()
+                    }
+                }
+                else -> stopLoopGently() // network/client/etc — never error-loop
+            }
+        }
+    }
+
+    // ------------------------------------------------------ voice status strip
+
+    /**
+     * Slim strip above the composer — the whole voice UI. One dot + one label,
+     * recolored and pulsed per state; hidden when idle or muted. During
+     * SPEAKING the strip itself is the barge-in tap target.
+     */
+    private fun setVoiceStatus(state: VoiceState) {
+        voiceState = state
+        statusPulse?.cancel(); statusPulse = null
+        voiceDot.alpha = 1f
+        voiceLabel.alpha = 1f
+        val visible = state != VoiceState.IDLE && voiceModeOn && !interviewDone
+        voiceStrip.visibility = if (visible) View.VISIBLE else View.GONE
+        if (!visible) return
+
+        fun color(res: Int) = ContextCompat.getColor(this, res)
+        when (state) {
+            VoiceState.SPEAKING -> {
+                voiceLabel.text = getString(R.string.voice_status_speaking)
+                voiceLabel.setTextColor(color(R.color.agento_primary))
+                voiceDot.setTextColor(color(R.color.agento_primary))
+                voiceStrip.isClickable = true
+                voiceStrip.contentDescription = getString(R.string.chat_a11y_voice_interrupt)
+                statusPulse = ObjectAnimator.ofFloat(voiceLabel, View.ALPHA, 1f, 0.55f).apply {
+                    duration = 700
+                    repeatCount = ObjectAnimator.INFINITE
+                    repeatMode = ObjectAnimator.REVERSE
+                    start()
+                }
+            }
+            VoiceState.LISTENING -> {
+                voiceLabel.text = getString(R.string.voice_status_listening)
+                voiceLabel.setTextColor(color(R.color.agento_on_surface))
+                voiceDot.setTextColor(color(R.color.agento_error))
+                voiceStrip.isClickable = false
+                voiceStrip.contentDescription = getString(R.string.voice_status_listening)
+                statusPulse = ObjectAnimator.ofFloat(voiceDot, View.ALPHA, 1f, 0.2f).apply {
+                    duration = 550
+                    repeatCount = ObjectAnimator.INFINITE
+                    repeatMode = ObjectAnimator.REVERSE
+                    start()
+                }
+            }
+            VoiceState.THINKING -> {
+                voiceLabel.text = getString(R.string.voice_status_thinking)
+                voiceLabel.setTextColor(color(R.color.agento_on_surface_muted))
+                voiceDot.setTextColor(color(R.color.agento_on_surface_muted))
+                voiceStrip.isClickable = false
+                voiceStrip.contentDescription = getString(R.string.voice_status_thinking)
+                statusPulse = ObjectAnimator.ofFloat(voiceDot, View.ALPHA, 0.3f, 1f).apply {
+                    duration = 450
+                    repeatCount = ObjectAnimator.INFINITE
+                    repeatMode = ObjectAnimator.REVERSE
+                    start()
+                }
+            }
+            VoiceState.IDLE -> Unit
+        }
+    }
+
+    // --------------------------------------------------- interview safety net
+
+    /**
+     * Blank transcript on a configured device: the agent must speak first.
+     * Send a silent "hola" through the normal onboarding path — typing dots
+     * only, no owner bubble — and render (and speak) just the reply.
+     */
+    private fun kickInterview() {
+        showTyping()
+        setBusy(true)
+        ServerClient.EXECUTOR.execute {
+            val resp = ServerClient.onboardingMessage(this, "hola")
+            runOnUiThread {
+                if (resp == null) {
+                    setBusy(false)
+                    hideTyping()
+                    setVoiceStatus(VoiceState.IDLE)
+                    // Keep the chat alive even offline: canned hint + next step.
+                    addParsed(getString(R.string.onboarding_resume_hint))
+                    addMsg(Role.SYSTEM, "⚠️ ${getString(R.string.server_error)}")
+                } else {
+                    handleAgentResponse(resp, retryTarget = null)
+                }
+            }
         }
     }
 
@@ -685,10 +1137,21 @@ class OnboardingActivity : AppCompatActivity() {
         finish()
     }
 
+    override fun onPause() {
+        super.onPause()
+        // Never keep the mic open in the background; the loop resumes on the
+        // next agent reply (or an explicit tap) when the owner comes back.
+        cancelVoiceListening()
+        voiceHandler.removeCallbacksAndMessages(null)
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         timerHandler.removeCallbacksAndMessages(null)
+        voiceHandler.removeCallbacksAndMessages(null)
         recordPulse?.cancel()
+        statusPulse?.cancel()
+        speech?.destroy()
         recorder?.release()
         player?.release()
     }
@@ -764,7 +1227,6 @@ class OnboardingActivity : AppCompatActivity() {
             private val retry: MaterialButton = v.findViewById(R.id.bubble_retry)
 
             init {
-                text.background = bubbleBg(R.color.agento_primary_container, sharpBottomRight = true)
                 text.maxWidth = bubbleMaxWidth
                 retry.setOnClickListener {
                     val pos = bindingAdapterPosition
@@ -773,8 +1235,22 @@ class OnboardingActivity : AppCompatActivity() {
             }
 
             fun bind(m: Msg) {
+                // Pending = live speech partial: muted fill + muted text until
+                // the recognizer's final result solidifies the bubble.
+                text.background = bubbleBg(
+                    if (m.pending) R.color.agento_surface_variant
+                    else R.color.agento_primary_container,
+                    sharpBottomRight = true
+                )
+                text.setTextColor(
+                    ContextCompat.getColor(
+                        this@OnboardingActivity,
+                        if (m.pending) R.color.agento_on_surface_muted
+                        else R.color.agento_on_primary_container
+                    )
+                )
                 text.text = m.text
-                retry.visibility = if (m.failed) View.VISIBLE else View.GONE
+                retry.visibility = if (m.failed && !m.pending) View.VISIBLE else View.GONE
             }
         }
 

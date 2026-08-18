@@ -5,6 +5,15 @@
     <string name="chat_retry">Not sent · Retry</string>
     <string name="chat_recording_hint">Recording — tap ⏹ to send</string>
 
+    <!-- Voice mode: status strip + hands-free loop. -->
+    <string name="voice_status_speaking">🔊 Speaking…</string>
+    <string name="voice_status_listening">🎙 Listening…</string>
+    <string name="voice_status_thinking">💭 Thinking…</string>
+    <string name="voice_not_heard">I didn\'t hear you — tap the mic or type</string>
+    <string name="voice_unavailable">Your phone doesn\'t support voice dictation, so we\'ll chat by text.</string>
+    <string name="voice_perm_denied">No microphone permission — we\'ll continue by text. Tap 🔇 to try again.</string>
+    <string name="voice_lang_unavailable">Spanish dictation isn\'t available on this phone — we\'ll continue by text.</string>
+
     <!-- Accessibility -->
     <string name="chat_a11y_send">Send message</string>
     <string name="chat_a11y_mic">Record voice note</string>
@@ -12,4 +21,8 @@
     <string name="chat_a11y_camera">Send catalog photo</string>
     <string name="chat_a11y_replay">Replay the answer</string>
     <string name="chat_a11y_typing">The assistant is typing</string>
+    <string name="chat_a11y_voice_mute">Mute voice mode</string>
+    <string name="chat_a11y_voice_unmute">Turn on voice mode</string>
+    <string name="chat_a11y_voice_interrupt">Interrupt the assistant and speak</string>
+    <string name="chat_a11y_voice_status">Voice mode status</string>
 </resources>

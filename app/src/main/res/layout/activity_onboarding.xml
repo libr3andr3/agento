@@ -99,12 +99,51 @@
                 android:text="@string/chat_recording_hint" />
         </LinearLayout>
 
+        <!-- Voice-mode status strip: 🔊 Hablando / 🎙 Escuchando / 💭 Pensando.
+             Tap while the agent talks to interrupt and answer (barge-in lite).
+             Colors + pulse are driven from code per state; hidden when idle. -->
+        <LinearLayout
+            android:id="@+id/voice_strip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_min"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@color/agento_surface_card"
+            android:paddingStart="@dimen/space_m"
+            android:paddingEnd="@dimen/space_m"
+            android:paddingTop="@dimen/space_xs"
+            android:paddingBottom="@dimen/space_xs"
+            android:visibility="gone"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="@string/chat_a11y_voice_status">
+
+            <TextView
+                android:id="@+id/voice_dot"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="@color/agento_primary"
+                android:importantForAccessibility="no"
+                android:text="@string/chat_dot" />
+
+            <TextView
+                android:id="@+id/voice_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_s"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="@color/agento_primary"
+                android:text="@string/voice_status_listening" />
+        </LinearLayout>
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="@color/agento_outline" />
 
-        <!-- Composer: replay · camera · field · mic · send. -->
+        <!-- Composer: voice-mode toggle · replay · camera · field · mic · send. -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -115,6 +154,24 @@
             android:paddingEnd="@dimen/space_s"
             android:paddingTop="@dimen/space_s"
             android:paddingBottom="@dimen/space_s">
+
+            <!-- Voice-mode toggle: 🔊 hands-free loop on · 🔇 classic text chat.
+                 Glyph + contentDescription flip from code; hidden when the
+                 device has no speech recognition at all. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chat_voice_toggle"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="@dimen/space_l"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:contentDescription="@string/chat_a11y_voice_mute"
+                android:text="@string/chat_voice_on_glyph" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/chat_replay"

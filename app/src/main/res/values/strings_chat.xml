@@ -5,12 +5,23 @@
     <string name="chat_retry">No se envió · Reintentar</string>
     <string name="chat_recording_hint">Grabando — toca ⏹ para enviar</string>
 
+    <!-- Voice mode: status strip + hands-free loop. -->
+    <string name="voice_status_speaking">🔊 Hablando…</string>
+    <string name="voice_status_listening">🎙 Escuchando…</string>
+    <string name="voice_status_thinking">💭 Pensando…</string>
+    <string name="voice_not_heard">No te escuché — toca el micrófono o escribe</string>
+    <string name="voice_unavailable">Tu teléfono no tiene dictado por voz, así que conversamos por escrito.</string>
+    <string name="voice_perm_denied">Sin permiso de micrófono — seguimos por escrito. Toca 🔇 para reintentar.</string>
+    <string name="voice_lang_unavailable">El dictado en español no está disponible en este teléfono — seguimos por escrito.</string>
+
     <!-- Glyph-only labels (never translated). -->
     <string name="chat_send_glyph" translatable="false">➤</string>
     <string name="chat_mic_glyph" translatable="false">🎤</string>
     <string name="chat_stop_glyph" translatable="false">⏹</string>
     <string name="chat_dot" translatable="false">●</string>
     <string name="chat_timer_zero" translatable="false">0:00</string>
+    <string name="chat_voice_on_glyph" translatable="false">🔊</string>
+    <string name="chat_voice_off_glyph" translatable="false">🔇</string>
 
     <!-- Accessibility -->
     <string name="chat_a11y_send">Enviar mensaje</string>
@@ -19,4 +30,8 @@
     <string name="chat_a11y_camera">Enviar foto del catálogo</string>
     <string name="chat_a11y_replay">Volver a escuchar la respuesta</string>
     <string name="chat_a11y_typing">El asistente está escribiendo</string>
+    <string name="chat_a11y_voice_mute">Silenciar el modo voz</string>
+    <string name="chat_a11y_voice_unmute">Activar el modo voz</string>
+    <string name="chat_a11y_voice_interrupt">Interrumpir al asistente y hablar</string>
+    <string name="chat_a11y_voice_status">Estado del modo voz</string>
 </resources>
