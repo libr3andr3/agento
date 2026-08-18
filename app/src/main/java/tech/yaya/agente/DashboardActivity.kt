@@ -139,14 +139,33 @@ class DashboardActivity : AppCompatActivity() {
     /** Last trial payload from the server; null until the first good fetch. */
     private var trial: JSONObject? = null
 
-    /** The trial-over banner: explain + hand the owner straight to sales. */
+    /**
+     * The trial banner sells the whole week, not just the funeral: a running
+     * "ends in N days — talk to our agent" countdown while active, the red
+     * it's-over version once the agent has gone quiet. Same button either way.
+     */
     private fun refreshTrialBanner() {
         val t = trial
-        val expired = t != null && !t.optBoolean("active", true)
-        val banner = findViewById<View>(R.id.trial_banner)
-        banner.visibility = if (expired) View.VISIBLE else View.GONE
-        if (!expired) return
-        val sales = t?.optString("salesPhone")?.filter { it.isDigit() } ?: ""
+        val banner = findViewById<com.google.android.material.card.MaterialCardView>(R.id.trial_banner)
+        if (t == null) {
+            banner.visibility = View.GONE
+            return
+        }
+        banner.visibility = View.VISIBLE
+        val text = findViewById<TextView>(R.id.trial_banner_text)
+        val active = t.optBoolean("active", true)
+        if (active) {
+            val days = t.optLong("daysLeft", 0).coerceAtLeast(0)
+            text.text = if (days == 0L) getString(R.string.trial_banner_today)
+                        else getString(R.string.trial_banner_days, days)
+            text.setTextColor(0xFFB26A00.toInt())
+            banner.setCardBackgroundColor(0xFFFFF4E5.toInt())
+        } else {
+            text.text = getString(R.string.trial_banner_text)
+            text.setTextColor(0xFFB3261E.toInt())
+            banner.setCardBackgroundColor(0xFFFDE7E9.toInt())
+        }
+        val sales = t.optString("salesPhone").filter { it.isDigit() }
         findViewById<View>(R.id.sales_button).setOnClickListener {
             if (sales.isEmpty()) return@setOnClickListener
             val msg = Uri.encode(getString(R.string.trial_sales_message,

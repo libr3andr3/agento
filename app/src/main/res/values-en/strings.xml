@@ -121,6 +121,8 @@
     <string name="verify_ok">Number verified</string>
     <string name="verify_wrong_code">Wrong code</string>
     <string name="trial_banner_text">Your free week ended — the agent stopped replying</string>
-    <string name="trial_talk_to_sales">💬 Talk to sales</string>
+    <string name="trial_talk_to_sales">💬 Talk to our agent</string>
     <string name="trial_sales_message">Hi! The free agento week for %1$s ended and I want to continue with the service.</string>
+    <string name="trial_banner_days">Your free week ends in %1$d days — talk to our agent to keep your service</string>
+    <string name="trial_banner_today">Your free week ends today — talk to our agent to keep your service</string>
 </resources>

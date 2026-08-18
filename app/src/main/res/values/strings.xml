@@ -135,6 +135,8 @@
     <string name="verify_ok">Número verificado</string>
     <string name="verify_wrong_code">Código incorrecto</string>
     <string name="trial_banner_text">Tu semana gratis terminó — el agente dejó de responder</string>
-    <string name="trial_talk_to_sales">💬 Hablar con ventas</string>
+    <string name="trial_talk_to_sales">💬 Hablar con nuestro agente</string>
     <string name="trial_sales_message">Hola! Mi semana gratis de agento para %1$s terminó y quiero continuar con el servicio.</string>
+    <string name="trial_banner_days">Tu semana gratis termina en %1$d días — habla con nuestro agente para mantener tu servicio</string>
+    <string name="trial_banner_today">Tu semana gratis termina hoy — habla con nuestro agente para mantener tu servicio</string>
 </resources>
