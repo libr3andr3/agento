@@ -117,6 +117,35 @@ object ServerClient {
         }
     }
 
+    /**
+     * Catalog/menu photo up (JPEG bytes), extracted items+prices down. The
+     * status code carries meaning (422 unreadable photo, 503 feature off,
+     * 429 limited), so the raw [Response] is returned instead of a nullable
+     * body — mirror of [voiceMessage] otherwise, same timeouts.
+     */
+    fun catalogPhoto(ctx: Context, image: ByteArray): Response {
+        return try {
+            val conn = URL(Prefs.serverUrl(ctx) + "/api/catalog_photo")
+                .openConnection() as HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.doOutput = true
+            conn.connectTimeout = 10_000
+            conn.readTimeout = 180_000
+            conn.setRequestProperty("Content-Type", "application/octet-stream")
+            conn.setRequestProperty("X-App-Key", APP_KEY)
+            conn.setRequestProperty("Authorization", "Bearer " + Prefs.deviceToken(ctx))
+            conn.outputStream.use { it.write(image) }
+            val code = conn.responseCode
+            val text = (if (code in 200..299) conn.inputStream else conn.errorStream)
+                ?.bufferedReader()?.readText() ?: ""
+            if (code !in 200..299) Log.w(TAG, "catalog -> $code: $text")
+            Response(code, runCatching { JSONObject(text) }.getOrNull())
+        } catch (e: Exception) {
+            Log.w(TAG, "catalog failed", e)
+            Response(0, null)
+        }
+    }
+
     fun dashboard(ctx: Context): JSONObject? {
         return try {
             val conn = URL(Prefs.serverUrl(ctx) + "/api/dashboard")

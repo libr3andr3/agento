@@ -125,6 +125,16 @@
     <string name="trial_sales_message">Hi! The free agento week for %1$s ended and I want to continue with the service.</string>
     <string name="trial_banner_days">Your free week ends in %1$d days — talk to our agent to keep your service</string>
     <string name="trial_banner_today">Your free week ends today — talk to our agent to keep your service</string>
+    <!-- Catalog photo (onboarding) -->
+    <string name="catalog_photo_title">Photo of your catalog or menu</string>
+    <string name="catalog_photo_take">Take a photo</string>
+    <string name="catalog_photo_gallery">Choose from gallery</string>
+    <string name="catalog_photo_reading">Reading your catalog…</string>
+    <string name="catalog_photo_saved">%1$d products saved</string>
+    <string name="catalog_photo_unreadable">Couldn\'t read the photo — try again with more light, facing the page</string>
+    <string name="catalog_photo_unavailable">Feature not available</string>
+    <string name="catalog_photo_no_app">No camera or gallery app found on your phone</string>
+
     <string name="dash_orders">Orders</string>
     <string name="order_paid">paid</string>
     <string name="order_pending">unpaid</string>

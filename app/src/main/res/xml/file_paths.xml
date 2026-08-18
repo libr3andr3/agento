@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Camera capture target for the catalog-photo flow: the full-size JPEG
+     lands in cacheDir and is handed to the camera app via FileProvider,
+     which needs no CAMERA permission. -->
+<paths>
+    <cache-path name="camera" path="." />
+</paths>

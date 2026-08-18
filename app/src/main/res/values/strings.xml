@@ -139,6 +139,17 @@
     <string name="trial_sales_message">Hola! Mi semana gratis de agento para %1$s terminó y quiero continuar con el servicio.</string>
     <string name="trial_banner_days">Tu semana gratis termina en %1$d días — habla con nuestro agente para mantener tu servicio</string>
     <string name="trial_banner_today">Tu semana gratis termina hoy — habla con nuestro agente para mantener tu servicio</string>
+    <!-- Catalog photo (onboarding) -->
+    <string name="catalog_photo_button" translatable="false">📷</string>
+    <string name="catalog_photo_title">Foto de tu catálogo o carta</string>
+    <string name="catalog_photo_take">Tomar foto</string>
+    <string name="catalog_photo_gallery">Elegir de la galería</string>
+    <string name="catalog_photo_reading">Leyendo tu catálogo…</string>
+    <string name="catalog_photo_saved">%1$d productos guardados</string>
+    <string name="catalog_photo_unreadable">No pude leer la foto — intenta con más luz y de frente</string>
+    <string name="catalog_photo_unavailable">Función no disponible</string>
+    <string name="catalog_photo_no_app">No se encontró una app de cámara o galería en tu teléfono</string>
+
     <string name="dash_orders">Pedidos</string>
     <string name="order_paid">pagado</string>
     <string name="order_pending">por pagar</string>

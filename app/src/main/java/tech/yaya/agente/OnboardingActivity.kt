@@ -1,9 +1,13 @@
 package tech.yaya.agente
 
 import android.Manifest
+import android.content.ClipData
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
@@ -20,9 +24,14 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import android.provider.MediaStore
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.exifinterface.media.ExifInterface
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 
 /**
@@ -32,11 +41,19 @@ import java.io.File
  */
 class OnboardingActivity : AppCompatActivity() {
 
+    companion object {
+        private const val RC_CATALOG_CAMERA = 72
+        private const val RC_CATALOG_GALLERY = 73
+        /** Longest edge for uploaded catalog photos. */
+        private const val MAX_PHOTO_EDGE = 1600
+    }
+
     private lateinit var chatLog: TextView
     private lateinit var scroll: ScrollView
     private lateinit var input: EditText
     private lateinit var sendButton: Button
     private lateinit var micButton: Button
+    private lateinit var cameraButton: Button
     private lateinit var replayButton: Button
 
     private val blocks = mutableListOf<String>()
@@ -47,6 +64,7 @@ class OnboardingActivity : AppCompatActivity() {
     private var pendingDone = false
     private val voiceFile: File by lazy { File(cacheDir, "voice.m4a") }
     private val replyWav: File by lazy { File(cacheDir, "reply.wav") }
+    private val photoFile: File by lazy { File(cacheDir, "catalog.jpg") }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,11 +74,17 @@ class OnboardingActivity : AppCompatActivity() {
         input = findViewById(R.id.chat_input)
         sendButton = findViewById(R.id.chat_send)
         micButton = findViewById(R.id.chat_mic)
+        cameraButton = findViewById(R.id.chat_camera)
         replayButton = findViewById(R.id.chat_replay)
 
         sendButton.setOnClickListener { send() }
         micButton.setOnClickListener { toggleRecording() }
+        cameraButton.setOnClickListener { showPhotoSourceDialog() }
         replayButton.setOnClickListener { replayLast() }
+
+        // Photos need a registered business to land on: server-gated like
+        // the rest of the chat.
+        cameraButton.isEnabled = Prefs.serverConfigured(this)
 
         // Restore the transcript so an interrupted owner never sees a blank chat.
         Prefs.chatTranscript(this)?.let {
@@ -205,6 +229,8 @@ class OnboardingActivity : AppCompatActivity() {
                 }
                 Prefs.setDeviceToken(this, resp.optString("deviceToken"))
                 Prefs.setBusinessId(this, resp.optString("businessId"))
+                // setBusy(false) ran before the token landed — unlock now.
+                cameraButton.isEnabled = Prefs.serverConfigured(this)
                 replaceLast("🟢 " + resp.optString("conversationStarterMessage"))
                 playIfPresent(resp)
             }
@@ -347,6 +373,176 @@ class OnboardingActivity : AppCompatActivity() {
         }
     }
 
+    // -------------------------------------------------------- catalog photo
+
+    /**
+     * Owner sends a photo of their catalog/menu; the server extracts items and
+     * prices. Camera goes through ACTION_IMAGE_CAPTURE + FileProvider (full
+     * size, no CAMERA permission), gallery through ACTION_GET_CONTENT.
+     */
+    private fun showPhotoSourceDialog() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.catalog_photo_title)
+            .setItems(
+                arrayOf(
+                    getString(R.string.catalog_photo_take),
+                    getString(R.string.catalog_photo_gallery)
+                )
+            ) { _, which ->
+                if (which == 0) launchCamera() else launchGallery()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun launchCamera() {
+        photoFile.delete()
+        val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", photoFile)
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            .putExtra(MediaStore.EXTRA_OUTPUT, uri)
+            .addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+        // Grant flags only cover data/clipData, not extras — mirror the uri
+        // there so every camera app can actually write to it.
+        intent.clipData = ClipData.newRawUri("output", uri)
+        try {
+            startActivityForResult(intent, RC_CATALOG_CAMERA)
+        } catch (_: Exception) {
+            Toast.makeText(this, getString(R.string.catalog_photo_no_app), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun launchGallery() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT)
+            .setType("image/*")
+            .addCategory(Intent.CATEGORY_OPENABLE)
+        try {
+            startActivityForResult(intent, RC_CATALOG_GALLERY)
+        } catch (_: Exception) {
+            Toast.makeText(this, getString(R.string.catalog_photo_no_app), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != RESULT_OK) return
+        val raw: ByteArray? = when (requestCode) {
+            RC_CATALOG_CAMERA ->
+                photoFile.takeIf { it.exists() && it.length() > 0 }?.readBytes()
+            RC_CATALOG_GALLERY ->
+                data?.data?.let { uri ->
+                    runCatching {
+                        contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    }.getOrNull()
+                }
+            else -> return
+        }
+        if (raw == null || raw.isEmpty()) {
+            Toast.makeText(this, getString(R.string.catalog_photo_unreadable), Toast.LENGTH_LONG).show()
+            return
+        }
+        sendCatalogPhoto(raw)
+    }
+
+    private fun sendCatalogPhoto(raw: ByteArray) {
+        append("📷 ⏳ ${getString(R.string.catalog_photo_reading)}")
+        setBusy(true)
+        ServerClient.EXECUTOR.execute {
+            val jpeg = prepareCatalogJpeg(raw)
+            val resp = jpeg?.let { ServerClient.catalogPhoto(this, it) }
+            runOnUiThread {
+                setBusy(false)
+                photoFile.delete()
+                if (resp == null) { // undecodable image, never left the phone
+                    replaceLast("⚠️ ${getString(R.string.catalog_photo_unreadable)}")
+                    return@runOnUiThread
+                }
+                handleCatalogResponse(resp)
+            }
+        }
+    }
+
+    /**
+     * Downscale so the longest edge is ≤ [MAX_PHOTO_EDGE] px and re-encode as
+     * JPEG q85 — menu photos are all the server needs, not 12MP originals.
+     * inSampleSize does the cheap power-of-two step, an exact scale finishes,
+     * and the EXIF orientation is baked in so the server never sees a
+     * sideways menu. Null = not a decodable image.
+     */
+    private fun prepareCatalogJpeg(raw: ByteArray): ByteArray? {
+        return try {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(raw, 0, raw.size, bounds)
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+            var sample = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= MAX_PHOTO_EDGE) {
+                sample *= 2
+            }
+            val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+            var bmp = BitmapFactory.decodeByteArray(raw, 0, raw.size, opts) ?: return null
+            val longest = maxOf(bmp.width, bmp.height)
+            if (longest > MAX_PHOTO_EDGE) {
+                val scale = MAX_PHOTO_EDGE.toFloat() / longest
+                bmp = Bitmap.createScaledBitmap(
+                    bmp,
+                    (bmp.width * scale).toInt().coerceAtLeast(1),
+                    (bmp.height * scale).toInt().coerceAtLeast(1),
+                    true
+                )
+            }
+            val rotation = try {
+                when (ExifInterface(ByteArrayInputStream(raw)).getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL
+                )) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                    ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                    ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                    else -> 0f
+                }
+            } catch (_: Exception) { 0f }
+            if (rotation != 0f) {
+                val m = Matrix().apply { postRotate(rotation) }
+                bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, m, true)
+            }
+            val out = ByteArrayOutputStream()
+            bmp.compress(Bitmap.CompressFormat.JPEG, 85, out)
+            out.toByteArray()
+        } catch (e: Exception) {
+            android.util.Log.w("Onboarding", "catalog photo decode failed", e)
+            null
+        }
+    }
+
+    private fun handleCatalogResponse(resp: ServerClient.Response) {
+        when {
+            resp.code in 200..299 && resp.json != null -> {
+                val items = resp.json.optJSONArray("items")
+                val total = items?.length() ?: 0
+                val preview = StringBuilder()
+                for (i in 0 until minOf(total, 3)) {
+                    val item = items?.optJSONObject(i) ?: continue
+                    if (preview.isNotEmpty()) preview.append(", ")
+                    preview.append(item.optString("name"))
+                        .append(" S/").append(item.optString("price"))
+                }
+                if (total > 3) preview.append(", …")
+                val note = resp.json.optString("note").takeIf { it.isNotEmpty() }
+                    ?: getString(R.string.catalog_photo_saved, resp.json.optInt("count", total))
+                replaceLast(
+                    "✅ $note" + if (preview.isNotEmpty()) " — $preview" else ""
+                )
+            }
+            resp.code == 422 -> replaceLast("⚠️ ${getString(R.string.catalog_photo_unreadable)}")
+            resp.code == 503 -> replaceLast("⚠️ ${getString(R.string.catalog_photo_unavailable)}")
+            resp.code == 429 -> replaceLast("⚠️ ${getString(R.string.verify_throttled)}")
+            else -> replaceLast("⚠️ ${getString(R.string.server_error)}")
+        }
+    }
+
     // ----------------------------------------------------------------- shared
 
     private fun handleAgentResponse(resp: org.json.JSONObject?) {
@@ -481,6 +677,7 @@ class OnboardingActivity : AppCompatActivity() {
         sendButton.isEnabled = !busy
         input.isEnabled = !busy
         micButton.isEnabled = !busy || recorder != null
+        cameraButton.isEnabled = !busy && Prefs.serverConfigured(this)
     }
 
     override fun onDestroy() {
