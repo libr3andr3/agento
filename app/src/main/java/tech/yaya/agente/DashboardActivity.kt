@@ -245,6 +245,9 @@ class DashboardActivity : AppCompatActivity() {
         earnWeek.text = soles(e.optDouble("week", 0.0))
         earnMonth.text = soles(e.optDouble("month", 0.0))
         renderGaps(d.optJSONArray("openGaps"))
+        // Orders render before the appointments early-return below: a
+        // products-only business has an empty agenda every single day.
+        renderOrders(d.optJSONArray("orders"))
 
         agenda.removeAllViews()
         val appts = d.optJSONArray("appointments")
@@ -269,6 +272,34 @@ class DashboardActivity : AppCompatActivity() {
                 })
             }
             agenda.addView(appointmentRow(a))
+        }
+    }
+
+    /** Product orders (last 14 days). Section hides when there are none. */
+    private fun renderOrders(arr: org.json.JSONArray?) {
+        val header = findViewById<TextView>(R.id.orders_header)
+        val container = findViewById<LinearLayout>(R.id.orders_container)
+        container.removeAllViews()
+        if (arr == null || arr.length() == 0) {
+            header.visibility = View.GONE
+            return
+        }
+        header.visibility = View.VISIBLE
+        for (i in 0 until arr.length()) {
+            val o = arr.getJSONObject(i)
+            val items = o.optJSONArray("items")
+            val summary = (0 until (items?.length() ?: 0)).joinToString(", ") { j ->
+                val it = items!!.getJSONObject(j)
+                "${it.optInt("qty", 1)}× ${it.optString("product")}"
+            }
+            val paid = o.optBoolean("paid")
+            container.addView(TextView(this).apply {
+                text = "🛍 ${o.optString("customer")} · $summary · ${soles(o.optDouble("total", 0.0))} · " +
+                    if (paid) getString(R.string.order_paid) else getString(R.string.order_pending)
+                textSize = 14f
+                setPadding(4, 10, 4, 10)
+                setTextColor(if (paid) 0xFF1B5E20.toInt() else 0xFFB26A00.toInt())
+            })
         }
     }
 

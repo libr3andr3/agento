@@ -139,4 +139,7 @@
     <string name="trial_sales_message">Hola! Mi semana gratis de agento para %1$s terminó y quiero continuar con el servicio.</string>
     <string name="trial_banner_days">Tu semana gratis termina en %1$d días — habla con nuestro agente para mantener tu servicio</string>
     <string name="trial_banner_today">Tu semana gratis termina hoy — habla con nuestro agente para mantener tu servicio</string>
+    <string name="dash_orders">Pedidos</string>
+    <string name="order_paid">pagado</string>
+    <string name="order_pending">por pagar</string>
 </resources>

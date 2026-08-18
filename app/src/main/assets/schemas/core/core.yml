@@ -9,6 +9,10 @@ defaults:
   paymentMethod: atVisit          # upfront | atVisit | yape
   bookingDeposit: null            # fixed soles to reserve; null = no deposit
 fields:
+  businessKind:
+    type: "enum[services|products|both]"
+    ask_in_onboarding: true
+    question_es: "¿Vendes productos, servicios (con citas), o ambos?"
   businessHours:
     type: "map[day -> range]"
     ask_in_onboarding: true
@@ -17,6 +21,10 @@ fields:
     type: "map[service -> money]"
     ask_in_onboarding: true
     question_es: "¿Qué servicios ofrecen y cuánto cuesta cada uno?"
+  products:
+    type: "map[product -> money]"
+    ask_in_onboarding: true
+    question_es: "¿Qué productos vendes y a qué precio cada uno?"
   paymentMethod:
     type: "enum[upfront|atVisit|yape]"
     ask_in_onboarding: true
