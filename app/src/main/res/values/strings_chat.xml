@@ -10,9 +10,7 @@
     <string name="voice_status_listening">🎙 Escuchando…</string>
     <string name="voice_status_thinking">💭 Pensando…</string>
     <string name="voice_not_heard">No te escuché — toca el micrófono o escribe</string>
-    <string name="voice_unavailable">Tu teléfono no tiene dictado por voz, así que conversamos por escrito.</string>
     <string name="voice_perm_denied">Sin permiso de micrófono — seguimos por escrito. Toca 🔇 para reintentar.</string>
-    <string name="voice_lang_unavailable">El dictado en español no está disponible en este teléfono — seguimos por escrito.</string>
 
     <!-- Glyph-only labels (never translated). -->
     <string name="chat_send_glyph" translatable="false">➤</string>

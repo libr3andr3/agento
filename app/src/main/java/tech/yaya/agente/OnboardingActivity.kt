@@ -12,13 +12,10 @@ import android.graphics.Matrix
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
+import android.os.SystemClock
 import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Base64
@@ -65,13 +62,29 @@ class OnboardingActivity : AppCompatActivity() {
         /** Chat-UI prefs — OUR file, never Prefs.kt (see BOUNDARIES.md). */
         private const val UI_PREFS = "agente_chat_ui"
         private const val KEY_VOICE_MODE = "voice_mode_on"
-        /** Recognizer locales: Peruvian Spanish first, LatAm Spanish fallback. */
-        private const val LOCALE_PRIMARY = "es-PE"
-        private const val LOCALE_FALLBACK = "es-419"
         /** Beat before auto-listening when a reply arrived without TTS audio. */
         private const val LISTEN_AFTER_TEXT_MS = 1100L
         /** Longer beat on open — the owner is still reading the seeded greeting. */
         private const val LISTEN_ON_OPEN_MS = 1600L
+
+        // --- DIY voice-activity detection over MediaRecorder.getMaxAmplitude()
+        //     (budget phones often lack on-device Spanish models, so hands-free
+        //     capture always transcribes through the server's Whisper path) ---
+        /** Amplitude poll cadence. */
+        private const val VAD_POLL_MS = 150L
+        /** Ambient-noise calibration window at the start of each listen. */
+        private const val VAD_CALIBRATE_MS = 500L
+        /** Speech-start floor; effective threshold = max(this, ambient×3). */
+        private const val VAD_MIN_THRESHOLD = 1500
+        private const val VAD_AMBIENT_FACTOR = 3
+        /** Continuous sub-threshold time that ends the utterance. */
+        private const val VAD_END_SILENCE_MS = 1800L
+        /** No speech at all within this → gentle stop (never an error loop). */
+        private const val VAD_NO_SPEECH_MS = 8000L
+        /** Hard cap: stop and send whatever was captured. */
+        private const val VAD_MAX_UTTERANCE_MS = 45_000L
+        /** Less voiced time than this = breath/rustle → discard silently. */
+        private const val VAD_MIN_VOICED_MS = 400L
     }
 
     // ------------------------------------------------------------- chat model
@@ -88,9 +101,10 @@ class OnboardingActivity : AppCompatActivity() {
 
     /**
      * Hands-free loop states. SPEAKING (agent TTS playing) → on completion →
-     * LISTENING (SpeechRecognizer, partials in a muted owner bubble) → final
-     * result → THINKING (message in flight, typing dots) → reply → SPEAKING.
-     * Any recognizer error or user action drops to IDLE (strip hidden); the
+     * LISTENING (MediaRecorder + amplitude VAD, muted "🎙 …" bubble once
+     * speech starts) → end-of-speech → THINKING (one voiceMessage call does
+     * Whisper transcript + reply + TTS; typing dots) → reply → SPEAKING.
+     * Silence, timeouts, or any user action drop to IDLE (strip hidden); the
      * loop then waits for the next agent reply or an explicit tap.
      */
     private enum class VoiceState { IDLE, SPEAKING, LISTENING, THINKING }
@@ -125,16 +139,19 @@ class OnboardingActivity : AppCompatActivity() {
     // --- voice-mode state machine ---
     private var voiceState = VoiceState.IDLE
     private var voiceModeOn = false
-    private var voiceCapable = false
     private var interviewDone = false
-    private var speech: SpeechRecognizer? = null
-    private var speechOnDevice = false
-    private var forceCloudRecognizer = false
-    private var triedCloudForLocale = false
-    private var busyRetryUsed = false
-    private var voiceLocale = LOCALE_PRIMARY
     private var pendingVoiceMsg: Msg? = null
     private val uiPrefs by lazy { getSharedPreferences(UI_PREFS, MODE_PRIVATE) }
+
+    // --- hands-free capture + VAD (separate from the push-to-talk recorder) ---
+    private var vadRecorder: MediaRecorder? = null
+    private var vadStartAt = 0L
+    private var vadFirstPollDone = false
+    private var vadAmbientMax = 0
+    private var vadThreshold = 0
+    private var vadSpeechStarted = false
+    private var vadSpeechStartAt = 0L
+    private var vadLastVoicedAt = 0L
 
     private val voiceFile: File by lazy { File(cacheDir, "voice.m4a") }
     private val replyWav: File by lazy { File(cacheDir, "reply.wav") }
@@ -180,10 +197,10 @@ class OnboardingActivity : AppCompatActivity() {
             if (voiceState == VoiceState.SPEAKING) startVoiceListening()
         }
 
-        // Voice mode: default ON while the recognizer exists; a persisted user
-        // choice wins. No recognizer → silently text-only, never a crash.
-        voiceCapable = SpeechRecognizer.isRecognitionAvailable(this)
-        voiceModeOn = voiceCapable && uiPrefs.getBoolean(KEY_VOICE_MODE, true)
+        // Voice mode: default ON during the interview; a persisted user choice
+        // wins. Capture is plain MediaRecorder + the server's Whisper path, so
+        // every device with a microphone qualifies.
+        voiceModeOn = uiPrefs.getBoolean(KEY_VOICE_MODE, true)
         updateVoiceToggle()
 
         // Restore the transcript so an interrupted owner never sees a blank chat.
@@ -192,12 +209,7 @@ class OnboardingActivity : AppCompatActivity() {
             adapter.notifyDataSetChanged()
             scrollToBottom(smooth = false)
         }
-        val transcriptBlank = msgs.isEmpty()
-        if (!voiceCapable) {
-            val line = getString(R.string.voice_unavailable)
-            if (msgs.none { it.text == line }) addMsg(Role.SYSTEM, line)
-        }
-        if (transcriptBlank) {
+        if (msgs.isEmpty()) {
             // Safety net: never open onto a silent agent — kick the interview
             // ourselves, invisibly (no owner bubble for the "hola").
             kickInterview()
@@ -725,14 +737,13 @@ class OnboardingActivity : AppCompatActivity() {
 
     /** Flip voice mode. [persistChoice] false = session-only (perm denials). */
     private fun setVoiceMode(on: Boolean, persistChoice: Boolean = true) {
-        voiceModeOn = on && voiceCapable
+        voiceModeOn = on
         if (persistChoice) uiPrefs.edit().putBoolean(KEY_VOICE_MODE, voiceModeOn).apply()
         if (!voiceModeOn) interruptVoiceLoop() // silence everything, instantly
         updateVoiceToggle()
     }
 
     private fun updateVoiceToggle() {
-        voiceToggle.visibility = if (voiceCapable) View.VISIBLE else View.GONE
         voiceToggle.text = getString(
             if (voiceModeOn) R.string.chat_voice_on_glyph else R.string.chat_voice_off_glyph
         )
@@ -750,38 +761,20 @@ class OnboardingActivity : AppCompatActivity() {
     }
 
     private fun cancelVoiceListening() {
-        if (voiceState == VoiceState.LISTENING) {
-            try { speech?.cancel() } catch (_: Exception) {}
-            setVoiceStatus(VoiceState.IDLE)
-        }
+        stopVadRecorder(discardCapture = true)
         discardPendingVoice()
+        if (voiceState == VoiceState.LISTENING) setVoiceStatus(VoiceState.IDLE)
     }
 
     /**
-     * Lazily build the recognizer: on-device engine when the OS offers one
-     * (API 31+), else the default service asked to EXTRA_PREFER_OFFLINE.
+     * LISTENING leg: open the mic with the exact push-to-talk MediaRecorder
+     * config and run a DIY voice-activity detector over getMaxAmplitude().
+     * No on-device model needed — end-of-speech ships the m4a through the
+     * server's Whisper path (transcript + reply + TTS in one call).
      */
-    private fun ensureRecognizer(): SpeechRecognizer? {
-        speech?.let { return it }
-        val onDevice = !forceCloudRecognizer &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-            SpeechRecognizer.isOnDeviceRecognitionAvailable(this)
-        val r = try {
-            if (onDevice) SpeechRecognizer.createOnDeviceSpeechRecognizer(this)
-            else SpeechRecognizer.createSpeechRecognizer(this)
-        } catch (_: Exception) {
-            return null
-        }
-        speechOnDevice = onDevice
-        r.setRecognitionListener(recognitionListener)
-        speech = r
-        return r
-    }
-
-    /** LISTENING leg: free-form Spanish, offline-preferred, partials on. */
     private fun startVoiceListening() {
-        if (!voiceModeOn || !voiceCapable || interviewDone) return
-        if (recorder != null || voiceState == VoiceState.LISTENING) return
+        if (!voiceModeOn || interviewDone) return
+        if (recorder != null || vadRecorder != null || voiceState == VoiceState.LISTENING) return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -790,46 +783,139 @@ class OnboardingActivity : AppCompatActivity() {
             )
             return
         }
-        val rec = ensureRecognizer()
-        if (rec == null) {
-            voiceCapable = false
-            setVoiceMode(false, persistChoice = false)
-            addSystemLineOnce(getString(R.string.voice_unavailable))
-            return
-        }
         player?.release(); player = null
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-            .putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-            )
-            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, voiceLocale)
-            .putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, voiceLocale)
-            .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-            .putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
-            .putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
-        setVoiceStatus(VoiceState.LISTENING)
         try {
-            rec.startListening(intent)
+            @Suppress("DEPRECATION")
+            vadRecorder = MediaRecorder().apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioSamplingRate(44100)
+                setAudioEncodingBitRate(96000)
+                setOutputFile(voiceFile.absolutePath)
+                prepare()
+                start()
+            }
         } catch (_: Exception) {
+            vadRecorder?.release(); vadRecorder = null
             setVoiceStatus(VoiceState.IDLE)
             addSystemLineOnce(getString(R.string.voice_not_heard))
+            return
+        }
+        vadStartAt = SystemClock.elapsedRealtime()
+        vadFirstPollDone = false
+        vadAmbientMax = 0
+        vadThreshold = 0
+        vadSpeechStarted = false
+        vadSpeechStartAt = 0L
+        vadLastVoicedAt = 0L
+        setVoiceStatus(VoiceState.LISTENING)
+        voiceHandler.postDelayed({ pollVad() }, VAD_POLL_MS)
+    }
+
+    /**
+     * One VAD tick every [VAD_POLL_MS]. getMaxAmplitude() reports the max
+     * since the previous call: the first read is always 0 (discarded), the
+     * calibration window measures ambient noise, then speech starts at
+     * max([VAD_MIN_THRESHOLD], ambient×[VAD_AMBIENT_FACTOR]) and ends after
+     * [VAD_END_SILENCE_MS] of continuous quiet.
+     */
+    private fun pollVad() {
+        val rec = vadRecorder ?: return
+        val now = SystemClock.elapsedRealtime()
+        val amp = try { rec.maxAmplitude } catch (_: Exception) { 0 }
+        when {
+            !vadFirstPollDone -> vadFirstPollDone = true
+            now - vadStartAt <= VAD_CALIBRATE_MS ->
+                vadAmbientMax = maxOf(vadAmbientMax, amp)
+            else -> {
+                if (vadThreshold == 0) {
+                    vadThreshold = maxOf(VAD_MIN_THRESHOLD, vadAmbientMax * VAD_AMBIENT_FACTOR)
+                }
+                if (amp >= vadThreshold) {
+                    if (!vadSpeechStarted) {
+                        vadSpeechStarted = true
+                        vadSpeechStartAt = now
+                        showVoicePendingBubble()
+                    }
+                    vadLastVoicedAt = now
+                }
+                if (!vadSpeechStarted && now - vadStartAt >= VAD_NO_SPEECH_MS) {
+                    abortListening(tellOwner = true) // nobody spoke: gentle stop
+                    return
+                }
+                if (vadSpeechStarted) {
+                    if (now - vadStartAt >= VAD_MAX_UTTERANCE_MS) {
+                        finishListening() // hard cap — send what we have
+                        return
+                    }
+                    if (now - vadLastVoicedAt >= VAD_END_SILENCE_MS) {
+                        if (vadLastVoicedAt - vadSpeechStartAt < VAD_MIN_VOICED_MS) {
+                            abortListening(tellOwner = false) // breath/rustle
+                        } else {
+                            finishListening()
+                        }
+                        return
+                    }
+                }
+            }
+        }
+        voiceHandler.postDelayed({ pollVad() }, VAD_POLL_MS)
+    }
+
+    private fun stopVadRecorder(discardCapture: Boolean) {
+        val rec = vadRecorder ?: return
+        vadRecorder = null // poller sees null and dies on its next tick
+        try { rec.stop() } catch (_: Exception) {}
+        rec.release()
+        if (discardCapture) voiceFile.delete()
+    }
+
+    /** Drop the capture; [tellOwner] leaves the gentle "didn't hear you" line. */
+    private fun abortListening(tellOwner: Boolean) {
+        stopVadRecorder(discardCapture = true)
+        discardPendingVoice()
+        setVoiceStatus(VoiceState.IDLE)
+        if (tellOwner) addSystemLineOnce(getString(R.string.voice_not_heard))
+    }
+
+    /**
+     * End-of-speech: close the file and ship it down the existing Whisper
+     * path — exactly the push-to-talk flow, so the "🎤 …" bubble gets the
+     * transcript swapped in when the server answers.
+     */
+    private fun finishListening() {
+        stopVadRecorder(discardCapture = false)
+        if (!voiceFile.exists() || voiceFile.length() < 1000) {
+            discardPendingVoice()
+            setVoiceStatus(VoiceState.IDLE)
+            return
+        }
+        val voiceMsg = pendingVoiceMsg?.also { m ->
+            pendingVoiceMsg = null
+            changeMsg(m) { it.pending = false; it.text = "🎤 …" }
+        } ?: addMsg(Role.OWNER, "🎤 …")
+        showTyping()
+        setBusy(true)
+        val bytes = voiceFile.readBytes()
+        ServerClient.EXECUTOR.execute {
+            val resp = ServerClient.voiceMessage(this, bytes)
+            runOnUiThread {
+                resp?.optString("transcript")?.takeIf { it.isNotEmpty() }?.let { t ->
+                    changeMsg(voiceMsg) { it.text = "🎤 $t" }
+                }
+                handleAgentResponse(resp, retryTarget = null)
+            }
         }
     }
 
-    /** Live partial → muted owner bubble that solidifies on the final result. */
-    private fun showVoicePartial(text: String) {
-        val m = pendingVoiceMsg
-        if (m == null) {
-            val nm = Msg(Role.OWNER, text, pending = true)
-            pendingVoiceMsg = nm
-            msgs.add(nm)
-            adapter.notifyItemInserted(msgs.size - 1)
-        } else {
-            m.text = text
-            val i = msgs.indexOf(m)
-            if (i >= 0) adapter.notifyItemChanged(i)
-        }
+    /** Muted "🎙 …" bubble while capturing — no live partials on Whisper. */
+    private fun showVoicePendingBubble() {
+        if (pendingVoiceMsg != null) return
+        val nm = Msg(Role.OWNER, "🎙 …", pending = true)
+        pendingVoiceMsg = nm
+        msgs.add(nm)
+        adapter.notifyItemInserted(msgs.size - 1)
         scrollToBottom()
     }
 
@@ -843,115 +929,10 @@ class OnboardingActivity : AppCompatActivity() {
         }
     }
 
-    /** Final transcript: solidify the bubble, send through onboardingMessage. */
-    private fun sendVoiceFinal(text: String) {
-        val m = pendingVoiceMsg
-        pendingVoiceMsg = null
-        val target: Msg = if (m != null) {
-            changeMsg(m) { it.pending = false; it.text = text }
-            m
-        } else {
-            addMsg(Role.OWNER, text)
-        }
-        showTyping()
-        setBusy(true)
-        ServerClient.EXECUTOR.execute {
-            val resp = ServerClient.onboardingMessage(this, text)
-            runOnUiThread { handleAgentResponse(resp, retryTarget = target) }
-        }
-    }
-
-    /** Silence/no-match: gentle status, loop stops until the user acts. */
-    private fun stopLoopGently() {
-        discardPendingVoice()
-        setVoiceStatus(VoiceState.IDLE)
-        addSystemLineOnce(getString(R.string.voice_not_heard))
-    }
-
-    /** es-PE → es-419 → (on-device only) default service → give up politely. */
-    private fun retryWithFallbackLocale() {
-        discardPendingVoice()
-        setVoiceStatus(VoiceState.IDLE)
-        when {
-            voiceLocale == LOCALE_PRIMARY -> {
-                voiceLocale = LOCALE_FALLBACK
-                startVoiceListening()
-            }
-            speechOnDevice && !triedCloudForLocale -> {
-                triedCloudForLocale = true
-                forceCloudRecognizer = true
-                speech?.destroy(); speech = null
-                voiceLocale = LOCALE_PRIMARY
-                startVoiceListening()
-            }
-            else -> {
-                setVoiceMode(false, persistChoice = false)
-                addSystemLineOnce(getString(R.string.voice_lang_unavailable))
-            }
-        }
-    }
-
     /** One quiet status line, never repeated back-to-back. */
     private fun addSystemLineOnce(text: String) {
         if (msgs.lastOrNull()?.text == text) return
         addMsg(Role.SYSTEM, text)
-    }
-
-    private val recognitionListener = object : RecognitionListener {
-        override fun onReadyForSpeech(params: Bundle?) { busyRetryUsed = false }
-        override fun onBeginningOfSpeech() {}
-        override fun onRmsChanged(rmsdB: Float) {}
-        override fun onBufferReceived(buffer: ByteArray?) {}
-        override fun onEndOfSpeech() {}
-        override fun onEvent(eventType: Int, params: Bundle?) {}
-
-        override fun onPartialResults(partialResults: Bundle?) {
-            if (voiceState != VoiceState.LISTENING) return
-            val stable = partialResults
-                ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                ?.firstOrNull().orEmpty()
-            val unstable = partialResults
-                ?.getStringArrayList("android.speech.extra.UNSTABLE_TEXT")
-                ?.firstOrNull().orEmpty()
-            val text = (stable + unstable).trim()
-            if (text.isNotEmpty()) showVoicePartial(text)
-        }
-
-        override fun onResults(results: Bundle?) {
-            if (voiceState != VoiceState.LISTENING) return // stale after cancel
-            val text = results
-                ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                ?.firstOrNull()?.trim().orEmpty()
-            if (text.isEmpty()) stopLoopGently() else sendVoiceFinal(text)
-        }
-
-        override fun onError(error: Int) {
-            if (voiceState != VoiceState.LISTENING) return // stale after cancel
-            when (error) {
-                SpeechRecognizer.ERROR_NO_MATCH,
-                SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> stopLoopGently()
-                SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED,
-                SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE -> retryWithFallbackLocale()
-                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
-                    discardPendingVoice()
-                    setVoiceMode(false, persistChoice = false)
-                    addSystemLineOnce(getString(R.string.voice_perm_denied))
-                }
-                SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> {
-                    // Wedged service: rebuild once per listen, else stop gently.
-                    discardPendingVoice()
-                    setVoiceStatus(VoiceState.IDLE)
-                    speech?.destroy(); speech = null
-                    if (!busyRetryUsed) {
-                        busyRetryUsed = true
-                        startVoiceListening()
-                    } else {
-                        stopLoopGently()
-                    }
-                }
-                else -> stopLoopGently() // network/client/etc — never error-loop
-            }
-        }
     }
 
     // ------------------------------------------------------ voice status strip
@@ -1151,7 +1132,7 @@ class OnboardingActivity : AppCompatActivity() {
         voiceHandler.removeCallbacksAndMessages(null)
         recordPulse?.cancel()
         statusPulse?.cancel()
-        speech?.destroy()
+        vadRecorder?.release(); vadRecorder = null
         recorder?.release()
         player?.release()
     }
