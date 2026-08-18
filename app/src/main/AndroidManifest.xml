@@ -8,6 +8,22 @@
          exempt agente so the notification listener survives. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
+    <!-- Android 11+ package visibility: Settings shows which supported chat
+         apps are actually installed, which needs an explicit allowlist to
+         query. Notification delivery itself never needed this. -->
+    <queries>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+        <package android:name="com.instagram.android" />
+        <package android:name="com.facebook.orca" />
+        <package android:name="com.facebook.mlite" />
+        <package android:name="com.facebook.katana" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="org.thoughtcrime.securesms" />
+        <package android:name="com.zhiliaoapp.musically" />
+        <package android:name="com.google.android.apps.messaging" />
+    </queries>
+
     <!-- Cleartext is off in release and permitted only for debug builds (local
          server over `adb reverse`); see res/xml/network_security_config.xml.
          Backup is off because the device token and customer conversations live

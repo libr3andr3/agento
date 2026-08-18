@@ -101,4 +101,10 @@
     <string name="log_payment_recorded">Payment recorded — no matching pending booking</string>
 
     <string name="default_reply">Hi! Thanks for writing. We got your message and will reply in a moment. 🙌</string>
+    <!-- Beta: app toggles + free trial -->
+    <string name="app_not_installed">%1$s (not installed)</string>
+    <string name="log_trial_expired">Free week ended — the agent did not reply</string>
+    <string name="trial_expired_alert">Your free week ended. The agent stopped answering your customers — contact us to continue.</string>
+    <string name="status_trial_expired">Trial ended — agent is not replying</string>
+    <string name="status_trial_days">%1$s · Free: %2$d days</string>
 </resources>

@@ -188,10 +188,18 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildAppToggles() {
         appTogglesContainer.removeAllViews()
-        SupportedApps.ALL.forEach { app ->
+        // Installed apps first — those are the ones the user came to configure.
+        // Uninstalled ones stay visible (so the catalog is discoverable) but
+        // inert: a toggle for an app that can't produce notifications is a lie.
+        val (installed, missing) = SupportedApps.ALL.partition { isInstalled(it.packageName) }
+        (installed + missing).forEach { app ->
+            val here = isInstalled(app.packageName)
             val sw = SwitchMaterial(this).apply {
-                text = app.displayName
-                isChecked = Prefs.isAppEnabled(this@MainActivity, app.packageName)
+                text = if (here) app.displayName
+                       else getString(R.string.app_not_installed, app.displayName)
+                isEnabled = here
+                isChecked = here && Prefs.isAppEnabled(this@MainActivity, app.packageName)
+                alpha = if (here) 1f else 0.5f
                 setOnCheckedChangeListener { _, on ->
                     Prefs.setAppEnabled(this@MainActivity, app.packageName, on)
                 }
@@ -199,6 +207,13 @@ class MainActivity : AppCompatActivity() {
             }
             appTogglesContainer.addView(sw)
         }
+    }
+
+    private fun isInstalled(pkg: String): Boolean = try {
+        packageManager.getPackageInfo(pkg, 0)
+        true
+    } catch (e: android.content.pm.PackageManager.NameNotFoundException) {
+        false
     }
 
     // ------------------------------------------------------------ log adapter

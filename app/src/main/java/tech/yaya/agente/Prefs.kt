@@ -26,7 +26,7 @@ object Prefs {
         sp(ctx).edit().putString(KEY_REPLY_TEXT, text).apply()
 
     fun isAppEnabled(ctx: Context, pkg: String) =
-        sp(ctx).getBoolean(KEY_APP_PREFIX + pkg, true)
+        sp(ctx).getBoolean(KEY_APP_PREFIX + pkg, pkg in SupportedApps.DEFAULT_ENABLED)
 
     fun setAppEnabled(ctx: Context, pkg: String, on: Boolean) =
         sp(ctx).edit().putBoolean(KEY_APP_PREFIX + pkg, on).apply()
@@ -45,7 +45,7 @@ object Prefs {
     fun serverUrl(ctx: Context): String =
         sp(ctx).getString("server_url", DEFAULT_SERVER) ?: DEFAULT_SERVER
 
-    private const val DEFAULT_SERVER = "https://api.agente.ceo"
+    private const val DEFAULT_SERVER = "https://agento.ceo"
 
     /**
      * Rejects anything that isn't HTTPS and reports whether it took the value.

@@ -167,6 +167,26 @@ class AgenteNotificationListener : NotificationListenerService() {
                 )
             }
         }
+        // Trial over: the server answered (so this is not an outage — no canned
+        // fallback, which would be answering customers for free) but the agent
+        // is off. Tell the owner, throttled so a busy inbox doesn't become a
+        // notification storm.
+        if (resp?.optString("action") == "trial_expired") {
+            log(app, parsed, sent = false, detail = ctx.getString(R.string.log_trial_expired))
+            val now = System.currentTimeMillis()
+            if (now - lastTrialAlert > TRIAL_ALERT_INTERVAL_MS) {
+                lastTrialAlert = now
+                OwnerAlerts.notify(
+                    ctx,
+                    urgent = true,
+                    sender = ctx.getString(R.string.app_name),
+                    question = ctx.getString(R.string.trial_expired_alert),
+                    gapId = "trial_expired"
+                )
+            }
+            return
+        }
+
         val text = resp?.optString("agentResponse")?.takeIf { it.isNotBlank() }
         if (text != null) {
             val ok = sendReply(replyAction, text)
@@ -294,5 +314,7 @@ class AgenteNotificationListener : NotificationListenerService() {
     companion object {
         private const val TAG = "AgenteListener"
         private const val IDENTITY_WINDOW_MS = 10 * 60_000L
+        private const val TRIAL_ALERT_INTERVAL_MS = 6 * 60 * 60_000L
+        @Volatile private var lastTrialAlert = 0L
     }
 }

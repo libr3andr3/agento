@@ -115,4 +115,10 @@
 
     <!-- Fallback reply sent to customers when offline -->
     <string name="default_reply">¡Hola! Gracias por escribirnos. Ya recibimos tu mensaje y te respondemos en un momento. 🙌</string>
+    <!-- Beta: app toggles + free trial -->
+    <string name="app_not_installed">%1$s (no instalado)</string>
+    <string name="log_trial_expired">Semana gratis terminada — el agente no respondió</string>
+    <string name="trial_expired_alert">Tu semana gratis terminó. El agente dejó de responder a tus clientes — escríbenos para continuar.</string>
+    <string name="status_trial_expired">Prueba terminada — el agente no responde</string>
+    <string name="status_trial_days">%1$s · Gratis: %2$d días</string>
 </resources>

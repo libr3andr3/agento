@@ -135,11 +135,15 @@ class DashboardActivity : AppCompatActivity() {
         refreshStatus(lastFetchOk)
     }
 
+    /** Last trial payload from the server; null until the first good fetch. */
+    private var trial: JSONObject? = null
+
     /** The truth row: is the agent actually able to answer right now? */
     private fun refreshStatus(fetchOk: Boolean) {
         val alive = hasNotificationAccess() && Prefs.isEnabled(this)
         agentSwitch.isChecked = alive
         offBanner.visibility = if (alive) View.GONE else View.VISIBLE
+        val t = trial
         when {
             !alive -> {
                 statusChip.text = getString(R.string.status_off_banner)
@@ -149,12 +153,21 @@ class DashboardActivity : AppCompatActivity() {
                 statusChip.text = getString(R.string.status_offline)
                 statusChip.setTextColor(0xFFB26A00.toInt())
             }
+            // The server has stopped answering customers; being "active" here
+            // would be a lie the owner discovers from an angry customer.
+            t != null && !t.optBoolean("active", true) -> {
+                statusChip.text = getString(R.string.status_trial_expired)
+                statusChip.setTextColor(0xFFB3261E.toInt())
+            }
             else -> {
                 val lastReply = ReplyLog.load(this).firstOrNull { it.replySent }
-                statusChip.text = if (lastReply != null) getString(
+                val base = if (lastReply != null) getString(
                     R.string.status_active_last,
                     DateUtils.getRelativeTimeSpanString(lastReply.timestamp).toString()
                 ) else getString(R.string.status_active)
+                val days = t?.optLong("daysLeft", Long.MAX_VALUE) ?: Long.MAX_VALUE
+                statusChip.text = if (days in 0..7)
+                    getString(R.string.status_trial_days, base, days) else base
                 statusChip.setTextColor(0xFF1B5E20.toInt())
             }
         }
@@ -186,6 +199,7 @@ class DashboardActivity : AppCompatActivity() {
 
     private fun render(d: JSONObject) {
         businessName.text = d.optString("businessName", getString(R.string.app_name))
+        trial = d.optJSONObject("trial")
         val e = d.optJSONObject("earnings") ?: JSONObject()
         earnToday.text = soles(e.optDouble("today", 0.0))
         earnWeek.text = soles(e.optDouble("week", 0.0))

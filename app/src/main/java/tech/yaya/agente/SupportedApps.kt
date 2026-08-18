@@ -15,8 +15,19 @@ object SupportedApps {
         SupportedApp("com.facebook.mlite", "Messenger Lite"),
         SupportedApp("com.facebook.katana", "Facebook"),
         SupportedApp("org.telegram.messenger", "Telegram"),
+        SupportedApp("org.thoughtcrime.securesms", "Signal"),
+        SupportedApp("com.zhiliaoapp.musically", "TikTok"),
         SupportedApp("com.google.android.apps.messaging", "Google Messages (SMS)")
     )
+
+    /**
+     * Apps the agent answers on out of the box. WhatsApp Business only: it is
+     * the one app on this list that is unambiguously a business inbox. A new
+     * user's personal WhatsApp answering their friends with a receptionist
+     * script is the fastest possible uninstall — everything else is opt-in
+     * from Settings.
+     */
+    val DEFAULT_ENABLED = setOf("com.whatsapp.w4b")
 
     private val byPackage = ALL.associateBy { it.packageName }
 
