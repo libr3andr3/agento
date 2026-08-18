@@ -1,7 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Agente" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">#1B5E20</item>
-        <item name="colorSecondary">#43A047</item>
+    <!-- Light-committed M3 theme over the agento tokens (DESIGN.md). -->
+    <style name="Theme.Agente" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/agento_primary</item>
+        <item name="colorOnPrimary">@color/agento_on_primary</item>
+        <item name="colorPrimaryContainer">@color/agento_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/agento_on_primary_container</item>
+        <item name="colorSecondary">@color/agento_secondary</item>
+        <item name="colorSecondaryContainer">@color/agento_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/agento_on_secondary_container</item>
+        <item name="colorError">@color/agento_error</item>
+        <item name="colorErrorContainer">@color/agento_error_container</item>
+        <item name="android:colorBackground">@color/agento_surface</item>
+        <item name="colorSurface">@color/agento_surface_card</item>
+        <item name="colorSurfaceVariant">@color/agento_surface_variant</item>
+        <item name="colorOnSurface">@color/agento_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/agento_on_surface_muted</item>
+        <item name="colorOutline">@color/agento_outline</item>
+        <item name="android:statusBarColor">@color/agento_surface</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

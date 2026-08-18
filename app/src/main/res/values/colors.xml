@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- agento design tokens — see android/DESIGN.md. Layouts use these names,
+     never raw hex. Owned by the integrator. -->
+<resources>
+    <color name="agento_primary">#047857</color>
+    <color name="agento_on_primary">#FFFFFF</color>
+    <color name="agento_primary_container">#D1FAE5</color>
+    <color name="agento_on_primary_container">#064E3B</color>
+    <color name="agento_secondary">#B45309</color>
+    <color name="agento_secondary_container">#FEF3C7</color>
+    <color name="agento_on_secondary_container">#78350F</color>
+    <color name="agento_error">#B3261E</color>
+    <color name="agento_error_container">#FDE7E9</color>
+    <color name="agento_surface">#FBFDF9</color>
+    <color name="agento_surface_card">#FFFFFF</color>
+    <color name="agento_surface_variant">#E8F0EA</color>
+    <color name="agento_on_surface">#191C1A</color>
+    <color name="agento_on_surface_muted">#5C6660</color>
+    <color name="agento_outline">#D3DDD6</color>
+</resources>

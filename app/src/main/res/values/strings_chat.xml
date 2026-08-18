@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chat surface (OnboardingActivity) — owned by A2. Spanish (default). -->
+<resources>
+    <string name="chat_header_status">Asistente en línea</string>
+    <string name="chat_retry">No se envió · Reintentar</string>
+    <string name="chat_recording_hint">Grabando — toca ⏹ para enviar</string>
+
+    <!-- Glyph-only labels (never translated). -->
+    <string name="chat_send_glyph" translatable="false">➤</string>
+    <string name="chat_mic_glyph" translatable="false">🎤</string>
+    <string name="chat_stop_glyph" translatable="false">⏹</string>
+    <string name="chat_dot" translatable="false">●</string>
+    <string name="chat_timer_zero" translatable="false">0:00</string>
+
+    <!-- Accessibility -->
+    <string name="chat_a11y_send">Enviar mensaje</string>
+    <string name="chat_a11y_mic">Grabar nota de voz</string>
+    <string name="chat_a11y_stop_recording">Detener y enviar la nota de voz</string>
+    <string name="chat_a11y_camera">Enviar foto del catálogo</string>
+    <string name="chat_a11y_replay">Volver a escuchar la respuesta</string>
+    <string name="chat_a11y_typing">El asistente está escribiendo</string>
+</resources>

@@ -35,7 +35,19 @@ object SecureStore {
 
     private fun secretKey(): SecretKey {
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        (ks.getEntry(KEY_ALIAS, null) as? KeyStore.SecretKeyEntry)?.let { return it.secretKey }
+        try {
+            (ks.getEntry(KEY_ALIAS, null) as? KeyStore.SecretKeyEntry)?.let { return it.secretKey }
+        } catch (e: Exception) {
+            // UnrecoverableKeyException et al: some OEM keystores corrupt or
+            // invalidate entries (lock-screen change, OS update). If the entry
+            // can't even be READ, it can never decrypt anything again — so
+            // drop it and regenerate rather than throw forever, which would
+            // also block STORING a new token and brick re-pairing. Old
+            // ciphertext then decrypts to null → re-pair, the documented
+            // failure mode.
+            Log.w(TAG, "keystore entry unreadable, regenerating", e)
+            runCatching { ks.deleteEntry(KEY_ALIAS) }
+        }
 
         val gen = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
         gen.init(

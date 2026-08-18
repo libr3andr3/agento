@@ -2,19 +2,23 @@ package tech.yaya.agente
 
 import android.content.ComponentName
 import android.content.Intent
-import android.graphics.Typeface
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.text.format.DateUtils
-import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.chip.Chip
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.materialswitch.MaterialSwitch
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -24,8 +28,8 @@ import java.util.Locale
 class DashboardActivity : AppCompatActivity() {
 
     private lateinit var businessName: TextView
-    private lateinit var statusChip: TextView
-    private lateinit var agentSwitch: SwitchMaterial
+    private lateinit var statusChip: Chip
+    private lateinit var agentSwitch: MaterialSwitch
     private lateinit var offBanner: View
     private lateinit var earnToday: TextView
     private lateinit var earnWeek: TextView
@@ -116,7 +120,7 @@ class DashboardActivity : AppCompatActivity() {
             startActivity(
                 Intent(
                     Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                    android.net.Uri.parse("package:$packageName")
+                    Uri.parse("package:$packageName")
                 )
             )
         } catch (_: Exception) {
@@ -146,6 +150,12 @@ class DashboardActivity : AppCompatActivity() {
     /** Last trial payload from the server; null until the first good fetch. */
     private var trial: JSONObject? = null
 
+    /** Tint an informational chip from color tokens. */
+    private fun styleChip(chip: Chip, bgRes: Int, fgRes: Int) {
+        chip.chipBackgroundColor = ColorStateList.valueOf(getColor(bgRes))
+        chip.setTextColor(getColor(fgRes))
+    }
+
     /**
      * The trial banner sells the whole week, not just the funeral: a running
      * "ends in N days — talk to our agent" countdown while active, the red
@@ -153,7 +163,7 @@ class DashboardActivity : AppCompatActivity() {
      */
     private fun refreshTrialBanner() {
         val t = trial
-        val banner = findViewById<com.google.android.material.card.MaterialCardView>(R.id.trial_banner)
+        val banner = findViewById<MaterialCardView>(R.id.trial_banner)
         if (t == null) {
             banner.visibility = View.GONE
             return
@@ -165,12 +175,12 @@ class DashboardActivity : AppCompatActivity() {
             val days = t.optLong("daysLeft", 0).coerceAtLeast(0)
             text.text = if (days == 0L) getString(R.string.trial_banner_today)
                         else getString(R.string.trial_banner_days, days)
-            text.setTextColor(0xFFB26A00.toInt())
-            banner.setCardBackgroundColor(0xFFFFF4E5.toInt())
+            text.setTextColor(getColor(R.color.agento_on_secondary_container))
+            banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
         } else {
             text.text = getString(R.string.trial_banner_text)
-            text.setTextColor(0xFFB3261E.toInt())
-            banner.setCardBackgroundColor(0xFFFDE7E9.toInt())
+            text.setTextColor(getColor(R.color.agento_error))
+            banner.setCardBackgroundColor(getColor(R.color.agento_error_container))
         }
         val sales = t.optString("salesPhone").filter { it.isDigit() }
         findViewById<View>(R.id.sales_button).setOnClickListener {
@@ -184,7 +194,7 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
-    /** The truth row: is the agent actually able to answer right now? */
+    /** The truth chip: is the agent actually able to answer right now? */
     private fun refreshStatus(fetchOk: Boolean) {
         val alive = hasNotificationAccess() && Prefs.isEnabled(this)
         agentSwitch.isChecked = alive
@@ -194,17 +204,18 @@ class DashboardActivity : AppCompatActivity() {
         when {
             !alive -> {
                 statusChip.text = getString(R.string.status_off_banner)
-                statusChip.setTextColor(0xFFB3261E.toInt())
+                styleChip(statusChip, R.color.agento_error_container, R.color.agento_error)
             }
             !fetchOk -> {
-                statusChip.text = getString(R.string.status_offline)
-                statusChip.setTextColor(0xFFB26A00.toInt())
+                statusChip.text = getString(R.string.dash_offline_chip)
+                styleChip(statusChip, R.color.agento_secondary_container,
+                    R.color.agento_on_secondary_container)
             }
             // The server has stopped answering customers; being "active" here
             // would be a lie the owner discovers from an angry customer.
             t != null && !t.optBoolean("active", true) -> {
                 statusChip.text = getString(R.string.status_trial_expired)
-                statusChip.setTextColor(0xFFB3261E.toInt())
+                styleChip(statusChip, R.color.agento_error_container, R.color.agento_error)
             }
             else -> {
                 val lastReply = ReplyLog.load(this).firstOrNull { it.replySent }
@@ -215,7 +226,8 @@ class DashboardActivity : AppCompatActivity() {
                 val days = t?.optLong("daysLeft", Long.MAX_VALUE) ?: Long.MAX_VALUE
                 statusChip.text = if (days in 0..7)
                     getString(R.string.status_trial_days, base, days) else base
-                statusChip.setTextColor(0xFF1B5E20.toInt())
+                styleChip(statusChip, R.color.agento_primary_container,
+                    R.color.agento_on_primary_container)
             }
         }
     }
@@ -244,6 +256,15 @@ class DashboardActivity : AppCompatActivity() {
         if (v == v.toLong().toDouble()) "S/ ${v.toLong()}"
         else String.format(Locale.US, "S/ %.2f", v)
 
+    private fun inflateIn(layoutRes: Int, parent: ViewGroup): View =
+        layoutInflater.inflate(layoutRes, parent, false)
+
+    /** Teaching empty state ("what will appear here, and how to make it happen"). */
+    private fun emptyState(parent: ViewGroup, msg: String): View =
+        inflateIn(R.layout.item_dash_empty, parent).apply {
+            findViewById<TextView>(R.id.dash_empty_text).text = msg
+        }
+
     private fun render(d: JSONObject) {
         businessName.text = d.optString("businessName", getString(R.string.app_name))
         trial = d.optJSONObject("trial")
@@ -259,7 +280,7 @@ class DashboardActivity : AppCompatActivity() {
         agenda.removeAllViews()
         val appts = d.optJSONArray("appointments")
         if (appts == null || appts.length() == 0) {
-            agenda.addView(emptyText(getString(R.string.dash_empty)))
+            agenda.addView(emptyState(agenda, getString(R.string.dash_empty)))
             return
         }
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().time)
@@ -269,29 +290,31 @@ class DashboardActivity : AppCompatActivity() {
             val date = a.optString("date")
             if (date != lastDate) {
                 lastDate = date
-                agenda.addView(TextView(this).apply {
-                    text = if (date == today)
-                        getString(R.string.dash_today_header, prettyDate(date))
-                    else prettyDate(date)
-                    setTypeface(null, Typeface.BOLD)
-                    textSize = 15f
-                    setPadding(4, 28, 0, 8)
-                })
+                agenda.addView(dayChip(date, date == today))
             }
-            agenda.addView(appointmentRow(a))
+            agenda.addView(appointmentCard(a))
         }
     }
 
-    /** Product orders (last 14 days). Section hides when there are none. */
+    /** Day header pill; "Hoy" gets the primary container so it pops. */
+    private fun dayChip(date: String, isToday: Boolean): View {
+        val chip = inflateIn(R.layout.item_dash_day, agenda) as Chip
+        chip.text = if (isToday) getString(R.string.dash_today_header, prettyDate(date))
+                    else prettyDate(date)
+        if (isToday) styleChip(chip, R.color.agento_primary_container,
+            R.color.agento_on_primary_container)
+        else styleChip(chip, R.color.agento_surface_variant, R.color.agento_on_surface)
+        return chip
+    }
+
+    /** Product orders (last 14 days). */
     private fun renderOrders(arr: org.json.JSONArray?) {
-        val header = findViewById<TextView>(R.id.orders_header)
         val container = findViewById<LinearLayout>(R.id.orders_container)
         container.removeAllViews()
         if (arr == null || arr.length() == 0) {
-            header.visibility = View.GONE
+            container.addView(emptyState(container, getString(R.string.dash_orders_empty)))
             return
         }
-        header.visibility = View.VISIBLE
         for (i in 0 until arr.length()) {
             val o = arr.getJSONObject(i)
             val items = o.optJSONArray("items")
@@ -300,13 +323,22 @@ class DashboardActivity : AppCompatActivity() {
                 "${it.optInt("qty", 1)}× ${it.optString("product")}"
             }
             val paid = o.optBoolean("paid")
-            container.addView(TextView(this).apply {
-                text = "🛍 ${o.optString("customer")} · $summary · ${soles(o.optDouble("total", 0.0))} · " +
-                    if (paid) getString(R.string.order_paid) else getString(R.string.order_pending)
-                textSize = 14f
-                setPadding(4, 10, 4, 10)
-                setTextColor(if (paid) 0xFF1B5E20.toInt() else 0xFFB26A00.toInt())
-            })
+            val card = inflateIn(R.layout.item_dash_order, container)
+            card.findViewById<TextView>(R.id.dash_order_customer).text = o.optString("customer")
+            card.findViewById<TextView>(R.id.dash_order_items).text = summary
+            card.findViewById<TextView>(R.id.dash_order_total).text =
+                soles(o.optDouble("total", 0.0))
+            val state = card.findViewById<Chip>(R.id.dash_order_state)
+            if (paid) {
+                state.text = getString(R.string.order_paid)
+                styleChip(state, R.color.agento_primary_container,
+                    R.color.agento_on_primary_container)
+            } else {
+                state.text = getString(R.string.order_pending)
+                styleChip(state, R.color.agento_secondary_container,
+                    R.color.agento_on_secondary_container)
+            }
+            container.addView(card)
         }
     }
 
@@ -317,45 +349,20 @@ class DashboardActivity : AppCompatActivity() {
     private fun renderGaps(arr: org.json.JSONArray?) {
         gaps.removeAllViews()
         val n = arr?.length() ?: 0
-        gapsHeader.visibility = if (n == 0) View.GONE else View.VISIBLE
-        if (arr == null) return
+        gapsHeader.visibility = View.VISIBLE
+        if (n == 0) {
+            gaps.addView(emptyState(gaps, getString(R.string.dash_gaps_empty)))
+            return
+        }
         for (i in 0 until n) {
-            val g = arr.getJSONObject(i)
-            val card = com.google.android.material.card.MaterialCardView(this).apply {
-                radius = 28f
-                cardElevation = 0f
-                setCardBackgroundColor(0x1AFF9800)
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).also { it.bottomMargin = 14 }
+            val g = arr!!.getJSONObject(i)
+            val card = inflateIn(R.layout.item_dash_gap, gaps)
+            card.findViewById<TextView>(R.id.dash_gap_from).text =
+                getString(R.string.gap_from, g.optString("customer"))
+            card.findViewById<TextView>(R.id.dash_gap_question).text = g.optString("question")
+            card.findViewById<MaterialButton>(R.id.dash_gap_answer).setOnClickListener {
+                askGapAnswer(g.optString("id"), g.optString("question"))
             }
-            val col = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(36, 24, 36, 24)
-            }
-            col.addView(TextView(this).apply {
-                text = getString(R.string.gap_from, g.optString("customer"))
-                textSize = 12f
-                alpha = 0.7f
-            })
-            col.addView(TextView(this).apply {
-                text = g.optString("question")
-                setTypeface(null, Typeface.BOLD)
-                textSize = 15f
-            })
-            col.addView(
-                com.google.android.material.button.MaterialButton(
-                    this, null,
-                    com.google.android.material.R.attr.materialButtonOutlinedStyle
-                ).apply {
-                    text = getString(R.string.gap_answer_button)
-                    setTextColor(0xFFB26A00.toInt())
-                    strokeColor = android.content.res.ColorStateList.valueOf(0xFFB26A00.toInt())
-                    setOnClickListener { askGapAnswer(g.optString("id"), g.optString("question")) }
-                }
-            )
-            card.addView(col)
             gaps.addView(card)
         }
     }
@@ -365,11 +372,12 @@ class DashboardActivity : AppCompatActivity() {
             hint = getString(R.string.gap_answer_hint)
             minLines = 2
         }
+        val pad = resources.getDimensionPixelSize(R.dimen.space_l)
         val wrap = android.widget.FrameLayout(this).apply {
-            setPadding(56, 24, 56, 0)
+            setPadding(pad, pad / 2, pad, 0)
             addView(input)
         }
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(question)
             .setView(wrap)
             .setNegativeButton(android.R.string.cancel, null)
@@ -396,63 +404,39 @@ class DashboardActivity : AppCompatActivity() {
         convos.removeAllViews()
         val events = ReplyLog.load(this).take(8)
         if (events.isEmpty()) {
-            convos.addView(emptyText(getString(R.string.dash_convos_empty)))
+            convos.addView(emptyState(convos, getString(R.string.dash_convos_empty)))
             return
         }
         val time = SimpleDateFormat("HH:mm", Locale.getDefault())
         events.forEach { e ->
-            val card = com.google.android.material.card.MaterialCardView(this).apply {
-                radius = 28f
-                cardElevation = 0f
-                setCardBackgroundColor(
-                    if (e.detail.startsWith("💰")) 0x146A1B9A else 0x0D000000
-                )
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).also { it.bottomMargin = 14 }
+            val payment = e.detail.startsWith("💰")
+            val card = inflateIn(R.layout.item_dash_convo, convos) as MaterialCardView
+            if (payment) {
+                card.setCardBackgroundColor(getColor(R.color.agento_primary_container))
+                card.strokeWidth = 0
             }
-            val col = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(36, 24, 36, 24)
-            }
-            col.addView(TextView(this).apply {
+            card.findViewById<TextView>(R.id.dash_convo_meta).apply {
                 text = "${e.sender} · ${e.appName} · ${time.format(e.timestamp)}"
-                setTypeface(null, Typeface.BOLD)
-                textSize = 14f
-            })
-            col.addView(TextView(this).apply {
+                if (payment) setTextColor(getColor(R.color.agento_on_primary_container))
+            }
+            card.findViewById<TextView>(R.id.dash_convo_incoming).apply {
                 text = e.incomingText
-                textSize = 14f
-                maxLines = 2
-            })
-            col.addView(TextView(this).apply {
+                if (payment) setTextColor(getColor(R.color.agento_on_primary_container))
+            }
+            card.findViewById<TextView>(R.id.dash_convo_detail).apply {
                 text = when {
-                    e.detail.startsWith("💰") -> e.detail
+                    payment -> e.detail
                     e.replySent -> "↩ ${e.detail}"
                     else -> e.detail
                 }
-                textSize = 13f
-                maxLines = 2
-                setTextColor(
-                    when {
-                        e.detail.startsWith("💰") -> 0xFF6A1B9A.toInt()
-                        e.replySent -> 0xFF1B5E20.toInt()
-                        else -> 0xFF5F6368.toInt()
-                    }
-                )
-            })
-            card.addView(col)
+                setTextColor(getColor(when {
+                    payment -> R.color.agento_on_primary_container
+                    e.replySent -> R.color.agento_primary
+                    else -> R.color.agento_on_surface_muted
+                }))
+            }
             convos.addView(card)
         }
-    }
-
-    private fun emptyText(msg: String) = TextView(this).apply {
-        text = msg
-        textSize = 14f
-        setPadding(4, 20, 4, 8)
-        gravity = Gravity.CENTER_HORIZONTAL
-        alpha = 0.75f
     }
 
     private fun prettyDate(iso: String): String = try {
@@ -460,70 +444,33 @@ class DashboardActivity : AppCompatActivity() {
         SimpleDateFormat("EEE d MMM", Locale.getDefault()).format(d)
     } catch (_: Exception) { iso }
 
-    private fun appointmentRow(a: JSONObject): View {
-        val card = com.google.android.material.card.MaterialCardView(this).apply {
-            radius = 28f
-            cardElevation = 0f
-            setCardBackgroundColor(0x14208030)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).also { it.bottomMargin = 16 }
-        }
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(36, 28, 36, 28)
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        row.addView(TextView(this).apply {
-            text = a.optString("time")
-            setTypeface(null, Typeface.BOLD)
-            textSize = 17f
-        })
-        val mid = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
-            ).also { it.marginStart = 36 }
-        }
-        mid.addView(TextView(this).apply {
-            text = a.optString("customer")
-            textSize = 15f
-            setTypeface(null, Typeface.BOLD)
-        })
+    private fun appointmentCard(a: JSONObject): View {
+        val card = inflateIn(R.layout.item_dash_appointment, agenda)
+        card.findViewById<TextView>(R.id.dash_appt_time).text = a.optString("time")
+        card.findViewById<TextView>(R.id.dash_appt_customer).text = a.optString("customer")
         val spec = a.optString("specialist").takeIf { it.isNotEmpty() && it != "null" }
-        mid.addView(TextView(this).apply {
-            text = spec ?: a.optString("phone").substringAfter(':')
-            textSize = 14f
-            alpha = 0.7f
-        })
+        card.findViewById<TextView>(R.id.dash_appt_sub).text =
+            spec ?: a.optString("phone").substringAfter(':')
         val remEmail = a.optString("reminderEmail").takeIf { it.isNotEmpty() && it != "null" }
-        if (remEmail != null) {
-            mid.addView(TextView(this).apply {
+        card.findViewById<TextView>(R.id.dash_appt_reminder).apply {
+            if (remEmail != null) {
+                visibility = View.VISIBLE
                 text = getString(R.string.dash_reminder_set, a.optInt("remindMinutes", 60))
-                textSize = 12f
-                alpha = 0.7f
-            })
-        }
-        row.addView(mid)
-        val right = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.END
+            } else visibility = View.GONE
         }
         val price = a.optDouble("price", Double.NaN)
-        right.addView(TextView(this).apply {
-            text = if (price.isNaN()) "—" else soles(price)
-            setTypeface(null, Typeface.BOLD)
-            textSize = 15f
-        })
-        right.addView(TextView(this).apply {
-            text = if (a.optBoolean("paid")) getString(R.string.dash_paid)
-            else getString(R.string.dash_pending)
-            textSize = 12f
-            setTextColor(if (a.optBoolean("paid")) 0xFF1B5E20.toInt() else 0xFFB26A00.toInt())
-        })
-        row.addView(right)
-        card.addView(row)
+        card.findViewById<TextView>(R.id.dash_appt_price).text =
+            if (price.isNaN()) "—" else soles(price)
+        val paidChip = card.findViewById<Chip>(R.id.dash_appt_paid)
+        if (a.optBoolean("paid")) {
+            paidChip.text = getString(R.string.dash_paid)
+            styleChip(paidChip, R.color.agento_primary_container,
+                R.color.agento_on_primary_container)
+        } else {
+            paidChip.text = getString(R.string.dash_pending)
+            styleChip(paidChip, R.color.agento_secondary_container,
+                R.color.agento_on_secondary_container)
+        }
         return card
     }
 }

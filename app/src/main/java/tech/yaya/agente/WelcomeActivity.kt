@@ -2,34 +2,28 @@ package tech.yaya.agente
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * Launcher. Registered businesses go straight to the dashboard; new users get
- * a single-purpose welcome with one call to action.
+ * Launcher: a pure router, no UI (see BOUNDARIES.md flow contract).
+ *  - not registered            → RegistrationActivity (full-screen step flow)
+ *  - registered, no interview  → OnboardingActivity (chat)
+ *  - registered + interviewed  → DashboardActivity
+ *
+ * "Interviewed" is inferred from the persisted chat transcript until Prefs
+ * grows an explicit onboarded flag; DashboardActivity keeps the chat reachable
+ * either way, so the heuristic can never strand anyone.
  */
 class WelcomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (Prefs.serverConfigured(this)) {
-            startActivity(Intent(this, DashboardActivity::class.java))
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-            finish()
-            return
+        val next = when {
+            !Prefs.serverConfigured(this) -> RegistrationActivity::class.java
+            Prefs.chatTranscript(this).isNullOrBlank() -> OnboardingActivity::class.java
+            else -> DashboardActivity::class.java
         }
-        setContentView(R.layout.activity_welcome)
-        findViewById<Button>(R.id.welcome_cta).setOnClickListener {
-            startActivity(Intent(this, OnboardingActivity::class.java))
-            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // Registration finished while we were behind the onboarding screen.
-        if (Prefs.serverConfigured(this) && !isFinishing) {
-            // Stay put: OnboardingActivity handles its own forward navigation.
-        }
+        startActivity(Intent(this, next))
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        finish()
     }
 }

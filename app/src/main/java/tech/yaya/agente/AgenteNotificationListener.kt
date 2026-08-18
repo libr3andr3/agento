@@ -3,6 +3,7 @@ package tech.yaya.agente
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.RemoteInput
+import android.content.ComponentName
 import android.content.Intent
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
@@ -26,7 +27,35 @@ class AgenteNotificationListener : NotificationListenerService() {
     /** Recently handled notification identities, to ignore reposts/updates. */
     private val handled = LinkedHashMap<String, Long>()
 
-    override fun onNotificationPosted(sbn: StatusBarNotification) {
+    // ------------------------------------------------------ listener lifecycle
+
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        Log.i(TAG, "listener connected")
+    }
+
+    /**
+     * The system (or an OEM battery manager — MIUI/EMUI are notorious for
+     * killing listener bindings) dropped us. requestRebind is the one call
+     * documented as safe after onListenerDisconnected; asking for a rebind
+     * costs nothing when the user simply revoked access, and brings the agent
+     * back without user action when the disconnect was a background kill.
+     */
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        Log.w(TAG, "listener disconnected — requesting rebind")
+        try {
+            requestRebind(ComponentName(this, AgenteNotificationListener::class.java))
+        } catch (t: Throwable) {
+            Log.e(TAG, "requestRebind failed", t)
+        }
+    }
+
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        // Each notification is processed under its own catch: a malformed one
+        // (OEM-mangled extras, a broken PendingIntent, a server hiccup) must
+        // never take the callback down and cost us the messages after it.
+        if (sbn == null) return
         try {
             process(sbn)
         } catch (t: Throwable) {
@@ -84,8 +113,15 @@ class AgenteNotificationListener : NotificationListenerService() {
         if (Prefs.serverConfigured(ctx)) {
             // Agent mode: every message goes to the server; the LLM agent holds
             // the conversation, so no cooldown — the identity dedupe above
-            // already blocks notification reposts.
-            ServerClient.EXECUTOR.execute { agentReply(app, parsed, replyAction) }
+            // already blocks notification reposts. The catch keeps one bad
+            // exchange from poisoning the shared executor thread.
+            ServerClient.EXECUTOR.execute {
+                try {
+                    agentReply(app, parsed, replyAction)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "agent reply failed for ${app.packageName}", t)
+                }
+            }
             return
         }
 
@@ -94,6 +130,9 @@ class AgenteNotificationListener : NotificationListenerService() {
         val convKey = "${app.packageName}|${parsed.sender}"
         val cooldownMs = Prefs.cooldownMinutes(ctx) * 60_000L
         synchronized(lastReplied) {
+            // Bounded memory: anything idle past the longest possible cooldown
+            // (24 h, enforced by the Settings editor) can never gate again.
+            lastReplied.entries.removeAll { now - it.value > MAX_COOLDOWN_MS }
             val last = lastReplied[convKey] ?: 0L
             if (now - last < cooldownMs) {
                 log(app, parsed, sent = false, detail = ctx.getString(R.string.log_skipped_cooldown))
@@ -133,14 +172,18 @@ class AgenteNotificationListener : NotificationListenerService() {
             return
         }
         ServerClient.IO_EXECUTOR.execute {
-            val resp = ServerClient.paymentEvent(ctx, app.displayName, title, text)
-            val detail = when {
-                resp == null -> ctx.getString(R.string.log_payment_unreachable)
-                !resp.isNull("matchedAppointment") ->
-                    ctx.getString(R.string.log_payment_matched, resp.optJSONObject("matchedAppointment")?.optString("customer") ?: "")
-                else -> ctx.getString(R.string.log_payment_recorded)
+            try {
+                val resp = ServerClient.paymentEvent(ctx, app.displayName, title, text)
+                val detail = when {
+                    resp == null -> ctx.getString(R.string.log_payment_unreachable)
+                    !resp.isNull("matchedAppointment") ->
+                        ctx.getString(R.string.log_payment_matched, resp.optJSONObject("matchedAppointment")?.optString("customer") ?: "")
+                    else -> ctx.getString(R.string.log_payment_recorded)
+                }
+                log(app, parsed, sent = false, detail = "💰 $detail")
+            } catch (t: Throwable) {
+                Log.e(TAG, "payment forward failed for ${app.packageName}", t)
             }
-            log(app, parsed, sent = false, detail = "💰 $detail")
         }
     }
 
@@ -157,14 +200,20 @@ class AgenteNotificationListener : NotificationListenerService() {
         // the customer asked for a human) — raise a local heads-up for each.
         resp?.optJSONArray("attention")?.let { arr ->
             for (i in 0 until arr.length()) {
-                val g = arr.getJSONObject(i)
-                OwnerAlerts.notify(
-                    ctx,
-                    urgent = g.optBoolean("urgent"),
-                    sender = parsed.sender,
-                    question = g.optString("question"),
-                    gapId = g.optString("gapId", "gap$i")
-                )
+                // opt + per-item catch: a malformed gap must not stop the
+                // remaining alerts nor the customer reply below.
+                val g = arr.optJSONObject(i) ?: continue
+                try {
+                    OwnerAlerts.notify(
+                        ctx,
+                        urgent = g.optBoolean("urgent"),
+                        sender = parsed.sender,
+                        question = g.optString("question"),
+                        gapId = g.optString("gapId", "gap$i")
+                    )
+                } catch (t: Throwable) {
+                    Log.e(TAG, "owner alert failed", t)
+                }
             }
         }
         // Trial over: the server answered (so this is not an outage — no canned
@@ -259,7 +308,9 @@ class AgenteNotificationListener : NotificationListenerService() {
     // ---------------------------------------------------------- reply sending
 
     private fun findReplyAction(n: Notification): Notification.Action? {
-        val direct = n.actions.orEmpty().filter { !it.remoteInputs.isNullOrEmpty() }
+        val direct = n.actions.orEmpty()
+            .filterNotNull()
+            .filter { !it.remoteInputs.isNullOrEmpty() }
         // Prefer an action explicitly marked/labelled as a reply; otherwise any
         // action carrying a RemoteInput is almost always the reply on messaging
         // notifications ("Mark as read" etc. carry no RemoteInput).
@@ -267,6 +318,7 @@ class AgenteNotificationListener : NotificationListenerService() {
         direct.firstOrNull()?.let { return it }
         // Some apps only expose reply through the wearable extender.
         return Notification.WearableExtender(n).actions
+            .filterNotNull()
             .firstOrNull { !it.remoteInputs.isNullOrEmpty() }
     }
 
@@ -280,16 +332,24 @@ class AgenteNotificationListener : NotificationListenerService() {
     }
 
     private fun sendReply(action: Notification.Action, text: String): Boolean {
-        val remoteInputs = action.remoteInputs ?: return false
+        val remoteInputs = action.remoteInputs?.takeIf { it.isNotEmpty() } ?: return false
+        // actionIntent is a platform field some OEM notifications leave null.
+        val pendingIntent = action.actionIntent ?: return false
         val intent = Intent()
         val results = Bundle()
-        remoteInputs.forEach { ri -> results.putCharSequence(ri.resultKey, text) }
+        remoteInputs.forEach { ri -> ri?.resultKey?.let { results.putCharSequence(it, text) } }
         RemoteInput.addResultsToIntent(remoteInputs, intent, results)
         return try {
-            action.actionIntent.send(this, 0, intent)
+            pendingIntent.send(this, 0, intent)
             true
         } catch (e: PendingIntent.CanceledException) {
             Log.w(TAG, "reply intent canceled", e)
+            false
+        } catch (t: Throwable) {
+            // Some OEM PendingIntents throw beyond CanceledException (dead
+            // process, revoked permissions); a failed send is a logged "no",
+            // never a crash.
+            Log.w(TAG, "reply intent send failed", t)
             false
         }
     }
@@ -314,6 +374,8 @@ class AgenteNotificationListener : NotificationListenerService() {
     companion object {
         private const val TAG = "AgenteListener"
         private const val IDENTITY_WINDOW_MS = 10 * 60_000L
+        /** Longest cooldown Settings allows (24 h) — prune horizon for lastReplied. */
+        private const val MAX_COOLDOWN_MS = 25 * 60 * 60_000L
         private const val TRIAL_ALERT_INTERVAL_MS = 6 * 60 * 60_000L
         @Volatile private var lastTrialAlert = 0L
     }

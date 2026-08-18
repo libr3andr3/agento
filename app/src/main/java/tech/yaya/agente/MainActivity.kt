@@ -1,29 +1,39 @@
 package tech.yaya.agente
 
+import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Bundle
+import android.os.PowerManager
 import android.provider.Settings
-import android.text.format.DateFormat
+import android.text.format.DateUtils
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.materialswitch.MaterialSwitch
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var permissionBanner: View
-    private lateinit var masterSwitch: SwitchMaterial
-    private lateinit var groupSwitch: SwitchMaterial
+    private lateinit var batteryCard: View
+    private lateinit var masterSwitch: MaterialSwitch
+    private lateinit var groupSwitch: MaterialSwitch
     private lateinit var replyPreview: TextView
     private lateinit var cooldownPreview: TextView
     private lateinit var appTogglesContainer: LinearLayout
@@ -40,20 +50,29 @@ class MainActivity : AppCompatActivity() {
         }
         // Server URL is a dev tool: reveal with a long-press on the section header.
         findViewById<TextView>(R.id.server_header).setOnLongClickListener {
-            val b = findViewById<Button>(R.id.server_config_button)
+            val b = findViewById<MaterialButton>(R.id.server_config_button)
             b.visibility = if (b.visibility == View.VISIBLE) View.GONE else View.VISIBLE
             true
         }
 
         permissionBanner = findViewById(R.id.permission_banner)
+        batteryCard = findViewById(R.id.battery_card)
         masterSwitch = findViewById(R.id.master_switch)
         groupSwitch = findViewById(R.id.group_switch)
         replyPreview = findViewById(R.id.reply_preview)
         cooldownPreview = findViewById(R.id.cooldown_preview)
         appTogglesContainer = findViewById(R.id.app_toggles)
 
-        findViewById<Button>(R.id.grant_button).setOnClickListener {
+        findViewById<MaterialButton>(R.id.grant_button).setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
+
+        findViewById<MaterialButton>(R.id.battery_allow_button).setOnClickListener {
+            requestBatteryExemption()
+        }
+        findViewById<MaterialButton>(R.id.battery_dismiss_button).setOnClickListener {
+            uiPrefs().edit().putBoolean(KEY_BATTERY_CARD_DISMISSED, true).apply()
+            batteryCard.visibility = View.GONE
         }
 
         masterSwitch.setOnCheckedChangeListener { _, on ->
@@ -67,14 +86,14 @@ class MainActivity : AppCompatActivity() {
 
         groupSwitch.setOnCheckedChangeListener { _, on -> Prefs.setReplyToGroups(this, on) }
 
-        findViewById<Button>(R.id.server_config_button).setOnClickListener { editServerUrl() }
-        findViewById<Button>(R.id.onboarding_button).setOnClickListener {
+        findViewById<MaterialButton>(R.id.server_config_button).setOnClickListener { editServerUrl() }
+        findViewById<MaterialButton>(R.id.onboarding_button).setOnClickListener {
             startActivity(Intent(this, OnboardingActivity::class.java))
         }
 
         findViewById<View>(R.id.reply_row).setOnClickListener { editReplyText() }
         findViewById<View>(R.id.cooldown_row).setOnClickListener { editCooldown() }
-        findViewById<Button>(R.id.clear_log_button).setOnClickListener {
+        findViewById<MaterialButton>(R.id.clear_log_button).setOnClickListener {
             ReplyLog.clear(this)
         }
 
@@ -100,6 +119,11 @@ class MainActivity : AppCompatActivity() {
     private fun refresh() {
         val granted = hasNotificationAccess()
         permissionBanner.visibility = if (granted) View.GONE else View.VISIBLE
+        // Access without battery exemption is the classic silent-death setup on
+        // Xiaomi/Huawei — nudge until exempted or explicitly dismissed.
+        val needsBatteryNudge = granted && !isBatteryExempt() &&
+            !uiPrefs().getBoolean(KEY_BATTERY_CARD_DISMISSED, false)
+        batteryCard.visibility = if (needsBatteryNudge) View.VISIBLE else View.GONE
         masterSwitch.isChecked = granted && Prefs.isEnabled(this)
         groupSwitch.isChecked = Prefs.replyToGroups(this)
         replyPreview.text = Prefs.replyText(this)
@@ -107,7 +131,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.server_status).text =
             if (Prefs.serverConfigured(this)) getString(R.string.server_status_connected)
             else getString(R.string.server_status_off)
-        findViewById<Button>(R.id.onboarding_button).text =
+        findViewById<MaterialButton>(R.id.onboarding_button).text =
             if (Prefs.serverConfigured(this)) getString(R.string.server_setup_chat)
             else getString(R.string.server_setup_chat_new)
         logAdapter.reload()
@@ -122,6 +146,34 @@ class MainActivity : AppCompatActivity() {
             ComponentName.unflattenFromString(it) == cn
         } == true
     }
+
+    // ------------------------------------------------------- battery exemption
+
+    private fun isBatteryExempt(): Boolean =
+        (getSystemService(POWER_SERVICE) as PowerManager)
+            .isIgnoringBatteryOptimizations(packageName)
+
+    @SuppressLint("BatteryLife")
+    private fun requestBatteryExemption() {
+        try {
+            startActivity(
+                Intent(
+                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    Uri.parse("package:$packageName")
+                )
+            )
+        } catch (_: ActivityNotFoundException) {
+            // Some OEM builds strip the direct dialog — fall back to the list.
+            try {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            } catch (_: ActivityNotFoundException) {
+            }
+        }
+    }
+
+    private fun uiPrefs() = getSharedPreferences(UI_PREFS, Context.MODE_PRIVATE)
+
+    // ----------------------------------------------------------------- dialogs
 
     private fun promptForAccess() {
         MaterialAlertDialogBuilder(this)
@@ -186,26 +238,73 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    // -------------------------------------------------------------- app toggles
+
     private fun buildAppToggles() {
         appTogglesContainer.removeAllViews()
+        val iconSize = resources.getDimensionPixelSize(R.dimen.space_xl)
+        val gap = resources.getDimensionPixelSize(R.dimen.space_m)
+        val minH = resources.getDimensionPixelSize(R.dimen.touch_min)
         // Installed apps first — those are the ones the user came to configure.
         // Uninstalled ones stay visible (so the catalog is discoverable) but
         // inert: a toggle for an app that can't produce notifications is a lie.
         val (installed, missing) = SupportedApps.ALL.partition { isInstalled(it.packageName) }
         (installed + missing).forEach { app ->
             val here = isInstalled(app.packageName)
-            val sw = SwitchMaterial(this).apply {
-                text = if (here) app.displayName
-                       else getString(R.string.app_not_installed, app.displayName)
+
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                minimumHeight = minH
+                alpha = if (here) 1f else 0.45f
+            }
+
+            val icon = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(iconSize, iconSize)
+                    .apply { marginEnd = gap }
+                setImageDrawable(appIcon(app.packageName))
+                // Decorative: the name TextView right next to it carries the label.
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }
+            row.addView(icon)
+
+            val labels = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
+                )
+            }
+            labels.addView(TextView(this).apply {
+                text = app.displayName
+                setTextAppearance(
+                    com.google.android.material.R.style.TextAppearance_Material3_BodyMedium
+                )
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface))
+            })
+            if (!here) {
+                labels.addView(TextView(this).apply {
+                    text = getString(R.string.settings_app_not_installed)
+                    setTextAppearance(
+                        com.google.android.material.R.style.TextAppearance_Material3_LabelMedium
+                    )
+                    setTextColor(
+                        ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface_muted)
+                    )
+                })
+            }
+            row.addView(labels)
+
+            val sw = MaterialSwitch(this).apply {
                 isEnabled = here
                 isChecked = here && Prefs.isAppEnabled(this@MainActivity, app.packageName)
-                alpha = if (here) 1f else 0.5f
+                contentDescription = app.displayName
                 setOnCheckedChangeListener { _, on ->
                     Prefs.setAppEnabled(this@MainActivity, app.packageName, on)
                 }
-                setPadding(0, 8, 0, 8)
             }
-            appTogglesContainer.addView(sw)
+            row.addView(sw)
+
+            appTogglesContainer.addView(row)
         }
     }
 
@@ -216,6 +315,18 @@ class MainActivity : AppCompatActivity() {
         false
     }
 
+    private val iconCache = HashMap<String, Drawable?>()
+
+    private fun appIcon(pkg: String): Drawable? = iconCache.getOrPut(pkg) {
+        try {
+            packageManager.getApplicationIcon(pkg)
+        } catch (_: Exception) {
+            ContextCompat.getDrawable(this, R.drawable.ic_bell)?.apply {
+                setTint(ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface_muted))
+            }
+        }
+    }
+
     // ------------------------------------------------------------ log adapter
 
     private inner class LogAdapter : RecyclerView.Adapter<LogAdapter.Holder>() {
@@ -224,10 +335,14 @@ class MainActivity : AppCompatActivity() {
         fun reload() {
             events = ReplyLog.load(this@MainActivity)
             notifyDataSetChanged()
+            findViewById<View>(R.id.log_empty)?.visibility =
+                if (events.isEmpty()) View.VISIBLE else View.GONE
         }
 
         inner class Holder(v: View) : RecyclerView.ViewHolder(v) {
+            val icon: ImageView = v.findViewById(R.id.log_app_icon)
             val line1: TextView = v.findViewById(R.id.log_line1)
+            val time: TextView = v.findViewById(R.id.log_time)
             val line2: TextView = v.findViewById(R.id.log_line2)
             val line3: TextView = v.findViewById(R.id.log_line3)
         }
@@ -242,15 +357,36 @@ class MainActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: Holder, position: Int) {
             val e = events[position]
-            val time = DateFormat.format("MMM d, HH:mm", e.timestamp)
-            val status = when {
-                e.detail.startsWith("💰") -> e.detail
-                e.replySent -> getString(R.string.log_replied)
-                else -> "– ${e.detail}"
-            }
-            holder.line1.text = "${e.appName} · ${e.sender} · $time"
+            holder.icon.setImageDrawable(appIcon(e.appPackage))
+            holder.line1.text = "${e.appName} · ${e.sender}"
+            holder.time.text = relativeTime(e.timestamp)
             holder.line2.text = e.incomingText
+
+            val (status, color) = when {
+                e.detail.startsWith("💰") ->
+                    e.detail to R.color.agento_secondary
+                e.replySent ->
+                    getString(R.string.log_replied) to R.color.agento_primary
+                e.detail == getString(R.string.log_send_failed) ->
+                    e.detail to R.color.agento_error
+                else ->
+                    e.detail to R.color.agento_on_surface_muted
+            }
             holder.line3.text = status
+            holder.line3.setTextColor(ContextCompat.getColor(this@MainActivity, color))
         }
+
+        private fun relativeTime(ts: Long): CharSequence {
+            val now = System.currentTimeMillis()
+            if (now - ts < DateUtils.MINUTE_IN_MILLIS) return getString(R.string.log_relative_now)
+            return DateUtils.getRelativeTimeSpanString(
+                ts, now, DateUtils.MINUTE_IN_MILLIS, DateUtils.FORMAT_ABBREV_RELATIVE
+            )
+        }
+    }
+
+    companion object {
+        private const val UI_PREFS = "agente_settings_ui"
+        private const val KEY_BATTERY_CARD_DISMISSED = "battery_card_dismissed"
     }
 }

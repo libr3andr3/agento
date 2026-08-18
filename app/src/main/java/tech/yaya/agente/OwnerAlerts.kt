@@ -18,10 +18,16 @@ import androidx.core.app.NotificationManagerCompat
  */
 object OwnerAlerts {
     private const val CHANNEL = "agente_attention"
+    private const val GROUP = "tech.yaya.agente.ATTENTION"
+    private const val SUMMARY_ID = -1962
 
+    /**
+     * Safe to call any number of times: createNotificationChannel is a no-op
+     * when the channel already exists (user tweaks to importance are kept).
+     */
     fun ensureChannel(ctx: Context) {
         if (Build.VERSION.SDK_INT < 26) return
-        val mgr = ctx.getSystemService(NotificationManager::class.java)
+        val mgr = ctx.getSystemService(NotificationManager::class.java) ?: return
         mgr.createNotificationChannel(
             NotificationChannel(
                 CHANNEL,
@@ -31,11 +37,16 @@ object OwnerAlerts {
         )
     }
 
-    fun notify(ctx: Context, urgent: Boolean, sender: String, question: String, gapId: String) {
-        if (Build.VERSION.SDK_INT >= 33 &&
-            ctx.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+    private fun canPost(ctx: Context): Boolean =
+        Build.VERSION.SDK_INT < 33 ||
+            ctx.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
-        ) return
+
+    fun notify(ctx: Context, urgent: Boolean, sender: String, question: String, gapId: String) {
+        if (!canPost(ctx)) return
+        // Defensive: the channel is created at app start, but the listener
+        // process can outlive data-clears and OEM restarts — recreate if gone.
+        ensureChannel(ctx)
         val intent = Intent(ctx, DashboardActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pi = PendingIntent.getActivity(
@@ -54,10 +65,24 @@ object OwnerAlerts {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pi)
+            .setGroup(GROUP)
+            .build()
+        // A busy inbox raises several alerts; the summary makes them one
+        // expandable stack in the shade instead of a pile.
+        val summary = NotificationCompat.Builder(ctx, CHANNEL)
+            .setSmallIcon(R.drawable.ic_bell)
+            .setContentTitle(ctx.getString(R.string.notif_attention_title))
+            .setGroup(GROUP)
+            .setGroupSummary(true)
+            .setAutoCancel(true)
+            .setContentIntent(pi)
             .build()
         try {
-            NotificationManagerCompat.from(ctx).notify(gapId.hashCode(), n)
+            val mgr = NotificationManagerCompat.from(ctx)
+            mgr.notify(gapId.hashCode(), n)
+            mgr.notify(SUMMARY_ID, summary)
         } catch (_: SecurityException) {
+            // Permission revoked between the check and the post — drop quietly.
         }
     }
 }

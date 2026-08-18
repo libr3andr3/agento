@@ -1,318 +1,356 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Owner's home. Pinned: header (name + status chip + switch + chat + gear)
+     and the agent-off alert. Everything else scrolls under swipe-refresh:
+     trial banner, earnings tiles, Atención (gaps), agenda, pedidos, convos. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:background="@color/agento_surface"
+    android:orientation="vertical">
 
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:paddingStart="@dimen/space_m"
+        android:paddingEnd="@dimen/space_s"
+        android:paddingTop="@dimen/space_m">
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/dash_business_name"
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textColor="@color/agento_on_surface"
+            android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/dash_business_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/dash_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        <com.google.android.material.switchmaterial.SwitchMaterial
+        <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/dash_agent_switch"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_min"
+            android:contentDescription="@string/dash_agent_switch_desc" />
 
         <TextView
             android:id="@+id/dash_chat"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="@dimen/touch_min"
+            android:layout_height="@dimen/touch_min"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/dash_talk_to_business"
+            android:gravity="center"
             android:text="💬"
-            android:textSize="22sp"
-            android:gravity="center" />
+            android:textSize="22sp" />
 
         <ImageButton
             android:id="@+id/dash_settings"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="@dimen/touch_min"
+            android:layout_height="@dimen/touch_min"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/dash_settings"
-            android:src="@drawable/ic_gear"
+            android:padding="10dp"
             android:scaleType="fitCenter"
-            android:padding="8dp" />
+            android:src="@drawable/ic_gear" />
     </LinearLayout>
 
+    <!-- Truth chip: is the agent answering right now? -->
+    <com.google.android.material.chip.Chip
+        android:id="@+id/dash_status"
+        style="@style/Widget.Material3.Chip.Assist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_m"
+        android:layout_marginEnd="@dimen/space_m"
+        android:clickable="false"
+        android:focusable="false"
+        android:contentDescription="@string/dash_status_desc"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        app:chipStrokeWidth="0dp"
+        app:ensureMinTouchTargetSize="false" />
+
+    <!-- Agent-off alert: pinned so it can never scroll out of sight. -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/off_banner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginStart="@dimen/space_m"
+        android:layout_marginEnd="@dimen/space_m"
+        android:layout_marginTop="@dimen/space_s"
         android:visibility="gone"
-        app:cardCornerRadius="14dp"
+        app:cardBackgroundColor="@color/agento_error_container"
+        app:cardCornerRadius="@dimen/corner_card"
         app:cardElevation="0dp"
-        app:cardBackgroundColor="#FDE7E9">
+        app:strokeWidth="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="14dp">
+            android:padding="@dimen/space_m">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/status_off_banner"
-                android:textColor="#B3261E"
-                android:textStyle="bold"
-                android:textSize="14sp" />
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="@color/agento_error" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/off_banner_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                app:backgroundTint="#B3261E"
-                android:text="@string/status_activate" />
+                android:layout_marginTop="@dimen/space_s"
+                android:minHeight="@dimen/touch_min"
+                android:text="@string/status_activate"
+                android:textColor="@color/agento_on_primary"
+                app:backgroundTint="@color/agento_error"
+                app:cornerRadius="@dimen/corner_control" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/trial_banner"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:visibility="gone"
-        app:cardCornerRadius="14dp"
-        app:cardElevation="0dp"
-        app:cardBackgroundColor="#FDE7E9">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="14dp">
-
-            <TextView
-                android:id="@+id/trial_banner_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/trial_banner_text"
-                android:textColor="#B3261E"
-                android:textStyle="bold"
-                android:textSize="14sp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/sales_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                app:backgroundTint="#1B5E20"
-                android:text="@string/trial_talk_to_sales" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="14dp">
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#141B5E20">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/dash_today"
-                    android:textSize="12sp"
-                    android:alpha="0.7" />
-
-                <TextView
-                    android:id="@+id/earn_today"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="—"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:textColor="#1B5E20" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#141B5E20">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/dash_week"
-                    android:textSize="12sp"
-                    android:alpha="0.7" />
-
-                <TextView
-                    android:id="@+id/earn_week"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="—"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:textColor="#1B5E20" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="#141B5E20">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/dash_month"
-                    android:textSize="12sp"
-                    android:alpha="0.7" />
-
-                <TextView
-                    android:id="@+id/earn_month"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="—"
-                    android:textSize="19sp"
-                    android:textStyle="bold"
-                    android:textColor="#1B5E20" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-    </LinearLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/dash_swipe"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="8dp">
+        android:layout_marginTop="@dimen/space_s">
 
         <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/space_m"
+            android:paddingEnd="@dimen/space_m"
+            android:paddingBottom="@dimen/space_l"
+            android:scrollbars="none">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <!-- Trial banner: secondary_container while active,
+                     error_container once expired (bound in code). -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/trial_banner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_s"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/agento_secondary_container"
+                    app:cardCornerRadius="@dimen/corner_card"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_m">
+
+                        <TextView
+                            android:id="@+id/trial_banner_text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/trial_banner_text"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="@color/agento_on_secondary_container" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/sales_button"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_s"
+                            android:minHeight="@dimen/touch_min"
+                            android:text="@string/trial_talk_to_sales"
+                            android:textColor="@color/agento_on_primary"
+                            app:backgroundTint="@color/agento_primary"
+                            app:cornerRadius="@dimen/corner_control" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Earnings: hoy / semana / mes -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="@color/agento_surface_card"
+                        app:cardCornerRadius="@dimen/corner_card"
+                        app:cardElevation="0dp"
+                        app:strokeColor="@color/agento_outline"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_m">
+
+                            <TextView
+                                android:id="@+id/earn_today"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="—"
+                                android:textAppearance="?attr/textAppearanceTitleLarge"
+                                android:textColor="@color/agento_primary"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/dash_today"
+                                android:textAppearance="?attr/textAppearanceLabelMedium"
+                                android:textColor="@color/agento_on_surface_muted" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_s"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="@color/agento_surface_card"
+                        app:cardCornerRadius="@dimen/corner_card"
+                        app:cardElevation="0dp"
+                        app:strokeColor="@color/agento_outline"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_m">
+
+                            <TextView
+                                android:id="@+id/earn_week"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="—"
+                                android:textAppearance="?attr/textAppearanceTitleLarge"
+                                android:textColor="@color/agento_primary"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/dash_week"
+                                android:textAppearance="?attr/textAppearanceLabelMedium"
+                                android:textColor="@color/agento_on_surface_muted" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_s"
+                        android:layout_weight="1"
+                        app:cardBackgroundColor="@color/agento_surface_card"
+                        app:cardCornerRadius="@dimen/corner_card"
+                        app:cardElevation="0dp"
+                        app:strokeColor="@color/agento_outline"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_m">
+
+                            <TextView
+                                android:id="@+id/earn_month"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="—"
+                                android:textAppearance="?attr/textAppearanceTitleLarge"
+                                android:textColor="@color/agento_primary"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/dash_month"
+                                android:textAppearance="?attr/textAppearanceLabelMedium"
+                                android:textColor="@color/agento_on_surface_muted" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
+                <!-- Atención: questions the agent couldn't answer -->
                 <TextView
                     android:id="@+id/gaps_header"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/dash_gaps"
-                    android:textStyle="bold"
-                    android:textSize="17sp"
-                    android:textColor="#B26A00"
-                    android:visibility="gone" />
+                    android:layout_marginTop="@dimen/space_l"
+                    android:text="@string/dash_attention"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/agento_secondary" />
 
                 <LinearLayout
                     android:id="@+id/gaps_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingTop="4dp" />
+                    android:paddingTop="@dimen/space_s" />
 
+                <!-- Agenda -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="@dimen/space_m"
                     android:text="@string/dash_agenda"
-                    android:textStyle="bold"
-                    android:textSize="17sp" />
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/agento_on_surface" />
 
                 <LinearLayout
                     android:id="@+id/agenda_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingTop="4dp" />
+                    android:paddingTop="@dimen/space_xs" />
 
+                <!-- Pedidos -->
                 <TextView
                     android:id="@+id/orders_header"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="@dimen/space_m"
                     android:text="@string/dash_orders"
-                    android:textStyle="bold"
-                    android:textSize="17sp"
-                    android:visibility="gone" />
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/agento_on_surface" />
 
                 <LinearLayout
                     android:id="@+id/orders_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingTop="4dp" />
+                    android:paddingTop="@dimen/space_s" />
 
+                <!-- Conversaciones recientes -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
+                    android:layout_marginTop="@dimen/space_m"
                     android:text="@string/dash_convos"
-                    android:textStyle="bold"
-                    android:textSize="17sp" />
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/agento_on_surface" />
 
                 <LinearLayout
                     android:id="@+id/convos_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingTop="4dp"
-                    android:paddingBottom="24dp" />
+                    android:paddingTop="@dimen/space_s"
+                    android:paddingBottom="@dimen/space_l" />
             </LinearLayout>
         </ScrollView>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

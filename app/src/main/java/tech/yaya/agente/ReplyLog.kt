@@ -37,9 +37,17 @@ object ReplyLog {
     fun load(ctx: Context): List<ReplyEvent> {
         val raw = ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE)
             .getString(KEY, "[]") ?: "[]"
-        return try {
-            val arr = JSONArray(raw)
-            (0 until arr.length()).map { i ->
+        // Malformed entries are skipped one by one, not wholesale: this log is
+        // the owner's only proof of what the agent said on their behalf, so a
+        // single bad record (interrupted write, schema drift from an old
+        // build) must not blank the whole feed.
+        val arr = try {
+            JSONArray(raw)
+        } catch (_: Exception) {
+            return emptyList()
+        }
+        return (0 until arr.length()).mapNotNull { i ->
+            try {
                 val o = arr.getJSONObject(i)
                 ReplyEvent(
                     timestamp = o.getLong("ts"),
@@ -50,9 +58,9 @@ object ReplyLog {
                     replySent = o.getBoolean("sent"),
                     detail = o.optString("detail", "")
                 )
+            } catch (_: Exception) {
+                null
             }
-        } catch (_: Exception) {
-            emptyList()
         }
     }
 

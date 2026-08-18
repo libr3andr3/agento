@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chat surface (OnboardingActivity) — owned by A2. English. -->
+<resources>
+    <string name="chat_header_status">Assistant online</string>
+    <string name="chat_retry">Not sent · Retry</string>
+    <string name="chat_recording_hint">Recording — tap ⏹ to send</string>
+
+    <!-- Accessibility -->
+    <string name="chat_a11y_send">Send message</string>
+    <string name="chat_a11y_mic">Record voice note</string>
+    <string name="chat_a11y_stop_recording">Stop and send voice note</string>
+    <string name="chat_a11y_camera">Send catalog photo</string>
+    <string name="chat_a11y_replay">Replay the answer</string>
+    <string name="chat_a11y_typing">The assistant is typing</string>
+</resources>

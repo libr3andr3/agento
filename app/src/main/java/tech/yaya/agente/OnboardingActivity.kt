@@ -1,6 +1,7 @@
 package tech.yaya.agente
 
 import android.Manifest
+import android.animation.ObjectAnimator
 import android.content.ClipData
 import android.content.ComponentName
 import android.content.Intent
@@ -14,30 +15,37 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Base64
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.Button
-import android.widget.EditText
+import android.view.ViewGroup
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import android.provider.MediaStore
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.exifinterface.media.ExifInterface
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
+import com.google.android.material.textfield.TextInputEditText
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 
 /**
- * Voice-first chat with the setup agent. Registers the business on first run,
- * then interviews the owner; ends with the "¡Todo listo!" sheet which also
- * gates on Notification Access so the agent can never finish setup dead.
+ * The owner's chat with their business — first the setup interview, later the
+ * management console (the server decides; the surface is the same). Real
+ * bubbles in a RecyclerView, a typing indicator while the server thinks, and
+ * the "¡Todo listo!" sheet which gates on Notification Access so the agent can
+ * never finish setup dead. Registration/OTP live in RegistrationActivity.
  */
 class OnboardingActivity : AppCompatActivity() {
 
@@ -46,21 +54,36 @@ class OnboardingActivity : AppCompatActivity() {
         private const val RC_CATALOG_GALLERY = 73
         /** Longest edge for uploaded catalog photos. */
         private const val MAX_PHOTO_EDGE = 1600
+        /** Transcript role markers — also the on-disk serialization prefixes. */
+        private const val OWNER_PREFIX = "🧑 "
+        private const val AGENT_PREFIX = "🟢 "
     }
 
-    private lateinit var chatLog: TextView
-    private lateinit var scroll: ScrollView
-    private lateinit var input: EditText
-    private lateinit var sendButton: Button
-    private lateinit var micButton: Button
-    private lateinit var cameraButton: Button
-    private lateinit var replayButton: Button
+    // ------------------------------------------------------------- chat model
 
-    private val blocks = mutableListOf<String>()
+    private enum class Role { OWNER, AGENT, SYSTEM }
+
+    private class Msg(var role: Role, var text: String, var failed: Boolean = false)
+
+    private val msgs = mutableListOf<Msg>()
+    private var typing = false
+
+    private lateinit var recycler: RecyclerView
+    private lateinit var adapter: ChatAdapter
+    private lateinit var input: TextInputEditText
+    private lateinit var sendButton: MaterialButton
+    private lateinit var micButton: MaterialButton
+    private lateinit var cameraButton: MaterialButton
+    private lateinit var replayButton: MaterialButton
+    private lateinit var recordBar: View
+    private lateinit var recordDot: TextView
+    private lateinit var recordTimer: TextView
+
     private var recorder: MediaRecorder? = null
     private var player: MediaPlayer? = null
     private var recordStart = 0L
     private val timerHandler = Handler(Looper.getMainLooper())
+    private var recordPulse: ObjectAnimator? = null
     private var pendingDone = false
     private val voiceFile: File by lazy { File(cacheDir, "voice.m4a") }
     private val replyWav: File by lazy { File(cacheDir, "reply.wav") }
@@ -68,173 +91,132 @@ class OnboardingActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Chat only exists for a registered business: registration (and OTP)
+        // live in RegistrationActivity, never here.
+        if (!Prefs.serverConfigured(this)) {
+            startActivity(Intent(this, RegistrationActivity::class.java))
+            finish()
+            return
+        }
+
         setContentView(R.layout.activity_onboarding)
-        chatLog = findViewById(R.id.chat_log)
-        scroll = findViewById(R.id.chat_scroll)
+        recycler = findViewById(R.id.chat_recycler)
         input = findViewById(R.id.chat_input)
         sendButton = findViewById(R.id.chat_send)
         micButton = findViewById(R.id.chat_mic)
         cameraButton = findViewById(R.id.chat_camera)
         replayButton = findViewById(R.id.chat_replay)
+        recordBar = findViewById(R.id.record_bar)
+        recordDot = findViewById(R.id.record_dot)
+        recordTimer = findViewById(R.id.record_timer)
+
+        adapter = ChatAdapter()
+        recycler.layoutManager = LinearLayoutManager(this).apply { stackFromEnd = true }
+        recycler.adapter = adapter
 
         sendButton.setOnClickListener { send() }
         micButton.setOnClickListener { toggleRecording() }
         cameraButton.setOnClickListener { showPhotoSourceDialog() }
         replayButton.setOnClickListener { replayLast() }
 
-        // Photos need a registered business to land on: server-gated like
-        // the rest of the chat.
-        cameraButton.isEnabled = Prefs.serverConfigured(this)
-
         // Restore the transcript so an interrupted owner never sees a blank chat.
-        Prefs.chatTranscript(this)?.let {
-            blocks.addAll(it.split("\n\n"))
-            renderBlocks()
+        Prefs.chatTranscript(this)?.let { stored ->
+            stored.split("\n\n").forEach { line -> parseLine(line)?.let { msgs.add(it) } }
+            adapter.notifyDataSetChanged()
+            scrollToBottom(smooth = false)
         }
-
-        if (!Prefs.serverConfigured(this)) {
-            if (blocks.isEmpty()) showRegistrationDialog()
-        } else if (blocks.isEmpty()) {
-            append(getString(R.string.onboarding_resume_hint))
+        if (msgs.isEmpty()) {
+            addParsed(getString(R.string.onboarding_resume_hint))
         }
     }
 
-    // ------------------------------------------------------------ registration
-
-    private fun showRegistrationDialog() {
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 16, 48, 0)
-        }
-        val name = EditText(this).apply { hint = getString(R.string.reg_business_name) }
-        val industry = EditText(this).apply { hint = getString(R.string.reg_industry) }
-        val phone = EditText(this).apply {
-            hint = getString(R.string.reg_owner_phone)
-            inputType = android.text.InputType.TYPE_CLASS_PHONE
-            setText("+51 ")
-        }
-        container.addView(name); container.addView(industry); container.addView(phone)
-
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.reg_title)
-            .setMessage(R.string.reg_message)
-            .setView(container)
-            .setCancelable(false)
-            .setPositiveButton(R.string.reg_start, null) // validated below, no dismiss
-            .setNegativeButton(android.R.string.cancel) { _, _ -> finish() }
-            .create()
-        dialog.show()
-        // Validate in place so typed values survive a validation error.
-        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            var ok = true
-            if (name.text.isBlank()) { name.error = getString(R.string.reg_error_empty); ok = false }
-            if (industry.text.isBlank()) { industry.error = getString(R.string.reg_error_empty); ok = false }
-            if (!ok) return@setOnClickListener
-            dialog.dismiss()
-            startVerification(name.text.toString().trim(), industry.text.toString().trim(),
-                              phone.text.toString().trim())
-        }
-    }
-
-    // ------------------------------------------------- phone verification (OTP)
+    // -------------------------------------------------- transcript persistence
 
     /**
-     * WhatsApps a 6-digit code to the owner's phone before registering. The
-     * status code decides the path: 503 means the server isn't enforcing
-     * verification, so registration proceeds without it — the flow degrades
-     * instead of bricking onboarding when the OTP bridge is down.
+     * Best-effort parse of one stored block back into a bubble role. The old
+     * one-TextView build persisted blocks joined by \n\n with "🧑 "/"🟢 "
+     * markers and bare status lines — the same format we keep writing, so old
+     * transcripts load unchanged. Unknown lines become system lines; stale
+     * typing-indicator blocks are dropped.
      */
-    private fun startVerification(name: String, industry: String, phone: String) {
-        setBusy(true)
-        append("⏳ ${getString(R.string.verify_sending)}")
-        ServerClient.EXECUTOR.execute {
-            val code = ServerClient.verifyStart(this, phone)
-            runOnUiThread {
-                setBusy(false)
-                when (code) {
-                    200 -> {
-                        replaceLast("📲 ${getString(R.string.verify_sent, phone)}")
-                        showCodeDialog(name, industry, phone)
-                    }
-                    503 -> {
-                        replaceLast("ℹ️ ${getString(R.string.verify_skipped)}")
-                        register(name, industry, phone, token = null)
-                    }
-                    400 -> {
-                        replaceLast("⚠️ ${getString(R.string.verify_bad_phone)}")
-                        showRegistrationDialog()
-                    }
-                    429 -> replaceLast("⚠️ ${getString(R.string.verify_throttled)}")
-                    else -> replaceLast("⚠️ ${getString(R.string.server_error)}")
-                }
-            }
+    private fun parseLine(line: String): Msg? {
+        val t = line.trim()
+        if (t.isEmpty()) return null
+        if (t == getString(R.string.typing_indicator)) return null
+        return when {
+            t.startsWith(OWNER_PREFIX) -> Msg(Role.OWNER, t.removePrefix(OWNER_PREFIX))
+            t.startsWith(AGENT_PREFIX) -> Msg(Role.AGENT, t.removePrefix(AGENT_PREFIX))
+            else -> Msg(Role.SYSTEM, t)
         }
     }
 
-    private fun showCodeDialog(name: String, industry: String, phone: String) {
-        val input = EditText(this).apply {
-            hint = getString(R.string.verify_code_hint)
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+    private fun persist() {
+        val serialized = msgs.joinToString("\n\n") {
+            when (it.role) {
+                Role.OWNER -> OWNER_PREFIX + it.text
+                Role.AGENT -> AGENT_PREFIX + it.text
+                Role.SYSTEM -> it.text
+            }
         }
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.verify_title)
-            .setMessage(getString(R.string.verify_message, phone))
-            .setView(LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(48, 16, 48, 0)
-                addView(input)
-            })
-            .setCancelable(false)
-            .setPositiveButton(R.string.verify_confirm, null) // validated below
-            .setNeutralButton(R.string.verify_resend) { _, _ ->
-                startVerification(name, industry, phone)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .create()
-        dialog.show()
-        dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            val typed = input.text.toString().trim()
-            if (typed.length != 6) {
-                input.error = getString(R.string.verify_code_hint)
-                return@setOnClickListener
-            }
-            setBusy(true)
-            ServerClient.EXECUTOR.execute {
-                val resp = ServerClient.verifyCheck(this, phone, typed)
-                val token = resp?.optString("verificationToken")?.takeIf { it.isNotEmpty() }
-                runOnUiThread {
-                    setBusy(false)
-                    if (token != null) {
-                        dialog.dismiss()
-                        append("✅ ${getString(R.string.verify_ok)}")
-                        register(name, industry, phone, token)
-                    } else {
-                        input.error = getString(R.string.verify_wrong_code)
-                    }
-                }
-            }
+        Prefs.setChatTranscript(this, serialized)
+    }
+
+    // ------------------------------------------------------------ chat surface
+
+    private fun addMsg(role: Role, text: String): Msg {
+        val m = Msg(role, text)
+        msgs.add(m)
+        adapter.notifyItemInserted(msgs.size - 1)
+        persist()
+        scrollToBottom()
+        return m
+    }
+
+    /** Add a line that may carry legacy 🧑/🟢 markers (e.g. resume hint). */
+    private fun addParsed(line: String) {
+        parseLine(line)?.let {
+            msgs.add(it)
+            adapter.notifyItemInserted(msgs.size - 1)
+            persist()
+            scrollToBottom()
         }
     }
 
-    private fun register(name: String, industry: String, phone: String, token: String?) {
-        setBusy(true)
-        append("⏳ ${getString(R.string.reg_registering)}")
-        ServerClient.EXECUTOR.execute {
-            val resp = ServerClient.onboardBusiness(this, name, industry, phone, token)
-            runOnUiThread {
-                setBusy(false)
-                if (resp == null) {
-                    replaceLast("⚠️ ${getString(R.string.server_error)}")
-                    return@runOnUiThread
-                }
-                Prefs.setDeviceToken(this, resp.optString("deviceToken"))
-                Prefs.setBusinessId(this, resp.optString("businessId"))
-                // setBusy(false) ran before the token landed — unlock now.
-                cameraButton.isEnabled = Prefs.serverConfigured(this)
-                replaceLast("🟢 " + resp.optString("conversationStarterMessage"))
-                playIfPresent(resp)
-            }
+    private fun changeMsg(m: Msg, block: (Msg) -> Unit) {
+        block(m)
+        val i = msgs.indexOf(m)
+        if (i >= 0) adapter.notifyItemChanged(i)
+        persist()
+    }
+
+    private fun showTyping() {
+        if (typing) return
+        typing = true
+        adapter.notifyItemInserted(msgs.size)
+        scrollToBottom()
+    }
+
+    private fun hideTyping() {
+        if (!typing) return
+        typing = false
+        adapter.notifyItemRemoved(msgs.size)
+    }
+
+    private fun scrollToBottom(smooth: Boolean = true) {
+        val last = adapter.itemCount - 1
+        if (last < 0) return
+        recycler.post {
+            if (smooth) recycler.smoothScrollToPosition(last)
+            else recycler.scrollToPosition(last)
         }
+    }
+
+    private fun setBusy(busy: Boolean) {
+        sendButton.isEnabled = !busy
+        input.isEnabled = !busy
+        micButton.isEnabled = !busy || recorder != null
+        cameraButton.isEnabled = !busy
     }
 
     // ------------------------------------------------------------------- text
@@ -242,16 +224,28 @@ class OnboardingActivity : AppCompatActivity() {
     private fun send() {
         val text = input.text.toString().trim()
         if (text.isEmpty()) return
-        append("🧑 $text")
-        append(getString(R.string.typing_indicator))
+        val mine = addMsg(Role.OWNER, text)
+        showTyping()
         setBusy(true)
         ServerClient.EXECUTOR.execute {
             val resp = ServerClient.onboardingMessage(this, text)
             runOnUiThread {
                 // Only clear the box once the message actually made it through.
                 if (resp != null) input.setText("")
-                handleAgentResponse(resp)
+                handleAgentResponse(resp, retryTarget = mine)
             }
+        }
+    }
+
+    /** "Reintentar" on a failed bubble — resends that exact text. */
+    private fun resend(m: Msg) {
+        if (!sendButton.isEnabled) return // a send is already in flight
+        changeMsg(m) { it.failed = false }
+        showTyping()
+        setBusy(true)
+        ServerClient.EXECUTOR.execute {
+            val resp = ServerClient.onboardingMessage(this, m.text)
+            runOnUiThread { handleAgentResponse(resp, retryTarget = m) }
         }
     }
 
@@ -282,20 +276,47 @@ class OnboardingActivity : AppCompatActivity() {
                 start()
             }
             recordStart = System.currentTimeMillis()
+            showRecordingUi(true)
             tickTimer()
             sendButton.isEnabled = false
         } catch (e: Exception) {
             recorder = null
+            showRecordingUi(false)
             Toast.makeText(this, getString(R.string.mic_error), Toast.LENGTH_LONG).show()
         }
     }
 
+    /** Timer strip + red pulse + mic becomes a stop button while capturing. */
+    private fun showRecordingUi(on: Boolean) {
+        recordBar.visibility = if (on) View.VISIBLE else View.GONE
+        if (on) {
+            micButton.text = getString(R.string.chat_stop_glyph)
+            micButton.contentDescription = getString(R.string.chat_a11y_stop_recording)
+            micButton.backgroundTintList =
+                ContextCompat.getColorStateList(this, R.color.agento_error_container)
+            micButton.setTextColor(ContextCompat.getColor(this, R.color.agento_error))
+            recordTimer.text = getString(R.string.chat_timer_zero)
+            recordPulse = ObjectAnimator.ofFloat(recordDot, View.ALPHA, 1f, 0.2f).apply {
+                duration = 550
+                repeatCount = ObjectAnimator.INFINITE
+                repeatMode = ObjectAnimator.REVERSE
+                start()
+            }
+        } else {
+            recordPulse?.cancel(); recordPulse = null
+            recordDot.alpha = 1f
+            micButton.text = getString(R.string.chat_mic_glyph)
+            micButton.contentDescription = getString(R.string.chat_a11y_mic)
+            micButton.backgroundTintList =
+                ContextCompat.getColorStateList(this, R.color.agento_primary_container)
+            micButton.setTextColor(ContextCompat.getColor(this, R.color.agento_on_primary_container))
+        }
+    }
+
     private fun tickTimer() {
-        val r = recorder ?: return
+        if (recorder == null) return
         val secs = (System.currentTimeMillis() - recordStart) / 1000
-        micButton.text = getString(
-            R.string.voice_stop, String.format("%d:%02d", secs / 60, secs % 60)
-        )
+        recordTimer.text = String.format("%d:%02d", secs / 60, secs % 60)
         timerHandler.postDelayed({ tickTimer() }, 500)
     }
 
@@ -326,26 +347,24 @@ class OnboardingActivity : AppCompatActivity() {
         try { recorder?.stop() } catch (_: Exception) {}
         recorder?.release()
         recorder = null
-        micButton.text = getString(R.string.voice_mic)
+        showRecordingUi(false)
         sendButton.isEnabled = true
         if (!voiceFile.exists() || voiceFile.length() < 1000) {
             Toast.makeText(this, getString(R.string.voice_too_short), Toast.LENGTH_SHORT).show()
             return
         }
-        append("🧑 🎤 …")
-        append(getString(R.string.typing_indicator))
+        val voiceMsg = addMsg(Role.OWNER, "🎤 …")
+        showTyping()
         setBusy(true)
-        micButton.text = getString(R.string.voice_sending)
         val bytes = voiceFile.readBytes()
         ServerClient.EXECUTOR.execute {
             val resp = ServerClient.voiceMessage(this, bytes)
             runOnUiThread {
-                micButton.text = getString(R.string.voice_mic)
-                resp?.optString("transcript")?.takeIf { it.isNotEmpty() }?.let {
-                    // blocks: [.., "🧑 🎤 …", typing]; fix the transcript line.
-                    if (blocks.size >= 2) blocks[blocks.size - 2] = "🧑 🎤 $it"
+                resp?.optString("transcript")?.takeIf { it.isNotEmpty() }?.let { t ->
+                    // Swap the placeholder for what the owner actually said.
+                    changeMsg(voiceMsg) { it.text = "🎤 $t" }
                 }
-                handleAgentResponse(resp)
+                handleAgentResponse(resp, retryTarget = null)
             }
         }
     }
@@ -449,7 +468,7 @@ class OnboardingActivity : AppCompatActivity() {
     }
 
     private fun sendCatalogPhoto(raw: ByteArray) {
-        append("📷 ⏳ ${getString(R.string.catalog_photo_reading)}")
+        val status = addMsg(Role.SYSTEM, "📷 ⏳ ${getString(R.string.catalog_photo_reading)}")
         setBusy(true)
         ServerClient.EXECUTOR.execute {
             val jpeg = prepareCatalogJpeg(raw)
@@ -458,10 +477,12 @@ class OnboardingActivity : AppCompatActivity() {
                 setBusy(false)
                 photoFile.delete()
                 if (resp == null) { // undecodable image, never left the phone
-                    replaceLast("⚠️ ${getString(R.string.catalog_photo_unreadable)}")
+                    changeMsg(status) {
+                        it.text = "⚠️ ${getString(R.string.catalog_photo_unreadable)}"
+                    }
                     return@runOnUiThread
                 }
-                handleCatalogResponse(resp)
+                handleCatalogResponse(resp, status)
             }
         }
     }
@@ -517,8 +538,8 @@ class OnboardingActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleCatalogResponse(resp: ServerClient.Response) {
-        when {
+    private fun handleCatalogResponse(resp: ServerClient.Response, status: Msg) {
+        val text = when {
             resp.code in 200..299 && resp.json != null -> {
                 val items = resp.json.optJSONArray("items")
                 val total = items?.length() ?: 0
@@ -532,29 +553,39 @@ class OnboardingActivity : AppCompatActivity() {
                 if (total > 3) preview.append(", …")
                 val note = resp.json.optString("note").takeIf { it.isNotEmpty() }
                     ?: getString(R.string.catalog_photo_saved, resp.json.optInt("count", total))
-                replaceLast(
-                    "✅ $note" + if (preview.isNotEmpty()) " — $preview" else ""
-                )
+                "✅ $note" + if (preview.isNotEmpty()) " — $preview" else ""
             }
-            resp.code == 422 -> replaceLast("⚠️ ${getString(R.string.catalog_photo_unreadable)}")
-            resp.code == 503 -> replaceLast("⚠️ ${getString(R.string.catalog_photo_unavailable)}")
-            resp.code == 429 -> replaceLast("⚠️ ${getString(R.string.verify_throttled)}")
-            else -> replaceLast("⚠️ ${getString(R.string.server_error)}")
+            resp.code == 422 -> "⚠️ ${getString(R.string.catalog_photo_unreadable)}"
+            resp.code == 503 -> "⚠️ ${getString(R.string.catalog_photo_unavailable)}"
+            resp.code == 429 -> "⚠️ ${getString(R.string.verify_throttled)}"
+            else -> "⚠️ ${getString(R.string.server_error)}"
         }
+        changeMsg(status) { it.text = text }
+        scrollToBottom()
     }
 
     // ----------------------------------------------------------------- shared
 
-    private fun handleAgentResponse(resp: org.json.JSONObject?) {
+    /**
+     * [retryTarget] is the owner bubble a null response should mark as failed
+     * (tap → resend). Voice sends pass null: their bytes are gone once the
+     * recorder file is rewritten, so failure becomes a readable system line.
+     */
+    private fun handleAgentResponse(resp: org.json.JSONObject?, retryTarget: Msg?) {
         setBusy(false)
+        hideTyping()
         if (resp == null) {
-            replaceLast("⚠️ ${getString(R.string.server_error)}")
+            if (retryTarget != null) {
+                changeMsg(retryTarget) { it.failed = true }
+            } else {
+                addMsg(Role.SYSTEM, "⚠️ ${getString(R.string.server_error)}")
+            }
             return
         }
-        replaceLast("🟢 " + resp.optString("agentResponse"))
+        addMsg(Role.AGENT, resp.optString("agentResponse"))
         playIfPresent(resp)
         if (resp.optString("action") == "finish_onboarding") {
-            append("✅ ${getString(R.string.onboarding_saved)}")
+            addMsg(Role.SYSTEM, "✅ ${getString(R.string.onboarding_saved)}")
             showDoneSheet()
         }
     }
@@ -654,36 +685,146 @@ class OnboardingActivity : AppCompatActivity() {
         finish()
     }
 
-    // ------------------------------------------------------------------ chat UI
-
-    private fun append(line: String) {
-        blocks.add(line)
-        renderBlocks()
-    }
-
-    private fun replaceLast(newLine: String) {
-        // The last block is the typing indicator / placeholder being resolved.
-        if (blocks.isNotEmpty()) blocks[blocks.size - 1] = newLine else blocks.add(newLine)
-        renderBlocks()
-    }
-
-    private fun renderBlocks() {
-        chatLog.text = blocks.joinToString("\n\n")
-        Prefs.setChatTranscript(this, chatLog.text.toString())
-        scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
-    }
-
-    private fun setBusy(busy: Boolean) {
-        sendButton.isEnabled = !busy
-        input.isEnabled = !busy
-        micButton.isEnabled = !busy || recorder != null
-        cameraButton.isEnabled = !busy && Prefs.serverConfigured(this)
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         timerHandler.removeCallbacksAndMessages(null)
+        recordPulse?.cancel()
         recorder?.release()
         player?.release()
+    }
+
+    // ---------------------------------------------------------------- adapter
+
+    private inner class ChatAdapter : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+        private val TYPE_OWNER = 0
+        private val TYPE_AGENT = 1
+        private val TYPE_SYSTEM = 2
+        private val TYPE_TYPING = 3
+
+        override fun getItemCount() = msgs.size + if (typing) 1 else 0
+
+        override fun getItemViewType(position: Int): Int {
+            if (typing && position == msgs.size) return TYPE_TYPING
+            return when (msgs[position].role) {
+                Role.OWNER -> TYPE_OWNER
+                Role.AGENT -> TYPE_AGENT
+                Role.SYSTEM -> TYPE_SYSTEM
+            }
+        }
+
+        /** WhatsApp-style tail: full 18dp radius, one sharp 4dp corner on the sender's side. */
+        private fun bubbleBg(fillColor: Int, sharpBottomRight: Boolean): MaterialShapeDrawable {
+            val r = resources.getDimension(R.dimen.corner_bubble)
+            val sharp = resources.getDimension(R.dimen.space_xs)
+            val shape = ShapeAppearanceModel.builder()
+                .setAllCornerSizes(r)
+                .apply {
+                    if (sharpBottomRight) setBottomRightCornerSize(sharp)
+                    else setBottomLeftCornerSize(sharp)
+                }
+                .build()
+            return MaterialShapeDrawable(shape).apply {
+                setTint(ContextCompat.getColor(this@OnboardingActivity, fillColor))
+            }
+        }
+
+        private val bubbleMaxWidth: Int
+            get() = (resources.displayMetrics.widthPixels * 0.78f).toInt()
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            val inf = LayoutInflater.from(parent.context)
+            return when (viewType) {
+                TYPE_OWNER -> OwnerVH(inf.inflate(R.layout.item_chat_owner, parent, false))
+                TYPE_AGENT -> AgentVH(inf.inflate(R.layout.item_chat_agent, parent, false))
+                TYPE_TYPING -> TypingVH(inf.inflate(R.layout.item_chat_typing, parent, false))
+                else -> SystemVH(inf.inflate(R.layout.item_chat_system, parent, false))
+            }
+        }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            when (holder) {
+                is OwnerVH -> holder.bind(msgs[position])
+                is AgentVH -> holder.bind(msgs[position])
+                is SystemVH -> holder.bind(msgs[position])
+                is TypingVH -> Unit // animation runs on attach
+            }
+        }
+
+        override fun onViewAttachedToWindow(holder: RecyclerView.ViewHolder) {
+            if (holder is TypingVH) holder.startDots()
+        }
+
+        override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+            if (holder is TypingVH) holder.stopDots()
+        }
+
+        inner class OwnerVH(v: View) : RecyclerView.ViewHolder(v) {
+            private val text: TextView = v.findViewById(R.id.bubble_text)
+            private val retry: MaterialButton = v.findViewById(R.id.bubble_retry)
+
+            init {
+                text.background = bubbleBg(R.color.agento_primary_container, sharpBottomRight = true)
+                text.maxWidth = bubbleMaxWidth
+                retry.setOnClickListener {
+                    val pos = bindingAdapterPosition
+                    if (pos != RecyclerView.NO_POSITION && pos < msgs.size) resend(msgs[pos])
+                }
+            }
+
+            fun bind(m: Msg) {
+                text.text = m.text
+                retry.visibility = if (m.failed) View.VISIBLE else View.GONE
+            }
+        }
+
+        inner class AgentVH(v: View) : RecyclerView.ViewHolder(v) {
+            private val text: TextView = v.findViewById(R.id.bubble_text)
+
+            init {
+                text.background = bubbleBg(R.color.agento_surface_variant, sharpBottomRight = false)
+                text.maxWidth = bubbleMaxWidth
+            }
+
+            fun bind(m: Msg) { text.text = m.text }
+        }
+
+        inner class SystemVH(v: View) : RecyclerView.ViewHolder(v) {
+            private val text: TextView = v.findViewById(R.id.system_text)
+            fun bind(m: Msg) { text.text = m.text }
+        }
+
+        inner class TypingVH(v: View) : RecyclerView.ViewHolder(v) {
+            private val dots = listOf<TextView>(
+                v.findViewById(R.id.typing_dot1),
+                v.findViewById(R.id.typing_dot2),
+                v.findViewById(R.id.typing_dot3)
+            )
+            private val animators = mutableListOf<ObjectAnimator>()
+
+            init {
+                v.findViewById<LinearLayout>(R.id.typing_bubble).background =
+                    bubbleBg(R.color.agento_surface_variant, sharpBottomRight = false)
+            }
+
+            fun startDots() {
+                stopDots()
+                dots.forEachIndexed { i, dot ->
+                    animators += ObjectAnimator.ofFloat(dot, View.ALPHA, 0.25f, 1f).apply {
+                        duration = 450
+                        startDelay = i * 160L
+                        repeatCount = ObjectAnimator.INFINITE
+                        repeatMode = ObjectAnimator.REVERSE
+                        start()
+                    }
+                }
+            }
+
+            fun stopDots() {
+                animators.forEach { it.cancel() }
+                animators.clear()
+                dots.forEach { it.alpha = 0.25f }
+            }
+        }
     }
 }

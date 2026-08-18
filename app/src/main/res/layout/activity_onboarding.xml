@@ -1,93 +1,212 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Owner ↔ business chat. adjustResize keeps the input row above the IME;
+     the RecyclerView (stackFromEnd) shrinks and stays pinned to the newest
+     message. Done-sheet overlays everything when onboarding finishes. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-<LinearLayout
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="12dp">
+    android:background="@color/agento_surface">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/onboarding_title"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:paddingBottom="8dp" />
-
-    <ScrollView
-        android:id="@+id/chat_scroll"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/chat_log"
+        <!-- Header: business-chat identity + live status. -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="15sp"
-            android:lineSpacingExtra="2dp" />
-    </ScrollView>
+            android:orientation="vertical"
+            android:background="@color/agento_surface_card"
+            android:paddingStart="@dimen/space_m"
+            android:paddingEnd="@dimen/space_m"
+            android:paddingTop="@dimen/space_s"
+            android:paddingBottom="@dimen/space_s">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="8dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="@color/agento_on_surface"
+                android:text="@string/onboarding_title" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/chat_mic"
-            android:layout_width="0dp"
+            <TextView
+                android:id="@+id/chat_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="@color/agento_primary"
+                android:text="@string/chat_header_status" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/agento_outline" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/chat_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             android:layout_weight="1"
-            android:layout_height="60dp"
-            android:textSize="17sp"
-            android:text="@string/voice_mic" />
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/space_m"
+            android:paddingEnd="@dimen/space_m"
+            android:paddingTop="@dimen/space_s"
+            android:paddingBottom="@dimen/space_s"
+            android:scrollbars="vertical" />
 
-        <!-- Catalog/menu photo → server extracts items+prices. -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/chat_camera"
-            android:layout_width="wrap_content"
-            android:layout_height="60dp"
-            android:layout_marginStart="8dp"
-            android:minWidth="64dp"
-            android:textSize="22sp"
-            android:text="@string/catalog_photo_button" />
+        <!-- Recording strip: red pulsing dot + live timer, visible only
+             while the mic is capturing. -->
+        <LinearLayout
+            android:id="@+id/record_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@color/agento_error_container"
+            android:paddingStart="@dimen/space_m"
+            android:paddingEnd="@dimen/space_m"
+            android:paddingTop="@dimen/space_s"
+            android:paddingBottom="@dimen/space_s"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/record_dot"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="@color/agento_error"
+                android:importantForAccessibility="no"
+                android:text="@string/chat_dot" />
+
+            <TextView
+                android:id="@+id/record_timer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_s"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="@color/agento_on_surface" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_m"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="@color/agento_on_surface_muted"
+                android:text="@string/chat_recording_hint" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/agento_outline" />
+
+        <!-- Composer: replay · camera · field · mic · send. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@color/agento_surface_card"
+            android:paddingStart="@dimen/space_s"
+            android:paddingEnd="@dimen/space_s"
+            android:paddingTop="@dimen/space_s"
+            android:paddingBottom="@dimen/space_s">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chat_replay"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="@dimen/space_l"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:contentDescription="@string/chat_a11y_replay"
+                android:visibility="gone"
+                android:text="@string/voice_replay" />
+
+            <!-- Catalog/menu photo → server extracts items+prices. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chat_camera"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="@dimen/space_l"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:contentDescription="@string/chat_a11y_camera"
+                android:text="@string/catalog_photo_button" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/chat_input_layout"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_xs"
+                android:layout_marginEnd="@dimen/space_xs"
+                app:hintEnabled="false"
+                app:boxBackgroundColor="@color/agento_surface"
+                app:boxStrokeColor="@color/agento_primary"
+                app:boxCornerRadiusTopStart="@dimen/corner_control"
+                app:boxCornerRadiusTopEnd="@dimen/corner_control"
+                app:boxCornerRadiusBottomStart="@dimen/corner_control"
+                app:boxCornerRadiusBottomEnd="@dimen/corner_control">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/chat_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/onboarding_input_hint"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:inputType="textCapSentences|textMultiLine"
+                    android:maxLines="4" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chat_mic"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="@dimen/space_l"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:contentDescription="@string/chat_a11y_mic"
+                android:text="@string/chat_mic_glyph" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chat_send"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:layout_marginStart="@dimen/space_xs"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:cornerRadius="@dimen/space_l"
+                app:backgroundTint="@color/agento_primary"
+                android:textColor="@color/agento_on_primary"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:contentDescription="@string/chat_a11y_send"
+                android:text="@string/chat_send_glyph" />
+        </LinearLayout>
     </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingTop="4dp">
-
-        <Button
-            android:id="@+id/chat_replay"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:minWidth="48dp"
-            android:visibility="gone"
-            android:text="@string/voice_replay" />
-
-        <EditText
-            android:id="@+id/chat_input"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:hint="@string/onboarding_input_hint"
-            android:maxLines="4" />
-
-        <Button
-            android:id="@+id/chat_send"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:text="@string/onboarding_send" />
-    </LinearLayout>
-</LinearLayout>
 
     <!-- "¡Todo listo!" celebration sheet — slides up when the schema is saved;
          the agent's voice keeps playing until the owner taps through. -->
@@ -99,9 +218,10 @@
         android:orientation="vertical"
         android:gravity="center_horizontal"
         android:background="@drawable/bg_done_sheet"
-        android:paddingTop="28dp"
-        android:paddingBottom="36dp"
-        android:paddingHorizontal="24dp"
+        android:paddingTop="@dimen/space_l"
+        android:paddingBottom="@dimen/space_xl"
+        android:paddingStart="@dimen/space_l"
+        android:paddingEnd="@dimen/space_l"
         android:elevation="12dp"
         android:visibility="gone"
         android:clickable="true"
@@ -111,26 +231,26 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/done_title"
-            android:textColor="#FFFFFF"
-            android:textSize="28sp"
+            android:textColor="@color/agento_on_primary"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/done_arrow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="@dimen/space_s"
             android:text="@string/done_arrow"
-            android:textColor="#FFFFFF"
-            android:textSize="46sp"
+            android:textColor="@color/agento_on_primary"
+            android:textAppearance="?attr/textAppearanceDisplaySmall"
             android:includeFontPadding="false" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="@dimen/space_xs"
             android:text="@string/done_cta"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp" />
+            android:textColor="@color/agento_on_primary"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
     </LinearLayout>
 </FrameLayout>

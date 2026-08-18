@@ -3,6 +3,7 @@
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Xiaomi/Huawei & friends kill background listeners; we ask the user to
          exempt agente so the notification listener survives. -->
@@ -50,6 +51,14 @@
         <activity
             android:name=".MainActivity"
             android:exported="false" />
+
+        <!-- Step-by-step registration; portrait-locked like the chat so the
+             step state machine never fights a rotation mid-request. -->
+        <activity
+            android:name=".RegistrationActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".OnboardingActivity"

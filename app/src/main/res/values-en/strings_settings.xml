@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings screen (A5), English. -->
+<resources>
+    <!-- Section cards -->
+    <string name="settings_section_status">Agent status</string>
+    <string name="settings_section_apps">Connected apps</string>
+    <string name="settings_section_replies">Replies</string>
+    <string name="settings_section_log">Activity log</string>
+
+    <!-- App toggle list -->
+    <string name="settings_app_not_installed">Not installed</string>
+
+    <!-- Battery-exemption nudge (OEM background killers) -->
+    <string name="battery_card_title">Keep your agent awake 🔋</string>
+    <string name="battery_card_body">Some phones (Xiaomi, Huawei, Oppo…) kill background apps to save battery, and your agent would silently stop replying. Exempt agento from battery optimization so it always answers.</string>
+    <string name="battery_card_allow">Keep it running</string>
+    <string name="battery_card_dismiss">Not now</string>
+
+    <!-- Activity log -->
+    <string name="log_relative_now">now</string>
+</resources>

@@ -19,8 +19,11 @@ object Prefs {
     fun setEnabled(ctx: Context, on: Boolean) =
         sp(ctx).edit().putBoolean(KEY_ENABLED, on).apply()
 
+    /** Blank counts as unset: an empty canned reply would make the listener
+     *  "answer" customers with nothing, which reads as a snub. */
     fun replyText(ctx: Context): String =
-        sp(ctx).getString(KEY_REPLY_TEXT, null) ?: ctx.getString(R.string.default_reply)
+        sp(ctx).getString(KEY_REPLY_TEXT, null)?.takeIf { it.isNotBlank() }
+            ?: ctx.getString(R.string.default_reply)
 
     fun setReplyText(ctx: Context, text: String) =
         sp(ctx).edit().putString(KEY_REPLY_TEXT, text).apply()
@@ -31,8 +34,10 @@ object Prefs {
     fun setAppEnabled(ctx: Context, pkg: String, on: Boolean) =
         sp(ctx).edit().putBoolean(KEY_APP_PREFIX + pkg, on).apply()
 
-    /** Minimum minutes between auto-replies to the same conversation. */
-    fun cooldownMinutes(ctx: Context) = sp(ctx).getInt(KEY_COOLDOWN_MIN, 30)
+    /** Minimum minutes between auto-replies to the same conversation.
+     *  Clamped at 0 on read: a negative value (bad import, old bug) would make
+     *  the cooldown math always pass and the agent double-reply. */
+    fun cooldownMinutes(ctx: Context) = sp(ctx).getInt(KEY_COOLDOWN_MIN, 30).coerceAtLeast(0)
     fun setCooldownMinutes(ctx: Context, min: Int) =
         sp(ctx).edit().putInt(KEY_COOLDOWN_MIN, min).apply()
 
@@ -83,6 +88,25 @@ object Prefs {
 
     /** Agent mode = registered business + reachable server; else canned replies. */
     fun serverConfigured(ctx: Context) = deviceToken(ctx).isNotEmpty()
+
+    /**
+     * Wipes everything tied to the paired business — for a future logout /
+     * "cambiar de negocio" flow. Nothing calls this yet; adding it now so the
+     * knowledge of WHICH keys make up an identity lives here, not in a
+     * settings screen. Clears the cached dashboard and transcript too: they
+     * are the previous business's data and must not greet the next login.
+     * (auto_reply settings and per-app toggles are device preferences and
+     * survive.)
+     */
+    fun clearIdentity(ctx: Context) {
+        sp(ctx).edit()
+            .remove(KEY_DEVICE_TOKEN)
+            .remove(LEGACY_DEVICE_TOKEN)
+            .remove("business_id")
+            .remove("dash_cache")
+            .remove("chat_transcript")
+            .apply()
+    }
 
     /** Last good dashboard payload, rendered while offline. */
     fun dashboardCache(ctx: Context): String? = sp(ctx).getString("dash_cache", null)
