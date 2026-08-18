@@ -25,6 +25,10 @@ fields:
     type: "map[product -> money]"
     ask_in_onboarding: true
     question_es: "¿Qué productos vendes y a qué precio cada uno?"
+  delivery:
+    type: "{zones: map[district -> money], default: money, coverage: string, freeAt: [keyword]}"
+    ask_in_onboarding: true
+    question_es: "¿Hacen delivery? ¿Cuánto cobran según la zona, hasta dónde llegan, y hay puntos de entrega gratis?"
   paymentMethod:
     type: "enum[upfront|atVisit|yape]"
     ask_in_onboarding: true
