@@ -138,4 +138,5 @@
     <string name="dash_orders">Orders</string>
     <string name="order_paid">paid</string>
     <string name="order_pending">unpaid</string>
+    <string name="dash_talk_to_business">Talk to your business</string>
 </resources>

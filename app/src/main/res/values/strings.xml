@@ -153,4 +153,5 @@
     <string name="dash_orders">Pedidos</string>
     <string name="order_paid">pagado</string>
     <string name="order_pending">por pagar</string>
+    <string name="dash_talk_to_business">Habla con tu negocio</string>
 </resources>

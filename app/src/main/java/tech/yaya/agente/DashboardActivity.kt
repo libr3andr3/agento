@@ -56,6 +56,13 @@ class DashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, MainActivity::class.java))
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
+        // "Habla con tu negocio": the onboarding chat lives on after setup as
+        // the owner's management console — same voice, camera and text, now
+        // wired to the server's manager agent.
+        findViewById<TextView>(R.id.dash_chat).setOnClickListener {
+            startActivity(Intent(this, OnboardingActivity::class.java))
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        }
         findViewById<View>(R.id.off_banner_button).setOnClickListener { activateAgent() }
         agentSwitch.setOnCheckedChangeListener { btn, on ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
