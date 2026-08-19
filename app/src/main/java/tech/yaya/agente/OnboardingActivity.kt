@@ -64,6 +64,14 @@ class OnboardingActivity : AppCompatActivity() {
         private const val KEY_VOICE_MODE = "voice_mode_on"
         /** Beat before auto-listening when a reply arrived without TTS audio. */
         private const val LISTEN_AFTER_TEXT_MS = 1100L
+
+        // --- WhatsApp-style hold-to-record gesture ---
+        /** A press shorter than this is a tap, not a recording: discard + hint. */
+        private const val MIN_HOLD_MS = 400L
+        /** Drag left this far (dp) while holding → cancel and discard. */
+        private const val CANCEL_DRAG_DP = 90f
+        /** Drag up this far (dp) while holding → lock hands-free recording. */
+        private const val LOCK_DRAG_DP = 70f
         /** Longer beat on open — the owner is still reading the seeded greeting. */
         private const val LISTEN_ON_OPEN_MS = 1600L
 
@@ -123,6 +131,9 @@ class OnboardingActivity : AppCompatActivity() {
     private lateinit var recordBar: View
     private lateinit var recordDot: TextView
     private lateinit var recordTimer: TextView
+    private lateinit var recordHint: TextView
+    private lateinit var recordCancel: MaterialButton
+    private lateinit var lockPill: View
     private lateinit var voiceStrip: View
     private lateinit var voiceDot: TextView
     private lateinit var voiceLabel: TextView
@@ -130,6 +141,10 @@ class OnboardingActivity : AppCompatActivity() {
     private var recorder: MediaRecorder? = null
     private var player: MediaPlayer? = null
     private var recordStart = 0L
+    // --- hold-to-record gesture state ---
+    private var recordLocked = false
+    private var micDownX = 0f
+    private var micDownY = 0f
     private val timerHandler = Handler(Looper.getMainLooper())
     private val voiceHandler = Handler(Looper.getMainLooper())
     private var recordPulse: ObjectAnimator? = null
@@ -157,6 +172,9 @@ class OnboardingActivity : AppCompatActivity() {
     private val replyWav: File by lazy { File(cacheDir, "reply.wav") }
     private val photoFile: File by lazy { File(cacheDir, "catalog.jpg") }
 
+    // The mic is a gesture surface (hold/slide/swipe); performClick fires on
+    // the send paths, and locked mode gives single-tap send for a11y users.
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -179,6 +197,9 @@ class OnboardingActivity : AppCompatActivity() {
         recordBar = findViewById(R.id.record_bar)
         recordDot = findViewById(R.id.record_dot)
         recordTimer = findViewById(R.id.record_timer)
+        recordHint = findViewById(R.id.record_hint)
+        recordCancel = findViewById(R.id.record_cancel)
+        lockPill = findViewById(R.id.lock_pill)
         voiceStrip = findViewById(R.id.voice_strip)
         voiceDot = findViewById(R.id.voice_dot)
         voiceLabel = findViewById(R.id.voice_label)
@@ -188,7 +209,10 @@ class OnboardingActivity : AppCompatActivity() {
         recycler.adapter = adapter
 
         sendButton.setOnClickListener { send() }
-        micButton.setOnClickListener { toggleRecording() }
+        // WhatsApp-style mic: hold to record, release to send, slide left to
+        // cancel, swipe up to lock; when locked, the mic itself becomes send.
+        micButton.setOnTouchListener { v, ev -> onMicTouch(v, ev) }
+        recordCancel.setOnClickListener { cancelHeldRecording() }
         cameraButton.setOnClickListener { showPhotoSourceDialog() }
         replayButton.setOnClickListener { replayLast() }
         voiceToggle.setOnClickListener { setVoiceMode(!voiceModeOn) }
@@ -196,6 +220,14 @@ class OnboardingActivity : AppCompatActivity() {
         voiceStrip.setOnClickListener {
             if (voiceState == VoiceState.SPEAKING) startVoiceListening()
         }
+
+        // WhatsApp composer: mic when the box is empty, send once there's text.
+        input.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
+            override fun afterTextChanged(s: android.text.Editable?) = updateComposerButtons()
+        })
+        updateComposerButtons()
 
         // Voice mode: default ON during the interview; a persisted user choice
         // wins. Capture is plain MediaRecorder + the server's Whisper path, so
@@ -345,19 +377,84 @@ class OnboardingActivity : AppCompatActivity() {
     }
 
     // ------------------------------------------------------------- voice mode
+    //
+    // WhatsApp-style push-to-talk. The mic button is a gesture surface:
+    //   hold → record        release → send        quick tap → "hold" hint
+    //   slide left → cancel  swipe up → lock (hands-free; mic becomes ➤)
+    // While locked, tapping the mic sends and the bar grows a Cancel button.
 
-    private fun toggleRecording() {
-        if (recorder != null) {
-            stopRecordingAndSend()
-            return
+    /** WhatsApp composer rule: mic when the box is empty, send when it isn't. */
+    private fun updateComposerButtons() {
+        val recording = recorder != null
+        val hasText = !input.text.isNullOrBlank()
+        micButton.visibility = if (recording || !hasText) View.VISIBLE else View.GONE
+        sendButton.visibility = if (!recording && hasText) View.VISIBLE else View.GONE
+    }
+
+    private fun onMicTouch(v: View, ev: android.view.MotionEvent): Boolean {
+        val density = resources.displayMetrics.density
+        when (ev.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> {
+                if (recordLocked && recorder != null) {
+                    // Locked mode: the mic IS the send button now.
+                    v.performClick()
+                    stopRecordingAndSend()
+                    return true
+                }
+                if (!v.isEnabled || recorder != null) return true
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                    != PackageManager.PERMISSION_GRANTED
+                ) {
+                    ActivityCompat.requestPermissions(
+                        this, arrayOf(Manifest.permission.RECORD_AUDIO), 71
+                    )
+                    return true
+                }
+                interruptVoiceLoop() // push-to-talk takes the mic from the loop
+                v.parent.requestDisallowInterceptTouchEvent(true)
+                micDownX = ev.rawX
+                micDownY = ev.rawY
+                startHeldRecording()
+            }
+            android.view.MotionEvent.ACTION_MOVE -> {
+                if (recorder == null || recordLocked) return true
+                val dx = ev.rawX - micDownX
+                val dy = ev.rawY - micDownY
+                val cancelPx = CANCEL_DRAG_DP * density
+                // The hint chases the finger and fades out — the same tell
+                // WhatsApp gives that letting go here will throw it away.
+                val pull = dx.coerceIn(-cancelPx, 0f)
+                recordHint.translationX = pull * 0.5f
+                recordHint.alpha = 1f + (pull / cancelPx) * 0.8f
+                if (dx <= -cancelPx) {
+                    cancelHeldRecording()
+                    return true
+                }
+                if (dy <= -(LOCK_DRAG_DP * density)) {
+                    lockHeldRecording()
+                    return true
+                }
+            }
+            android.view.MotionEvent.ACTION_UP,
+            android.view.MotionEvent.ACTION_CANCEL -> {
+                if (recorder == null || recordLocked) return true
+                if (System.currentTimeMillis() - recordStart < MIN_HOLD_MS) {
+                    // A tap, not a hold — teach the gesture instead of sending
+                    // a half-syllable to Whisper.
+                    cancelHeldRecording()
+                    Toast.makeText(
+                        this, getString(R.string.chat_hold_to_record), Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    v.performClick()
+                    stopRecordingAndSend()
+                }
+            }
         }
-        interruptVoiceLoop() // push-to-talk takes the mic from the loop
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 71)
-            return
-        }
+        return true
+    }
+
+    private fun startHeldRecording() {
         try {
             player?.release(); player = null
             @Suppress("DEPRECATION")
@@ -371,42 +468,87 @@ class OnboardingActivity : AppCompatActivity() {
                 prepare()
                 start()
             }
-            recordStart = System.currentTimeMillis()
-            showRecordingUi(true)
-            tickTimer()
-            sendButton.isEnabled = false
         } catch (e: Exception) {
             recorder = null
-            showRecordingUi(false)
+            resetRecordUi()
             Toast.makeText(this, getString(R.string.mic_error), Toast.LENGTH_LONG).show()
+            return
         }
+        recordStart = System.currentTimeMillis()
+        recordLocked = false
+        micButton.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+
+        // Held UI: bar with pulsing dot + timer + slide-to-cancel hint, the
+        // mic swells under the finger, and the lock pill floats above it.
+        recordBar.visibility = View.VISIBLE
+        recordHint.text = getString(R.string.chat_slide_cancel_hint)
+        recordHint.translationX = 0f
+        recordHint.alpha = 1f
+        recordCancel.visibility = View.GONE
+        recordTimer.text = getString(R.string.chat_timer_zero)
+        micButton.animate().scaleX(1.45f).scaleY(1.45f).setDuration(120).start()
+        micButton.backgroundTintList =
+            ContextCompat.getColorStateList(this, R.color.agento_error_container)
+        micButton.setTextColor(ContextCompat.getColor(this, R.color.agento_error))
+        micButton.contentDescription = getString(R.string.chat_a11y_stop_recording)
+        lockPill.visibility = View.VISIBLE
+        recordPulse = ObjectAnimator.ofFloat(recordDot, View.ALPHA, 1f, 0.2f).apply {
+            duration = 550
+            repeatCount = ObjectAnimator.INFINITE
+            repeatMode = ObjectAnimator.REVERSE
+            start()
+        }
+        updateComposerButtons()
+        tickTimer()
     }
 
-    /** Timer strip + red pulse + mic becomes a stop button while capturing. */
-    private fun showRecordingUi(on: Boolean) {
-        recordBar.visibility = if (on) View.VISIBLE else View.GONE
-        if (on) {
-            micButton.text = getString(R.string.chat_stop_glyph)
-            micButton.contentDescription = getString(R.string.chat_a11y_stop_recording)
-            micButton.backgroundTintList =
-                ContextCompat.getColorStateList(this, R.color.agento_error_container)
-            micButton.setTextColor(ContextCompat.getColor(this, R.color.agento_error))
-            recordTimer.text = getString(R.string.chat_timer_zero)
-            recordPulse = ObjectAnimator.ofFloat(recordDot, View.ALPHA, 1f, 0.2f).apply {
-                duration = 550
-                repeatCount = ObjectAnimator.INFINITE
-                repeatMode = ObjectAnimator.REVERSE
-                start()
-            }
-        } else {
-            recordPulse?.cancel(); recordPulse = null
-            recordDot.alpha = 1f
-            micButton.text = getString(R.string.chat_mic_glyph)
-            micButton.contentDescription = getString(R.string.chat_a11y_mic)
-            micButton.backgroundTintList =
-                ContextCompat.getColorStateList(this, R.color.agento_primary_container)
-            micButton.setTextColor(ContextCompat.getColor(this, R.color.agento_on_primary_container))
-        }
+    /** Swipe-up latch: the finger can leave; the mic becomes the send button. */
+    private fun lockHeldRecording() {
+        if (recorder == null || recordLocked) return
+        recordLocked = true
+        micButton.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+        micButton.animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+        micButton.text = getString(R.string.chat_send_glyph)
+        micButton.backgroundTintList =
+            ContextCompat.getColorStateList(this, R.color.agento_primary)
+        micButton.setTextColor(ContextCompat.getColor(this, R.color.agento_on_primary))
+        micButton.contentDescription = getString(R.string.chat_a11y_send_voice)
+        recordHint.translationX = 0f
+        recordHint.alpha = 1f
+        recordHint.text = getString(R.string.chat_locked_hint)
+        recordCancel.visibility = View.VISIBLE
+        lockPill.visibility = View.GONE
+    }
+
+    /** Slide-left / too-short / Cancel button: discard the capture entirely. */
+    private fun cancelHeldRecording() {
+        timerHandler.removeCallbacksAndMessages(null)
+        try { recorder?.stop() } catch (_: Exception) {}
+        recorder?.release()
+        recorder = null
+        voiceFile.delete()
+        resetRecordUi()
+    }
+
+    /** Composer back to its resting state, whatever just happened. */
+    private fun resetRecordUi() {
+        recordPulse?.cancel(); recordPulse = null
+        recordDot.alpha = 1f
+        recordBar.visibility = View.GONE
+        recordCancel.visibility = View.GONE
+        lockPill.visibility = View.GONE
+        recordLocked = false
+        recordHint.translationX = 0f
+        recordHint.alpha = 1f
+        micButton.animate().cancel()
+        micButton.scaleX = 1f
+        micButton.scaleY = 1f
+        micButton.text = getString(R.string.chat_mic_glyph)
+        micButton.contentDescription = getString(R.string.chat_a11y_mic)
+        micButton.backgroundTintList =
+            ContextCompat.getColorStateList(this, R.color.agento_primary_container)
+        micButton.setTextColor(ContextCompat.getColor(this, R.color.agento_on_primary_container))
+        updateComposerButtons()
     }
 
     private fun tickTimer() {
@@ -434,7 +576,10 @@ class OnboardingActivity : AppCompatActivity() {
         }
         if (requestCode != 71) return
         if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-            toggleRecording()
+            // The finger that triggered the request is long gone — teach the
+            // gesture rather than surprise-recording.
+            Toast.makeText(this, getString(R.string.chat_hold_to_record), Toast.LENGTH_SHORT)
+                .show()
         } else {
             MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.mic_perm_title)
@@ -455,8 +600,7 @@ class OnboardingActivity : AppCompatActivity() {
         try { recorder?.stop() } catch (_: Exception) {}
         recorder?.release()
         recorder = null
-        showRecordingUi(false)
-        sendButton.isEnabled = true
+        resetRecordUi()
         if (!voiceFile.exists() || voiceFile.length() < 1000) {
             Toast.makeText(this, getString(R.string.voice_too_short), Toast.LENGTH_SHORT).show()
             return

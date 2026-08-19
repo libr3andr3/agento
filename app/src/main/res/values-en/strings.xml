@@ -53,7 +53,7 @@
     <string name="voice_mic">🎤  Tap to speak</string>
     <string name="voice_stop">⏹  %1$s · Recording — tap to send</string>
     <string name="voice_sending">Sending…</string>
-    <string name="voice_too_short">Too short — tap, speak, then tap again to send</string>
+    <string name="voice_too_short">Too short — keep holding while you speak</string>
     <string name="mic_perm_title">Microphone permission</string>
     <string name="mic_perm_msg">To talk with your assistant, allow the microphone. You can also type if you prefer.</string>
     <string name="mic_error">Couldn\'t use the microphone. You can type your answer.</string>

@@ -90,13 +90,29 @@
                 android:textColor="@color/agento_on_surface" />
 
             <TextView
+                android:id="@+id/record_hint"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/space_m"
                 android:textAppearance="?attr/textAppearanceLabelMedium"
                 android:textColor="@color/agento_on_surface_muted"
-                android:text="@string/chat_recording_hint" />
+                android:text="@string/chat_slide_cancel_hint" />
+
+            <!-- Only while the recording is locked (swipe up): discard it. -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/record_cancel"
+                style="@style/Widget.Agento.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/touch_min"
+                android:minWidth="0dp"
+                android:minHeight="0dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:textColor="@color/agento_error"
+                android:contentDescription="@string/chat_a11y_cancel_voice"
+                android:visibility="gone"
+                android:text="@string/chat_record_cancel" />
         </LinearLayout>
 
         <!-- Voice-mode status strip: 🔊 Hablando / 🎙 Escuchando / 💭 Pensando.
@@ -257,6 +273,42 @@
                 android:contentDescription="@string/chat_a11y_send"
                 android:text="@string/chat_send_glyph" />
         </LinearLayout>
+    </LinearLayout>
+
+    <!-- Swipe-up-to-lock affordance: floats above the mic while the owner is
+         holding it (WhatsApp-style). Visibility + position driven from code. -->
+    <LinearLayout
+        android:id="@+id/lock_pill"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="@dimen/space_m"
+        android:layout_marginBottom="96dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:background="@drawable/bg_lock_pill"
+        android:paddingStart="@dimen/space_s"
+        android:paddingEnd="@dimen/space_s"
+        android:paddingTop="@dimen/space_s"
+        android:paddingBottom="@dimen/space_s"
+        android:elevation="8dp"
+        android:visibility="gone"
+        android:importantForAccessibility="no">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:text="@string/chat_lock_glyph" />
+
+        <TextView
+            android:id="@+id/lock_chevron"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/agento_on_surface_muted"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:includeFontPadding="false"
+            android:text="@string/chat_lock_chevron" />
     </LinearLayout>
 
     <!-- "¡Todo listo!" celebration sheet — slides up when the schema is saved;

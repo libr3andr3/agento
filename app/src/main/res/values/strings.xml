@@ -63,7 +63,7 @@
     <string name="voice_mic">🎤  Toca para hablar</string>
     <string name="voice_stop">⏹  %1$s · Grabando — toca para enviar</string>
     <string name="voice_sending">Enviando…</string>
-    <string name="voice_too_short">Muy corto — toca, habla y vuelve a tocar para enviar</string>
+    <string name="voice_too_short">Muy corto — mantén presionado mientras hablas</string>
     <string name="voice_replay">🔊</string>
     <string name="mic_perm_title">Permiso de micrófono</string>
     <string name="mic_perm_msg">Para hablar con tu asistente necesitas permitir el micrófono. También puedes escribir si prefieres.</string>

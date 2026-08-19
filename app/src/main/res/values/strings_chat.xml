@@ -5,6 +5,16 @@
     <string name="chat_retry">No se envió · Reintentar</string>
     <string name="chat_recording_hint">Grabando — toca ⏹ para enviar</string>
 
+    <!-- WhatsApp-style hold-to-record gesture. -->
+    <string name="chat_slide_cancel_hint">◀ Desliza para cancelar</string>
+    <string name="chat_locked_hint">Grabando — toca ➤ para enviar</string>
+    <string name="chat_hold_to_record">Mantén presionado 🎤 para grabar, suelta para enviar</string>
+    <string name="chat_record_cancel">Cancelar</string>
+    <string name="chat_a11y_send_voice">Enviar la nota de voz</string>
+    <string name="chat_a11y_cancel_voice">Cancelar la grabación</string>
+    <string name="chat_lock_glyph" translatable="false">🔒</string>
+    <string name="chat_lock_chevron" translatable="false">⌃</string>
+
     <!-- Voice mode: status strip + hands-free loop. -->
     <string name="voice_status_speaking">🔊 Hablando…</string>
     <string name="voice_status_listening">🎙 Escuchando…</string>
