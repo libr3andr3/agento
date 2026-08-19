@@ -2,6 +2,7 @@
 # Never edited per-client. Bundles extend it; client patches override values.
 version: 1
 defaults:
+  timezone: America/Lima          # IANA zone; all stored times are UTC, this is the display/parse zone
   slotDuration: 30
   cancellationNoticeMins: 60
   maxAdvanceBookingDays: 30
@@ -49,4 +50,7 @@ fields:
     ask_in_onboarding: false
   walkInsAllowed:
     type: "bool"
+    ask_in_onboarding: false
+  timezone:
+    type: "iana-timezone"
     ask_in_onboarding: false
