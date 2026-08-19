@@ -4,7 +4,7 @@
 <com.google.android.material.chip.Chip xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/dash_day_chip"
-    style="@style/Widget.Material3.Chip.Assist"
+    style="@style/Widget.Agento.Chip"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_marginTop="@dimen/space_m"

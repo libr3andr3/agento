@@ -25,7 +25,7 @@
     <!-- Failed-send affordance: tap resends this exact text. -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/bubble_retry"
-        style="@style/Widget.Material3.Button.TextButton"
+        style="@style/Widget.Agento.Button.Text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:minHeight="@dimen/touch_min"

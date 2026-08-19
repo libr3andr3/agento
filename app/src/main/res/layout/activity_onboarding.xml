@@ -160,7 +160,7 @@
                  device has no speech recognition at all. -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/chat_voice_toggle"
-                style="@style/Widget.Material3.Button.TextButton"
+                style="@style/Widget.Agento.Button.Text"
                 android:layout_width="@dimen/touch_min"
                 android:layout_height="@dimen/touch_min"
                 android:minWidth="0dp"
@@ -175,7 +175,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/chat_replay"
-                style="@style/Widget.Material3.Button.TextButton"
+                style="@style/Widget.Agento.Button.Text"
                 android:layout_width="@dimen/touch_min"
                 android:layout_height="@dimen/touch_min"
                 android:minWidth="0dp"
@@ -192,7 +192,7 @@
             <!-- Catalog/menu photo → server extracts items+prices. -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/chat_camera"
-                style="@style/Widget.Material3.Button.TextButton"
+                style="@style/Widget.Agento.Button.Text"
                 android:layout_width="@dimen/touch_min"
                 android:layout_height="@dimen/touch_min"
                 android:minWidth="0dp"
@@ -207,19 +207,13 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/chat_input_layout"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                style="@style/Widget.Agento.TextInput"
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/space_xs"
                 android:layout_marginEnd="@dimen/space_xs"
-                app:hintEnabled="false"
-                app:boxBackgroundColor="@color/agento_surface"
-                app:boxStrokeColor="@color/agento_primary"
-                app:boxCornerRadiusTopStart="@dimen/corner_control"
-                app:boxCornerRadiusTopEnd="@dimen/corner_control"
-                app:boxCornerRadiusBottomStart="@dimen/corner_control"
-                app:boxCornerRadiusBottomEnd="@dimen/corner_control">
+                app:boxBackgroundColor="@color/agento_surface">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/chat_input"
@@ -233,7 +227,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/chat_mic"
-                style="@style/Widget.Material3.Button.TonalButton"
+                style="@style/Widget.Agento.Button.Tonal"
                 android:layout_width="@dimen/touch_min"
                 android:layout_height="@dimen/touch_min"
                 android:minWidth="0dp"

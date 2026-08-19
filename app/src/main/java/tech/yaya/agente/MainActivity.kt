@@ -276,17 +276,13 @@ class MainActivity : AppCompatActivity() {
             }
             labels.addView(TextView(this).apply {
                 text = app.displayName
-                setTextAppearance(
-                    com.google.android.material.R.style.TextAppearance_Material3_BodyMedium
-                )
+                setTextAppearance(R.style.TextAppearance_Agento_Body)
                 setTextColor(ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface))
             })
             if (!here) {
                 labels.addView(TextView(this).apply {
                     text = getString(R.string.settings_app_not_installed)
-                    setTextAppearance(
-                        com.google.android.material.R.style.TextAppearance_Material3_LabelMedium
-                    )
+                    setTextAppearance(R.style.TextAppearance_Agento_Label)
                     setTextColor(
                         ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface_muted)
                     )

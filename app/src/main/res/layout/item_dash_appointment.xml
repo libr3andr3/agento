@@ -7,9 +7,8 @@
     android:layout_marginBottom="@dimen/space_s"
     app:cardBackgroundColor="@color/agento_surface_card"
     app:cardCornerRadius="@dimen/corner_card"
-    app:cardElevation="0dp"
-    app:strokeColor="@color/agento_outline"
-    app:strokeWidth="1dp">
+    app:cardElevation="@dimen/card_elevation"
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -74,7 +73,7 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/dash_appt_paid"
-                style="@style/Widget.Material3.Chip.Assist"
+                style="@style/Widget.Agento.Chip"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"

@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Light-committed M3 theme over the agento tokens (DESIGN.md). -->
+<!-- agento theme v2 "warm paper" — light-committed, custom-typed, pill-shaped.
+     Owned by the integrator (DESIGN.md). Layouts should lean on ?attr/ text
+     appearances and the Widget.Agento.* styles below, never stock M3 widgets. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+
     <style name="Theme.Agente" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Color roles -->
         <item name="colorPrimary">@color/agento_primary</item>
         <item name="colorOnPrimary">@color/agento_on_primary</item>
         <item name="colorPrimaryContainer">@color/agento_primary_container</item>
@@ -17,7 +21,183 @@
         <item name="colorOnSurface">@color/agento_on_surface</item>
         <item name="colorOnSurfaceVariant">@color/agento_on_surface_muted</item>
         <item name="colorOutline">@color/agento_outline</item>
+
+        <!-- Keep elevated cards crisp white: no M3 tonal-elevation green wash -->
+        <item name="elevationOverlayEnabled">false</item>
+
+        <!-- System bars blend into the paper ground -->
         <item name="android:statusBarColor">@color/agento_surface</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/agento_surface</item>
+        <item name="android:windowLightNavigationBar">true</item>
+
+        <!-- Typeface: Plus Jakarta Sans everywhere -->
+        <item name="android:fontFamily">@font/jakarta</item>
+        <item name="fontFamily">@font/jakarta</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.Agento.Display</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.Agento.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.Agento.Headline</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Agento.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.Agento.Title</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Agento.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Agento.Body</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.Agento.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.Agento.Label</item>
+
+        <!-- Shape system -->
+        <item name="shapeAppearanceCornerSmall">@style/Shape.Agento.Small</item>
+        <item name="shapeAppearanceCornerMedium">@style/Shape.Agento.Medium</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.Agento.Large</item>
+
+        <!-- Widgets default to the Agento styles -->
+        <item name="materialButtonStyle">@style/Widget.Agento.Button</item>
+        <item name="borderlessButtonStyle">@style/Widget.Agento.Button.Text</item>
+        <item name="materialCardViewStyle">@style/Widget.Agento.Card</item>
+        <item name="chipStyle">@style/Widget.Agento.Chip</item>
+        <item name="textInputStyle">@style/Widget.Agento.TextInput</item>
+    </style>
+
+    <!-- ============ Type ramp (Plus Jakarta Sans) ============ -->
+    <style name="TextAppearance.Agento.Display" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/jakarta</item>
+        <item name="android:fontFamily">@font/jakarta</item>
+        <item name="android:textFontWeight">800</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextAppearance.Agento.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/jakarta</item>
+        <item name="android:fontFamily">@font/jakarta</item>
+        <item name="android:textFontWeight">800</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextAppearance.Agento.Headline" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/jakarta</item>
+        <item name="android:fontFamily">@font/jakarta</item>
+        <item name="android:textFontWeight">700</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <style name="TextAppearance.Agento.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/jakarta</item>
+        <item name="android:fontFamily">@font/jakarta</item>
+        <item name="android:textFontWeight">700</item>
+        <item name="android:letterSpacing">-0.01</item>
+    </style>
+
+    <style name="TextAppearance.Agento.Title" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/jakarta</item>
+        <item name="android:fontFamily">@font/jakarta</item>
+        <item name="android:textFontWeight">600</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.Agento.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/jakarta</item>
+        <item name="android:fontFamily">@font/jakarta</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.Agento.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/jakarta</item>
+        <item name="android:fontFamily">@font/jakarta</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.Agento.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/jakarta</item>
+        <item name="android:fontFamily">@font/jakarta</item>
+        <item name="android:textFontWeight">600</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.Agento.Label" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/jakarta</item>
+        <item name="android:fontFamily">@font/jakarta</item>
+        <item name="android:textFontWeight">600</item>
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+
+    <!-- ============ Shapes ============ -->
+    <style name="Shape.Agento.Small" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerSize">12dp</item>
+    </style>
+    <style name="Shape.Agento.Medium" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerSize">18dp</item>
+    </style>
+    <style name="Shape.Agento.Large" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">@dimen/corner_card</item>
+    </style>
+    <style name="Shape.Agento.Pill" parent="ShapeAppearance.Material3.Corner.Full" />
+
+    <!-- ============ Widgets ============ -->
+    <!-- Primary action: emerald pill, generous height -->
+    <style name="Widget.Agento.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/Shape.Agento.Pill</item>
+        <item name="android:minHeight">@dimen/touch_min</item>
+        <item name="android:textAppearance">@style/TextAppearance.Agento.LabelLarge</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="backgroundTint">@color/agento_primary</item>
+        <item name="android:textColor">@color/agento_on_primary</item>
+    </style>
+
+    <!-- Quiet action: emerald text, no fill -->
+    <style name="Widget.Agento.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/Shape.Agento.Pill</item>
+        <item name="android:textAppearance">@style/TextAppearance.Agento.LabelLarge</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textColor">@color/agento_primary</item>
+    </style>
+
+    <!-- Soft action: mint pill -->
+    <style name="Widget.Agento.Button.Tonal" parent="Widget.Material3.Button.TonalButton">
+        <item name="shapeAppearance">@style/Shape.Agento.Pill</item>
+        <item name="android:textAppearance">@style/TextAppearance.Agento.LabelLarge</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="backgroundTint">@color/agento_primary_container</item>
+        <item name="android:textColor">@color/agento_on_primary_container</item>
+    </style>
+
+    <!-- Square glyph button for composer rows (48dp, no fill) -->
+    <style name="Widget.Agento.Button.Glyph" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/Shape.Agento.Pill</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:padding">0dp</item>
+    </style>
+
+    <!-- Floating card: strokeless white, whisper of shadow -->
+    <style name="Widget.Agento.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">@color/agento_surface_card</item>
+        <item name="cardCornerRadius">@dimen/corner_card</item>
+        <item name="cardElevation">@dimen/card_elevation</item>
+        <item name="strokeWidth">0dp</item>
+        <item name="android:outlineAmbientShadowColor" tools:targetApi="p">@color/agento_shadow</item>
+        <item name="android:outlineSpotShadowColor" tools:targetApi="p">@color/agento_shadow</item>
+    </style>
+
+    <!-- Status pill -->
+    <style name="Widget.Agento.Chip" parent="Widget.Material3.Chip.Assist">
+        <item name="chipStrokeWidth">0dp</item>
+        <item name="shapeAppearance">@style/Shape.Agento.Pill</item>
+        <item name="android:textAppearance">@style/TextAppearance.Agento.LabelLarge</item>
+        <item name="chipMinHeight">34dp</item>
+        <item name="ensureMinTouchTargetSize">false</item>
+    </style>
+
+    <!-- Input: soft white pill-ish field, no floating label -->
+    <style name="Widget.Agento.TextInput" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="hintEnabled">false</item>
+        <item name="boxBackgroundColor">@color/agento_input_bg</item>
+        <item name="boxStrokeColor">@color/agento_input_stroke</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="boxCornerRadiusTopStart">18dp</item>
+        <item name="boxCornerRadiusTopEnd">18dp</item>
+        <item name="boxCornerRadiusBottomStart">18dp</item>
+        <item name="boxCornerRadiusBottomEnd">18dp</item>
     </style>
 </resources>

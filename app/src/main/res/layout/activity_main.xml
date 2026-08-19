@@ -61,8 +61,7 @@
                     android:layout_marginTop="@dimen/space_s"
                     android:text="@string/permission_open_settings"
                     android:textColor="@color/agento_on_primary"
-                    app:backgroundTint="@color/agento_error"
-                    app:cornerRadius="@dimen/corner_control" />
+                    app:backgroundTint="@color/agento_error" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -108,7 +107,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/battery_dismiss_button"
-                        style="@style/Widget.Material3.Button.TextButton"
+                        style="@style/Widget.Agento.Button.Text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:minHeight="@dimen/touch_min"
@@ -136,9 +135,8 @@
             android:layout_marginTop="@dimen/space_m"
             app:cardBackgroundColor="@color/agento_surface_card"
             app:cardCornerRadius="@dimen/corner_card"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/agento_outline"
-            app:strokeWidth="1dp">
+            app:cardElevation="@dimen/card_elevation"
+            app:strokeWidth="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -226,9 +224,8 @@
             android:layout_marginTop="@dimen/space_m"
             app:cardBackgroundColor="@color/agento_surface_card"
             app:cardCornerRadius="@dimen/corner_card"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/agento_outline"
-            app:strokeWidth="1dp">
+            app:cardElevation="@dimen/card_elevation"
+            app:strokeWidth="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -267,9 +264,8 @@
             android:layout_marginTop="@dimen/space_m"
             app:cardBackgroundColor="@color/agento_surface_card"
             app:cardCornerRadius="@dimen/corner_card"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/agento_outline"
-            app:strokeWidth="1dp">
+            app:cardElevation="@dimen/card_elevation"
+            app:strokeWidth="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -362,9 +358,8 @@
             android:layout_marginBottom="@dimen/space_l"
             app:cardBackgroundColor="@color/agento_surface_card"
             app:cardCornerRadius="@dimen/corner_card"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/agento_outline"
-            app:strokeWidth="1dp">
+            app:cardElevation="@dimen/card_elevation"
+            app:strokeWidth="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -388,7 +383,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/clear_log_button"
-                        style="@style/Widget.Material3.Button.TextButton"
+                        style="@style/Widget.Agento.Button.Text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:minHeight="@dimen/touch_min"
