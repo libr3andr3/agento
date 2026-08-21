@@ -26,16 +26,37 @@ object PaymentDetector {
 
     /** Package → human label, for the log and the server's `source`. */
     val KNOWN: Map<String, String> = mapOf(
-        // Perú
+        // ---- Tier 1: launch markets (Perú, then Panamá #2, Colombia, Chile)
+        // Perú — Yape/Plin
         "com.bcp.innovacxion.yapeapp" to "Yape",
         "pe.com.interbank.mobilebanking" to "Interbank (Plin)",
         "com.bbva.nxt_peru" to "BBVA (Plin)",
         "pe.com.scotiabank.blpm.android.client" to "Scotiabank (Plin)",
-        // LatAm
-        "com.mercadopago.wallet" to "Mercado Pago",
+        // Panamá — Yappy (Banco General) is the rail; Nequi PA, Banistmo, BAC
+        "com.yappy" to "Yappy",
+        "com.bgeneral" to "Banco General",
+        "pa.com.nequi.MobileApp" to "Nequi Panamá",
+        "com.banistmo.transaccional.personas" to "Banistmo",
+        "net.bac.sbe.android" to "BAC Credomatic",
+        // Colombia — Nequi, Daviplata, Bre-B inside every bank app
         "com.nequi.MobileApp" to "Nequi",
-        "co.com.davivienda.daviplataapp" to "Daviplata",
-        "com.nu.production" to "Nubank",
+        "com.davivienda.daviplataapp" to "Daviplata",
+        "com.davivienda.daviviendaapp" to "Davivienda",
+        "co.com.bancolombia.personas.superapp" to "Mi Bancolombia",
+        "com.todo1.mobile" to "Bancolombia",
+        "com.bbva.bbvacolombia" to "BBVA Colombia",
+        "com.lulobank.lulo" to "Lulo Bank",
+        "com.nu.production" to "Nu",
+        // Chile — transferencia is king; BancoEstado, MACH, Tenpo, Mercado Pago
+        "net.veritran.becl.prod" to "BancoEstado",
+        "cl.bci.sismo.mach" to "MACH",
+        "cl.tenpo.app" to "Tenpo",
+        "cl.santander.smartphone" to "Santander Chile",
+        "cl.bancochile.mi_banco" to "Banco de Chile",
+        "com.mercadopago.wallet" to "Mercado Pago",
+
+        // ---- Tier 2: highest WhatsApp penetration worldwide (BR, IN, IT, ES, MX, ZA, AR, ID, NG…)
+        // Brasil — Pix
         "com.picpay" to "PicPay",
         "br.com.intermedium" to "Inter",
         "com.itau" to "Itaú",
@@ -43,16 +64,7 @@ object PaymentDetector {
         "com.bradesco" to "Bradesco",
         "br.com.gabba.Caixa" to "Caixa",
         "com.santander.app" to "Santander BR",
-        "com.bancoppel.bancoppel" to "BanCoppel",
-        "com.bbva.bbvacontigo" to "BBVA México",
-        "mx.bancoazteca.bazdigitalmovil" to "Banco Azteca",
-        "com.bancodechile.mobile" to "Banco de Chile",
-        "cl.tenpo.app" to "Tenpo",
-        "cl.bci.mach" to "MACH",
-        "com.bancogeneral.yappy" to "Yappy",
-        "com.ath.athmovil" to "ATH Móvil",
-        "uy.com.prex.prexapp" to "Prex",
-        // India
+        // India — UPI
         "com.phonepe.app" to "PhonePe",
         "com.google.android.apps.nbu.paisa.user" to "Google Pay",
         "net.one97.paytm" to "Paytm",
@@ -64,19 +76,35 @@ object PaymentDetector {
         "com.snapwork.hdfc" to "HDFC",
         "com.axis.mobile" to "Axis Mobile",
         "com.msf.kbank.mobile" to "Kotak",
-        // US / CA / EU / UK
-        "com.zellepay.zelle" to "Zelle",
-        "com.venmo" to "Venmo",
-        "com.squareup.cash" to "Cash App",
-        "com.paypal.android.p2pmobile" to "PayPal",
-        "com.chase.sig.android" to "Chase",
-        "com.infonow.bofa" to "Bank of America",
-        "com.wf.wellsfargomobile" to "Wells Fargo",
-        "com.revolut.revolut" to "Revolut",
-        "com.transferwise.android" to "Wise",
+        // Italia / España — Bizum, Satispay, PayPal
         "es.bizum.app" to "Bizum",
         "com.bbva.bbvacontigo.es" to "BBVA España",
         "es.lacaixa.mobile.android.newwapicon" to "CaixaBank",
+        "com.satispay.customer" to "Satispay",
+        "com.paypal.android.p2pmobile" to "PayPal",
+        "com.revolut.revolut" to "Revolut",
+        // México — SPEI / CoDi
+        "com.bancoppel.bancoppel" to "BanCoppel",
+        "com.bbva.bbvacontigo" to "BBVA México",
+        "mx.bancoazteca.bazdigitalmovil" to "Banco Azteca",
+        "com.banorte.mobile" to "Banorte",
+        // Argentina / Uruguay / Paraguay / Bolivia / Ecuador
+        "ar.com.santander.rio.mbanking" to "Santander Río",
+        "com.uala" to "Ualá",
+        "uy.com.prex.prexapp" to "Prex",
+        "py.com.tigo.money" to "Tigo Money",
+        "com.bancogeneral.yappy" to "Yappy (legacy)",
+        // US / CA / UK / DE
+        "com.zellepay.zelle" to "Zelle",
+        "com.venmo" to "Venmo",
+        "com.squareup.cash" to "Cash App",
+        "com.chase.sig.android" to "Chase",
+        "com.infonow.bofa" to "Bank of America",
+        "com.wf.wellsfargomobile" to "Wells Fargo",
+        "com.transferwise.android" to "Wise",
+        "com.monzo.android" to "Monzo",
+        "com.starlingbank.android" to "Starling",
+        // Europe instant rails
         "pt.sibs.android.mbway" to "MB WAY",
         "com.twint.payment" to "TWINT",
         "se.bankgirot.swish" to "Swish",
@@ -84,34 +112,33 @@ object PaymentDetector {
         "dk.danskebank.mobilepay" to "MobilePay",
         "com.blik.app" to "BLIK",
         "nl.abnamro.tikkie" to "Tikkie",
-        "com.monzo.android" to "Monzo",
-        "com.starlingbank.android" to "Starling",
-        // Asia / Africa
+        // Africa / Middle East
+        "com.safaricom.mpesa.lifestyle" to "M-PESA",
+        "team.opay.pay" to "OPay",
+        "com.transsnet.palmpay" to "PalmPay",
+        "com.stcpay.wallet" to "STC Pay",
+        "com.vodafone.cash" to "Vodafone Cash",
+        // Asia-Pacific
+        "id.dana" to "DANA",
+        "ovo.id" to "OVO",
+        "com.gojek.app" to "GoPay",
+        "com.globe.gcash.android" to "GCash",
+        "com.paymaya" to "Maya",
+        "com.grabtaxi.passenger" to "GrabPay",
+        "com.mservice.momotransfer" to "MoMo",
+        "vn.com.vng.zalopay" to "ZaloPay",
+        "com.bkash.customerapp" to "bKash",
+        "com.konasl.nagad" to "Nagad",
+        "com.techlogix.mobilinkcustomer" to "JazzCash",
+        "pk.com.telenor.phoenix" to "Easypaisa",
         "com.eg.android.AlipayGphone" to "Alipay",
         "com.tencent.mm" to "WeChat Pay",
         "jp.ne.paypay.android.app" to "PayPay",
         "com.kakao.talk" to "KakaoPay",
         "viva.republica.toss" to "Toss",
-        "com.globe.gcash.android" to "GCash",
-        "com.paymaya" to "Maya",
-        "com.gojek.app" to "GoPay",
-        "ovo.id" to "OVO",
-        "id.dana" to "DANA",
-        "com.mobile.legends.tng" to "Touch 'n Go",
-        "com.grabtaxi.passenger" to "GrabPay",
-        "com.mservice.momotransfer" to "MoMo",
-        "vn.com.vng.zalopay" to "ZaloPay",
-        "com.safaricom.mpesa.lifestyle" to "M-PESA",
-        "team.opay.pay" to "OPay",
-        "com.transsnet.palmpay" to "PalmPay",
-        "com.bkash.customerapp" to "bKash",
-        "com.konasl.nagad" to "Nagad",
-        "com.techlogix.mobilinkcustomer" to "JazzCash",
-        "pk.com.telenor.phoenix" to "Easypaisa",
-        "com.stcpay.wallet" to "STC Pay",
-        "com.getmoby" to "InstaPay EG",
-        "com.vodafone.cash" to "Vodafone Cash",
     )
+    // Any app NOT listed still gets through on the amount + credit-verb
+    // heuristic below — the list only lowers the bar, it never closes the door.
 
     private val SYSTEM_PREFIXES = listOf("android", "com.android.", "com.google.android.gms", "com.sec.android", "com.miui", "com.samsung")
 
