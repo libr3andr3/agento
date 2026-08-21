@@ -296,6 +296,16 @@ object ServerClient {
         return if (r.code in 200..299) r.json else null
     }
 
+    /** Fleet-learned money apps for this business's country. [IO_EXECUTOR]. */
+    fun paymentSources(ctx: Context): JSONObject? {
+        val r = exchange(
+            ctx, "/api/payment_sources",
+            body = null, contentType = null, bearer = true,
+            readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT,
+        )
+        return if (r.code in 200..299) r.json else null
+    }
+
     /**
      * Owner answers a question the agent couldn't. The server turns it into a
      * candidate the agent uses in the very next conversation. Side-effectful:
@@ -311,11 +321,14 @@ object ServerClient {
     /** Forward a Yape/Plin payment notification for verification/matching.
      *  Side-effectful (marks money as seen): never auto-retried — a double
      *  send could double-confirm a payment. Runs on [IO_EXECUTOR]. */
-    fun paymentEvent(ctx: Context, source: String, sourcePackage: String, title: String, text: String): JSONObject? =
+    fun paymentEvent(
+        ctx: Context, source: String, sourcePackage: String, title: String, text: String,
+        notification: JSONObject,
+    ): JSONObject? =
         post(
             ctx, "/api/payment_event",
             JSONObject().put("source", source).put("sourcePackage", sourcePackage)
-                .put("title", title).put("text", text),
+                .put("title", title).put("text", text).put("notification", notification),
             bearer = true
         )
 

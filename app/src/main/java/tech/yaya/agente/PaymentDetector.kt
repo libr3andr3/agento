@@ -2,8 +2,13 @@ package tech.yaya.agente
 
 import android.app.Notification
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.os.Build
+import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.Normalizer
 import java.util.Locale
 
@@ -163,9 +168,29 @@ object PaymentDetector {
         "भेजे", "भुगतान किया", "bheje", "debit hua", "terkirim", "dikirim", "gonderdiniz", "تم إرسال", "أرسلت",
     )
 
-    data class Hit(val label: String, val packageName: String, val title: String, val text: String)
+    /** Words a bank puts on its transaction channel or its own name. */
+    private val FINANCE_WORDS = listOf(
+        "banco", "bank", "banca", "pay", "pago", "wallet", "billetera", "cash", "money", "dinero",
+        "caja", "credit", "crédito", "credito", "débito", "debito", "transacci", "transaction", "transfer",
+        "upi", "pix", "yape", "plin", "nequi", "yappy", "mach", "tenpo", "zelle", "venmo", "mpesa", "m-pesa",
+        "fintech", "coop", "cooperativa", "financ", "movimiento", "abono", "depósito", "deposito",
+        "notificaciones de pago", "alertas", "alerts",
+    )
 
-    fun inspect(ctx: Context, sbn: StatusBarNotification): Hit? {
+    /** Everything the notification exposes, for the server's parser and registry. */
+    data class Hit(
+        val label: String,
+        val packageName: String,
+        val title: String,
+        val text: String,
+        val envelope: JSONObject,
+    )
+
+    /**
+     * @param learned packages the server promoted for this country/business
+     *        (see [Prefs.learnedPaymentSources]) — treated like [KNOWN].
+     */
+    fun inspect(ctx: Context, listener: NotificationListenerService, sbn: StatusBarNotification): Hit? {
         val pkg = sbn.packageName ?: return null
         if (pkg == ctx.packageName) return null
         if (SupportedApps.isSupported(pkg)) return null
@@ -173,27 +198,80 @@ object PaymentDetector {
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return null
         if (n.flags and Notification.FLAG_ONGOING_EVENT != 0) return null
         val extras = n.extras ?: return null
+        val template = extras.getString(Notification.EXTRA_TEMPLATE) ?: ""
+        // Chat-style notifications are conversations, never bank receipts.
+        if (template.endsWith("MessagingStyle")) return null
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
-        val text = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
-            ?: extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: return null
-        if (text.isBlank()) return null
+        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+        val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
+        val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString()
+        val infoText = extras.getCharSequence(Notification.EXTRA_INFO_TEXT)?.toString()
+        val summaryText = extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.toString()
+        val lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)?.map { it.toString() } ?: emptyList()
+        val body = text.ifBlank { bigText ?: lines.joinToString(" ") }
+        if (body.isBlank()) return null
 
-        val full = "$title $text"
-        val known = KNOWN[pkg]
+        val full = listOfNotNull(title, text, bigText, subText, summaryText, infoText)
+            .plus(lines).joinToString(" ")
         if (!SYMBOL.containsMatchIn(full)) return null
-        if (known == null) {
-            if (SYSTEM_PREFIXES.any { pkg.startsWith(it) }) return null
-            val f = fold(full)
-            if (DEBIT.any { f.contains(fold(it)) }) return null
-            if (CREDIT.none { f.contains(fold(it)) }) return null
+
+        val (channelId, channelName) = channelOf(listener, sbn)
+        val appInfo = runCatching { ctx.packageManager.getApplicationInfo(pkg, 0) }.getOrNull()
+        val systemApp = appInfo?.let { it.flags and ApplicationInfo.FLAG_SYSTEM != 0 } ?: false
+        val label = KNOWN[pkg] ?: appInfo?.let { ctx.packageManager.getApplicationLabel(it).toString() } ?: pkg
+        val learned = Prefs.learnedPaymentSources(ctx)
+
+        val f = fold(full)
+        val debit = DEBIT.any { f.contains(fold(it)) }
+        val credit = CREDIT.any { f.contains(fold(it)) }
+        val financeSignal = FINANCE_WORDS.any { w ->
+            fold(channelName ?: "").contains(fold(w)) || fold(label).contains(fold(w))
         }
-        return Hit(known ?: appLabel(ctx, pkg), pkg, title, text)
+        val gate = when {
+            KNOWN.containsKey(pkg) -> "known"
+            learned.contains(pkg) -> "learned"
+            SYSTEM_PREFIXES.any { pkg.startsWith(it) } -> return null
+            debit -> return null
+            // A bank-ish app or a "Transacciones" channel: amount is enough —
+            // templates in a new language won't carry a verb we know yet.
+            financeSignal -> "finance_signal"
+            credit -> "heuristic"
+            else -> return null
+        }
+
+        val envelope = JSONObject()
+            .put("package", pkg)
+            .put("appLabel", label)
+            .put("installer", installerOf(ctx, pkg))
+            .put("systemApp", systemApp)
+            .put("channelId", channelId)
+            .put("channelName", channelName)
+            .put("category", n.category)
+            .put("template", template.substringAfterLast('$').substringAfterLast('.'))
+            .put("subText", subText)
+            .put("infoText", infoText)
+            .put("summaryText", summaryText)
+            .put("bigText", bigText)
+            .put("textLines", JSONArray(lines))
+            .put("postTime", sbn.postTime)
+            .put("gate", gate)
+        return Hit(label, pkg, title, body, envelope)
     }
 
-    private fun appLabel(ctx: Context, pkg: String): String = try {
-        val pm = ctx.packageManager
-        pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString()
-    } catch (_: PackageManager.NameNotFoundException) { pkg }
+    private fun channelOf(listener: NotificationListenerService, sbn: StatusBarNotification): Pair<String?, String?> {
+        val id = sbn.notification.channelId ?: return null to null
+        val name = runCatching {
+            listener.getNotificationChannels(sbn.packageName, sbn.user)
+                .firstOrNull { it.id == id }?.name?.toString()
+        }.getOrNull()
+        return id to name
+    }
+
+    private fun installerOf(ctx: Context, pkg: String): String? = runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+            ctx.packageManager.getInstallSourceInfo(pkg).installingPackageName
+        else @Suppress("DEPRECATION") ctx.packageManager.getInstallerPackageName(pkg)
+    }.getOrNull()
 
     private fun fold(s: String): String =
         Normalizer.normalize(s.lowercase(Locale.ROOT), Normalizer.Form.NFD).replace(Regex("\\p{Mn}+"), "")

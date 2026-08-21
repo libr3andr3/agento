@@ -75,6 +75,34 @@ object Prefs {
         }
     }
 
+    // ------------------------------------------------------------ learned payment sources
+
+    private const val LEARNED_TTL_MS = 6 * 60 * 60 * 1000L
+
+    /** Packages the server promoted as money apps (cached; refreshed by [refreshLearnedSources]). */
+    fun learnedPaymentSources(ctx: Context): Set<String> =
+        sp(ctx).getStringSet("learned_pay_sources", emptySet()) ?: emptySet()
+
+    fun learnedSourcesStale(ctx: Context): Boolean =
+        System.currentTimeMillis() - sp(ctx).getLong("learned_pay_sources_at", 0L) > LEARNED_TTL_MS
+
+    fun invalidateLearnedSources(ctx: Context) =
+        sp(ctx).edit().putLong("learned_pay_sources_at", 0L).apply()
+
+    /** Pulls the list if stale. Network: call from [ServerClient.IO_EXECUTOR]. */
+    fun refreshLearnedSources(ctx: Context, force: Boolean = false) {
+        if (!force && !learnedSourcesStale(ctx)) return
+        if (!serverConfigured(ctx)) return
+        val resp = ServerClient.paymentSources(ctx) ?: return
+        val arr = resp.optJSONArray("sources") ?: return
+        val pkgs = HashSet<String>()
+        for (i in 0 until arr.length()) arr.optJSONObject(i)?.optString("package")?.takeIf { it.isNotBlank() }?.let { pkgs.add(it) }
+        sp(ctx).edit()
+            .putStringSet("learned_pay_sources", pkgs)
+            .putLong("learned_pay_sources_at", System.currentTimeMillis())
+            .apply()
+    }
+
     // ------------------------------------------------------------ server sync
 
     fun serverUrl(ctx: Context): String =
@@ -136,6 +164,7 @@ object Prefs {
             .remove("dash_cache")
             .remove("chat_transcript")
             .remove("loc_country").remove("loc_currency").remove("loc_symbol").remove("loc_language")
+            .remove("learned_pay_sources").remove("learned_pay_sources_at")
             .apply()
     }
 

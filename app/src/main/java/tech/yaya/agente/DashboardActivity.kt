@@ -241,6 +241,7 @@ class DashboardActivity : AppCompatActivity() {
                 lastFetchOk = data != null
                 if (data != null) {
                     Prefs.setDashboardCache(this, data.toString())
+                    ServerClient.IO_EXECUTOR.execute { runCatching { Prefs.refreshLearnedSources(applicationContext) } }
                     render(data)
                 } else {
                     // Keep identity + cached content; the chip explains.

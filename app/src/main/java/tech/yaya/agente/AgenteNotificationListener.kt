@@ -32,6 +32,7 @@ class AgenteNotificationListener : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         Log.i(TAG, "listener connected")
+        ServerClient.IO_EXECUTOR.execute { runCatching { Prefs.refreshLearnedSources(applicationContext) } }
     }
 
     /**
@@ -67,7 +68,7 @@ class AgenteNotificationListener : NotificationListenerService() {
         val ctx = applicationContext
         if (!Prefs.isEnabled(ctx)) return
 
-        PaymentDetector.inspect(ctx, sbn)?.let { hit ->
+        PaymentDetector.inspect(ctx, this, sbn)?.let { hit ->
             handlePaymentNotification(hit, sbn)
             return
         }
@@ -168,7 +169,9 @@ class AgenteNotificationListener : NotificationListenerService() {
         }
         ServerClient.IO_EXECUTOR.execute {
             try {
-                val resp = ServerClient.paymentEvent(ctx, app.displayName, app.packageName, title, text)
+                val resp = ServerClient.paymentEvent(ctx, app.displayName, app.packageName, title, text, hit.envelope)
+                // A new bank just earned fleet-wide trust: refresh the learned list now.
+                if (resp?.optBoolean("sourcePromoted") == true) Prefs.invalidateLearnedSources(ctx)
                 val detail = when {
                     resp == null -> ctx.getString(R.string.log_payment_unreachable)
                     !resp.isNull("matchedAppointment") ->
