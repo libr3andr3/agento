@@ -117,12 +117,15 @@ object UpdateCheck {
     fun checkInBackground(ctx: Context) {
         val u = available(ctx, allowNetwork = true) ?: return
         if (Prefs.sp(ctx).getLong("update_notified_code", 0L) >= u.versionCode) return
-        Prefs.sp(ctx).edit().putLong("update_notified_code", u.versionCode).apply()
-        notifyAvailable(ctx, u)
+        // Marked only once actually posted: without POST_NOTIFICATIONS yet
+        // (fresh install) we must retry on the next reconnect, not give up.
+        if (notifyAvailable(ctx, u)) {
+            Prefs.sp(ctx).edit().putLong("update_notified_code", u.versionCode).apply()
+        }
     }
 
-    private fun notifyAvailable(ctx: Context, u: Update) {
-        if (!OwnerAlerts.canPost(ctx)) return
+    private fun notifyAvailable(ctx: Context, u: Update): Boolean {
+        if (!OwnerAlerts.canPost(ctx)) return false
         val nm = ctx.getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL, ctx.getString(R.string.update_channel), NotificationManager.IMPORTANCE_DEFAULT)
@@ -141,6 +144,7 @@ object UpdateCheck {
             .setAutoCancel(true)
             .setContentIntent(pi)
             .build())
+        return true
     }
 
     // ------------------------------------------------------------ download + install
