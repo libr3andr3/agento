@@ -133,6 +133,64 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
+                <!-- Update banner: a newer APK is published on agento.ceo. -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/update_banner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_s"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/agento_secondary_container"
+                    app:cardCornerRadius="@dimen/corner_card"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_m">
+
+                        <TextView
+                            android:id="@+id/update_banner_title"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="@color/agento_on_secondary_container" />
+
+                        <TextView
+                            android:id="@+id/update_banner_notes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="@color/agento_on_secondary_container" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_s"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/update_button"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minHeight="@dimen/touch_min"
+                                android:text="@string/update_install" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/update_later_button"
+                                style="@style/Widget.Agento.Button.Text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/space_s"
+                                android:minHeight="@dimen/touch_min"
+                                android:text="@string/update_later" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
                 <!-- Trial banner: secondary_container while active,
                      error_container once expired (bound in code). -->
                 <com.google.android.material.card.MaterialCardView

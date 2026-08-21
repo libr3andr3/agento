@@ -6,4 +6,17 @@
     <string name="dash_offline_chip">Offline · swipe to refresh</string>
     <string name="dash_agent_switch_desc">Turn the agent on or off</string>
     <string name="dash_status_desc">Agent status</string>
+
+    <!-- Self-hosted update channel -->
+    <string name="update_channel">agento updates</string>
+    <string name="update_available_title">New version %1$s available</string>
+    <string name="update_required_title">Update required (v%1$s)</string>
+    <string name="update_tap_to_install">Tap to install the latest version.</string>
+    <string name="update_install">Update</string>
+    <string name="update_later">Later</string>
+    <string name="update_downloading">Downloading agento %1$s…</string>
+    <string name="update_size">%1$s MB</string>
+    <string name="update_required_body">This version no longer works with the server. Update to keep serving your customers.</string>
+    <string name="update_perm_needed">Allow agento to install updates, then tap Update again.</string>
+    <string name="update_started">Downloading… we\'ll let you know when it\'s ready to install.</string>
 </resources>

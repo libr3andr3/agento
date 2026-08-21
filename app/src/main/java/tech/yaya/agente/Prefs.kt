@@ -12,7 +12,7 @@ object Prefs {
     private const val KEY_COOLDOWN_MIN = "cooldown_minutes"
     private const val KEY_REPLY_GROUPS = "reply_to_groups"
 
-    private fun sp(ctx: Context): SharedPreferences =
+    internal fun sp(ctx: Context): SharedPreferences =
         ctx.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     fun isEnabled(ctx: Context) = sp(ctx).getBoolean(KEY_ENABLED, false)

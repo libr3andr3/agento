@@ -7,4 +7,17 @@
     <string name="dash_offline_chip">Sin conexión · desliza para actualizar</string>
     <string name="dash_agent_switch_desc">Encender o apagar el agente</string>
     <string name="dash_status_desc">Estado del agente</string>
+
+    <!-- Self-hosted update channel -->
+    <string name="update_channel">Actualizaciones de agento</string>
+    <string name="update_available_title">Nueva versión %1$s disponible</string>
+    <string name="update_required_title">Actualización requerida (v%1$s)</string>
+    <string name="update_tap_to_install">Toca para instalar la última versión.</string>
+    <string name="update_install">Actualizar</string>
+    <string name="update_later">Luego</string>
+    <string name="update_downloading">Descargando agento %1$s…</string>
+    <string name="update_size">%1$s MB</string>
+    <string name="update_required_body">Esta versión ya no es compatible con el servidor. Actualiza para seguir atendiendo a tus clientes.</string>
+    <string name="update_perm_needed">Permite a agento instalar actualizaciones y vuelve a tocar Actualizar.</string>
+    <string name="update_started">Descargando… te avisamos cuando esté lista para instalar.</string>
 </resources>

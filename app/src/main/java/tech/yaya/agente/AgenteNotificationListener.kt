@@ -32,7 +32,10 @@ class AgenteNotificationListener : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         Log.i(TAG, "listener connected")
-        ServerClient.IO_EXECUTOR.execute { runCatching { Prefs.refreshLearnedSources(applicationContext) } }
+        ServerClient.IO_EXECUTOR.execute {
+            runCatching { Prefs.refreshLearnedSources(applicationContext) }
+            runCatching { UpdateCheck.checkInBackground(applicationContext) }
+        }
     }
 
     /**

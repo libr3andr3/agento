@@ -8,6 +8,8 @@
     <!-- Xiaomi/Huawei & friends kill background listeners; we ask the user to
          exempt agente so the notification listener survives. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Self-hosted update channel: hand a downloaded APK to the installer. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Android 11+ package visibility: Settings shows which supported chat
          apps are actually installed, which needs an explicit allowlist to
@@ -81,6 +83,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Update channel: DownloadManager finished fetching a new APK. -->
+        <receiver
+            android:name=".DownloadReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
+            </intent-filter>
+        </receiver>
 
         <service
             android:name=".AgenteNotificationListener"

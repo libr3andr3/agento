@@ -37,7 +37,7 @@ object OwnerAlerts {
         )
     }
 
-    private fun canPost(ctx: Context): Boolean =
+    fun canPost(ctx: Context): Boolean =
         Build.VERSION.SDK_INT < 33 ||
             ctx.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED

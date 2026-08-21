@@ -91,6 +91,7 @@ class DashboardActivity : AppCompatActivity() {
         refreshStatus(lastFetchOk)
         load()
         maybeAskBatteryExemption()
+        refreshUpdateBanner()
         maybeAskNotifPermission()
     }
 
@@ -154,6 +155,53 @@ class DashboardActivity : AppCompatActivity() {
     private fun styleChip(chip: Chip, bgRes: Int, fgRes: Int) {
         chip.chipBackgroundColor = ColorStateList.valueOf(getColor(bgRes))
         chip.setTextColor(getColor(fgRes))
+    }
+
+    /**
+     * Self-hosted update banner: cached manifest renders instantly, a stale
+     * one refreshes off-thread and re-renders. Below minVersionCode the
+     * "Luego" button disappears — the server will stop talking to this build.
+     */
+    private fun refreshUpdateBanner() {
+        bindUpdateBanner(UpdateCheck.available(this, allowNetwork = false))
+        if (UpdateCheck.stale(this)) {
+            ServerClient.IO_EXECUTOR.execute {
+                val u = UpdateCheck.available(this, allowNetwork = true)
+                runOnUiThread { if (!isFinishing) bindUpdateBanner(u) }
+            }
+        }
+    }
+
+    private fun bindUpdateBanner(u: UpdateCheck.Update?) {
+        val banner = findViewById<MaterialCardView>(R.id.update_banner)
+        if (u == null || (UpdateCheck.dismissed(this, u) && !u.mandatoryFor(UpdateCheck.installedVersionCode(this)))) {
+            banner.visibility = View.GONE
+            return
+        }
+        val mandatory = u.mandatoryFor(UpdateCheck.installedVersionCode(this))
+        banner.visibility = View.VISIBLE
+        banner.setCardBackgroundColor(getColor(
+            if (mandatory) R.color.agento_error_container else R.color.agento_secondary_container))
+        val tint = getColor(if (mandatory) R.color.agento_error else R.color.agento_on_secondary_container)
+        val title = findViewById<TextView>(R.id.update_banner_title)
+        val notes = findViewById<TextView>(R.id.update_banner_notes)
+        title.setTextColor(tint); notes.setTextColor(tint)
+        title.text = getString(if (mandatory) R.string.update_required_title else R.string.update_available_title, u.version)
+        val size = if (u.sizeMb > 0) " · " + getString(R.string.update_size, String.format(Locale.US, "%.1f", u.sizeMb)) else ""
+        notes.text = (if (mandatory) getString(R.string.update_required_body) else (u.notes ?: getString(R.string.update_tap_to_install))) + size
+        val later = findViewById<View>(R.id.update_later_button)
+        later.visibility = if (mandatory) View.GONE else View.VISIBLE
+        later.setOnClickListener { UpdateCheck.dismiss(this, u); banner.visibility = View.GONE }
+        findViewById<View>(R.id.update_button).setOnClickListener {
+            if (!UpdateCheck.canInstall(this)) {
+                android.widget.Toast.makeText(this, R.string.update_perm_needed, android.widget.Toast.LENGTH_LONG).show()
+                UpdateCheck.openInstallPermission(this)
+                return@setOnClickListener
+            }
+            if (UpdateCheck.download(this, u)) {
+                android.widget.Toast.makeText(this, R.string.update_started, android.widget.Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     /**
