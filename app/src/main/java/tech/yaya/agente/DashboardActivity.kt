@@ -252,9 +252,7 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun soles(v: Double): String =
-        if (v == v.toLong().toDouble()) "S/ ${v.toLong()}"
-        else String.format(Locale.US, "S/ %.2f", v)
+    private fun soles(v: Double): String = Prefs.money(this, v)
 
     private fun inflateIn(layoutRes: Int, parent: ViewGroup): View =
         layoutInflater.inflate(layoutRes, parent, false)
@@ -266,6 +264,7 @@ class DashboardActivity : AppCompatActivity() {
         }
 
     private fun render(d: JSONObject) {
+        d.optJSONObject("locale")?.let { Prefs.setLocale(this, it) }
         businessName.text = d.optString("businessName", getString(R.string.app_name))
         trial = d.optJSONObject("trial")
         val e = d.optJSONObject("earnings") ?: JSONObject()

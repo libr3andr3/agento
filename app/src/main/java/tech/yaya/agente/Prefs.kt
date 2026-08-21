@@ -45,6 +45,36 @@ object Prefs {
     fun setReplyToGroups(ctx: Context, on: Boolean) =
         sp(ctx).edit().putBoolean(KEY_REPLY_GROUPS, on).apply()
 
+    // ------------------------------------------------------------ locale
+
+    /** Server-declared locale for this business (registration + dashboard). */
+    fun setLocale(ctx: Context, locale: org.json.JSONObject?, fallbackCountry: String? = null) {
+        val e = sp(ctx).edit()
+        val country = locale?.optString("country").takeIf { !it.isNullOrBlank() } ?: fallbackCountry
+        country?.let { e.putString("loc_country", it) }
+        locale?.optString("currency")?.takeIf { it.isNotBlank() }?.let { e.putString("loc_currency", it) }
+        locale?.optString("currencySymbol")?.let { e.putString("loc_symbol", it) }
+        locale?.optString("language")?.takeIf { it.isNotBlank() }?.let { e.putString("loc_language", it) }
+        e.apply()
+    }
+    fun country(ctx: Context): String = sp(ctx).getString("loc_country", "PE") ?: "PE"
+    fun currencyCode(ctx: Context): String = sp(ctx).getString("loc_currency", "PEN") ?: "PEN"
+    /** Symbol may legitimately be empty (unknown country): callers then show the code. */
+    fun currencySymbol(ctx: Context): String =
+        sp(ctx).getString("loc_symbol", null) ?: if (sp(ctx).contains("loc_currency")) "" else "S/"
+
+    /** "S/ 50", "₹ 1,200.50", "50 USD" — money the way this business counts it. */
+    fun money(ctx: Context, v: Double): String {
+        val n = if (v == v.toLong().toDouble()) "${v.toLong()}"
+                else String.format(java.util.Locale.US, "%.2f", v)
+        val sym = currencySymbol(ctx)
+        return when {
+            sym.isNotEmpty() -> "$sym $n"
+            currencyCode(ctx).isNotEmpty() -> "$n ${currencyCode(ctx)}"
+            else -> n
+        }
+    }
+
     // ------------------------------------------------------------ server sync
 
     fun serverUrl(ctx: Context): String =
@@ -105,6 +135,7 @@ object Prefs {
             .remove("business_id")
             .remove("dash_cache")
             .remove("chat_transcript")
+            .remove("loc_country").remove("loc_currency").remove("loc_symbol").remove("loc_language")
             .apply()
     }
 

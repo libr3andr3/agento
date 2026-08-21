@@ -11,8 +11,8 @@ android {
         applicationId = "tech.yaya.agente.replies"
         minSdk = 26
         targetSdk = 36
-        versionCode = 23
-        versionName = "0.15.0"
+        versionCode = 24
+        versionName = "0.16.0"
 
         // Client API key: supplied per-build, never committed.
         val appKey = System.getenv("AGENTO_APP_KEY")

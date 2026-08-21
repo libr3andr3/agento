@@ -311,10 +311,11 @@ object ServerClient {
     /** Forward a Yape/Plin payment notification for verification/matching.
      *  Side-effectful (marks money as seen): never auto-retried — a double
      *  send could double-confirm a payment. Runs on [IO_EXECUTOR]. */
-    fun paymentEvent(ctx: Context, source: String, title: String, text: String): JSONObject? =
+    fun paymentEvent(ctx: Context, source: String, sourcePackage: String, title: String, text: String): JSONObject? =
         post(
             ctx, "/api/payment_event",
-            JSONObject().put("source", source).put("title", title).put("text", text),
+            JSONObject().put("source", source).put("sourcePackage", sourcePackage)
+                .put("title", title).put("text", text),
             bearer = true
         )
 
@@ -350,7 +351,7 @@ object ServerClient {
      */
     fun onboardBusiness(
         ctx: Context, name: String, industry: String, ownerPhone: String,
-        verificationToken: String? = null
+        country: String, verificationToken: String? = null
     ): JSONObject? =
         post(
             ctx, "/api/onboard_business",
@@ -358,6 +359,7 @@ object ServerClient {
                 .put("businessName", name)
                 .put("industry", industry)
                 .put("ownerPhone", ownerPhone)
+                .put("country", country)
                 .apply { verificationToken?.let { put("verificationToken", it) } },
             bearer = false
         )

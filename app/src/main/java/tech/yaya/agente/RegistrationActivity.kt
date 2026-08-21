@@ -47,7 +47,7 @@ class RegistrationActivity : AppCompatActivity() {
 
     // ------------------------------------------------------------------ state
     private var step = 1
-    private var country: Country = Countries.DEFAULT
+    private lateinit var country: Country
     private var fullPhone = ""          // E.164, composed when step 2 submits
     private var resendDeadline = 0L     // wall-clock millis; 0 = no countdown
     private var busy = false
@@ -96,6 +96,9 @@ class RegistrationActivity : AppCompatActivity() {
             override fun handleOnBackPressed() = stepBack()
         })
 
+        // The picker opens on the phone's own country (SIM, then network,
+        // then system locale) — the owner confirms rather than searches.
+        country = Countries.defaultFor(this)
         savedInstanceState?.let {
             country = Countries.byIso(it.getString("iso"))
             fullPhone = it.getString("phone", "")
@@ -401,13 +404,14 @@ class RegistrationActivity : AppCompatActivity() {
         val name = nameInput.text?.toString()?.trim().orEmpty()
         val industry = industryInput.text?.toString()?.trim().orEmpty()
         ServerClient.IO_EXECUTOR.execute {
-            val resp = ServerClient.onboardBusiness(this, name, industry, fullPhone, verificationToken)
+            val resp = ServerClient.onboardBusiness(this, name, industry, fullPhone, country.iso, verificationToken)
             runOnUiThread {
                 if (my != seq || isFinishing) return@runOnUiThread
                 val deviceToken = resp?.optString("deviceToken").orEmpty()
                 if (deviceToken.isNotEmpty()) {
                     Prefs.setDeviceToken(this, deviceToken)
                     Prefs.setBusinessId(this, resp!!.optString("businessId"))
+                    Prefs.setLocale(this, resp.optJSONObject("locale"), fallbackCountry = country.iso)
                     // The interview's opening line rides the registration
                     // response; without seeding it the chat opened silent and
                     // the owner stared at an agent that never spoke first.

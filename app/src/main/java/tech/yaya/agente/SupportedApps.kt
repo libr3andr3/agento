@@ -35,17 +35,4 @@ object SupportedApps {
     fun isSupported(packageName: String): Boolean = byPackage.containsKey(packageName)
 }
 
-/**
- * Payment apps whose notifications we parse (never reply to) so the server
- * can verify that a customer's Yape/Plin transfer actually arrived.
- */
-object PaymentApps {
-    val ALL = listOf(
-        SupportedApp("com.bcp.innovacxion.yapeapp", "Yape"),
-        SupportedApp("pe.com.interbank.mobilebanking", "Interbank (Plin)"),
-        SupportedApp("com.bbva.nxt_peru", "BBVA (Plin)"),
-        SupportedApp("pe.com.scotiabank.blpm.android.client", "Scotiabank (Plin)")
-    )
-    private val byPackage = ALL.associateBy { it.packageName }
-    fun get(packageName: String): SupportedApp? = byPackage[packageName]
-}
+// Payment notifications: see PaymentDetector (any bank/wallet, any country).

@@ -820,7 +820,7 @@ class OnboardingActivity : AppCompatActivity() {
                     val item = items?.optJSONObject(i) ?: continue
                     if (preview.isNotEmpty()) preview.append(", ")
                     preview.append(item.optString("name"))
-                        .append(" S/").append(item.optString("price"))
+                        .append(" ").append(Prefs.money(this, item.optDouble("price", 0.0)))
                 }
                 if (total > 3) preview.append(", …")
                 val note = resp.json.optString("note").takeIf { it.isNotEmpty() }

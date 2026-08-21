@@ -67,8 +67,8 @@ class AgenteNotificationListener : NotificationListenerService() {
         val ctx = applicationContext
         if (!Prefs.isEnabled(ctx)) return
 
-        PaymentApps.get(sbn.packageName)?.let { payApp ->
-            handlePaymentNotification(payApp, sbn)
+        PaymentDetector.inspect(ctx, sbn)?.let { hit ->
+            handlePaymentNotification(hit, sbn)
             return
         }
 
@@ -146,16 +146,11 @@ class AgenteNotificationListener : NotificationListenerService() {
         log(app, parsed, sent = ok, detail = if (ok) replyText else ctx.getString(R.string.log_send_failed))
     }
 
-    /** Yape/Plin: parse and forward to the server for payment matching. */
-    private fun handlePaymentNotification(app: SupportedApp, sbn: StatusBarNotification) {
-        val n = sbn.notification ?: return
-        if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
-        if (n.flags and Notification.FLAG_ONGOING_EVENT != 0) return
-        val extras = n.extras ?: return
-        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
-        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
-            ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: return
-        if (text.isBlank()) return
+    /** Any bank/wallet "money arrived": forward to the server for payment matching. */
+    private fun handlePaymentNotification(hit: PaymentDetector.Hit, sbn: StatusBarNotification) {
+        val app = SupportedApp(hit.packageName, hit.label)
+        val title = hit.title
+        val text = hit.text
 
         val identity = "${sbn.key}|$title|${text.hashCode()}"
         val now = System.currentTimeMillis()
@@ -173,7 +168,7 @@ class AgenteNotificationListener : NotificationListenerService() {
         }
         ServerClient.IO_EXECUTOR.execute {
             try {
-                val resp = ServerClient.paymentEvent(ctx, app.displayName, title, text)
+                val resp = ServerClient.paymentEvent(ctx, app.displayName, app.packageName, title, text)
                 val detail = when {
                     resp == null -> ctx.getString(R.string.log_payment_unreachable)
                     !resp.isNull("matchedAppointment") ->

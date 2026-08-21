@@ -115,6 +115,21 @@ object Countries {
 
     fun byIso(iso: String?): Country = ALL.firstOrNull { it.iso == iso } ?: DEFAULT
 
+    /**
+     * The country this phone most likely lives in: SIM country, then the
+     * network's, then the system locale's region. Falls back to [DEFAULT]
+     * only when none of them names a country on the list.
+     */
+    fun defaultFor(ctx: android.content.Context): Country {
+        val tm = ctx.getSystemService(android.content.Context.TELEPHONY_SERVICE)
+            as? android.telephony.TelephonyManager
+        val candidates = listOfNotNull(
+            tm?.simCountryIso, tm?.networkCountryIso,
+            ctx.resources.configuration.locales[0]?.country
+        ).map { it.uppercase(Locale.US) }.filter { it.length == 2 }
+        return candidates.firstNotNullOfOrNull { iso -> ALL.firstOrNull { it.iso == iso } } ?: DEFAULT
+    }
+
     /** Accent-insensitive lowercase for search ("peru" finds "Perú"). */
     private fun fold(s: String): String =
         Normalizer.normalize(s.lowercase(Locale("es")), Normalizer.Form.NFD)

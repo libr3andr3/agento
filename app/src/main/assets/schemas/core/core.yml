@@ -2,13 +2,15 @@
 # Never edited per-client. Bundles extend it; client patches override values.
 version: 1
 defaults:
-  timezone: America/Lima          # IANA zone; all stored times are UTC, this is the display/parse zone
+  # timezone / currency / language / paymentRails are NOT listed here: they come
+  # from the business's registration country (see src/locale.rs) and are mounted
+  # between these defaults and the owner's patch, so any of them can be overridden.
   slotDuration: 30
   cancellationNoticeMins: 60
   maxAdvanceBookingDays: 30
   walkInsAllowed: true
-  paymentMethod: atVisit          # upfront | atVisit | yape
-  bookingDeposit: null            # fixed soles to reserve; null = no deposit
+  paymentMethod: atVisit          # upfront | atVisit | transfer (legacy: yape)
+  bookingDeposit: null            # fixed amount (business currency) to reserve; null = no deposit
 fields:
   businessKind:
     type: "enum[services|products|both]"
@@ -35,9 +37,9 @@ fields:
     ask_in_onboarding: false
     question_es: "¿Necesitas el correo del cliente para agendar? (reuniones virtuales, confirmaciones por email)"
   paymentMethod:
-    type: "enum[upfront|atVisit|yape]"
+    type: "enum[upfront|atVisit|transfer]"
     ask_in_onboarding: true
-    question_es: "¿Cobran por adelantado, en la visita, o por Yape/Plin?"
+    question_es: "¿Cobran por adelantado, en la visita, o por transferencia (Yape/Plin o el equivalente local)?"
   bookingDeposit:
     type: "money | null"
     ask_in_onboarding: true
@@ -53,4 +55,19 @@ fields:
     ask_in_onboarding: false
   timezone:
     type: "iana-timezone"
+    ask_in_onboarding: false
+  language:
+    type: "bcp47-language"
+    ask_in_onboarding: false
+  currency:
+    type: "iso4217"
+    ask_in_onboarding: false
+  currencySymbol:
+    type: "string"
+    ask_in_onboarding: false
+  paymentRails:
+    type: "string"
+    ask_in_onboarding: false
+  country:
+    type: "iso3166-alpha2"
     ask_in_onboarding: false

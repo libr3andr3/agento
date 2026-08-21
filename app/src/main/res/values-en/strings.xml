@@ -2,7 +2,7 @@
 <resources>
     <string name="app_subtitle">Your AI receptionist for WhatsApp and Instagram</string>
 
-    <string name="welcome_tagline">agento answers your WhatsApp, books appointments and collects Yape payments — for you.</string>
+    <string name="welcome_tagline">agento answers your WhatsApp, books appointments and collects payments — for you.</string>
     <string name="welcome_cta">Create my agent</string>
 
     <string name="permission_banner_text">To reply for you, agento needs to read your notifications. Nothing leaves your phone: replies go out through each app\'s own reply button.</string>
