@@ -50,6 +50,9 @@ object AgentoCore {
             } else {
                 lastError = null
                 Log.i(TAG, "core ${version()} listening on 127.0.0.1:$code")
+                // Measured boot, off this thread: the core is up, so it can
+                // answer /api/agent; the chain goes back to it when ready.
+                Thread({ DeviceAttestation.ensure(app) }, "agento-attest").start()
                 code
             }
         } catch (e: Throwable) {
