@@ -8,7 +8,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "tech.yaya.agente.replies"
+        applicationId = "yaya.tech.agento"
         minSdk = 26
         targetSdk = 36
         versionCode = 29
