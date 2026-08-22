@@ -8,6 +8,7 @@
 # entry, so nothing in our code references the constructor. Without this it
 # would be shrunk away and auto-reply would silently stop working.
 -keep class tech.yaya.agente.AgenteNotificationListener { *; }
+-keep class tech.yaya.agente.DownloadReceiver { *; }
 
 # Keystore-backed crypto is reached through JCA provider names, not direct
 # references.

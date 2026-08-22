@@ -11,8 +11,8 @@ android {
         applicationId = "tech.yaya.agente.replies"
         minSdk = 26
         targetSdk = 36
-        versionCode = 28
-        versionName = "0.18.1"
+        versionCode = 29
+        versionName = "1.0.0"
 
         // Client API key: supplied per-build, never committed.
         val appKey = System.getenv("AGENTO_APP_KEY")
@@ -25,8 +25,44 @@ android {
         buildConfig = true
     }
 
+    // Distribution channel. `direct` = APK from agento.ceo with the
+    // self-hosted update channel (needs REQUEST_INSTALL_PACKAGES, which Play
+    // policy forbids for an app like this). `play` = Google Play build: no
+    // install permission, Play handles updates. Same applicationId — a phone
+    // carries one or the other, never both.
+    flavorDimensions += "channel"
+    productFlavors {
+        create("direct") {
+            dimension = "channel"
+            buildConfigField("boolean", "SELF_UPDATE", "true")
+        }
+        create("play") {
+            dimension = "channel"
+            buildConfigField("boolean", "SELF_UPDATE", "false")
+        }
+    }
+
+    // Upload key for Play (and any release build). Lives OUTSIDE the repo:
+    // ~/.agento/keystore.env exports AGENTO_KEYSTORE / _PASS / _ALIAS / KEY_PASS.
+    // Without them a release build is unsigned (Play rejects it) but still
+    // compiles, so CI and contributors are not blocked.
+    signingConfigs {
+        create("upload") {
+            val ks = System.getenv("AGENTO_KEYSTORE")
+            if (ks != null) {
+                storeFile = file(ks)
+                storePassword = System.getenv("AGENTO_KEYSTORE_PASS")
+                keyAlias = System.getenv("AGENTO_KEY_ALIAS") ?: "agento-upload"
+                keyPassword = System.getenv("AGENTO_KEY_PASS")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (System.getenv("AGENTO_KEYSTORE") != null) {
+                signingConfig = signingConfigs.getByName("upload")
+            }
             // Shrinking does not make APP_KEY secret — nothing in a client
             // binary can be — but it removes the trivial `strings`-and-read
             // path, and a release build should be minified regardless.
