@@ -110,6 +110,25 @@ object Prefs {
 
     private const val DEFAULT_SERVER = "https://agento.ceo"
 
+    // ------------------------------------------------------------ AI engine
+    //
+    // The agent runs on the phone; only the language model is remote. Blank
+    // = the yaya.tech gateway (free tier, authenticated by the agent's own
+    // identity). Owners who want full sovereignty point this at any
+    // OpenAI-compatible endpoint with their own key — even one on their LAN.
+
+    fun llmBaseUrl(ctx: Context): String = sp(ctx).getString("llm_base_url", "") ?: ""
+    fun llmApiKey(ctx: Context): String = SecureStore.getString(sp(ctx), "llm_api_key_enc") ?: ""
+    fun llmModel(ctx: Context): String = sp(ctx).getString("llm_model", "") ?: ""
+    fun setLlm(ctx: Context, baseUrl: String, apiKey: String, model: String) {
+        sp(ctx).edit()
+            .putString("llm_base_url", baseUrl.trim().trimEnd('/'))
+            .putString("llm_model", model.trim())
+            .apply()
+        SecureStore.putString(sp(ctx), "llm_api_key_enc", apiKey.trim())
+    }
+    fun llmIsCustom(ctx: Context) = llmBaseUrl(ctx).isNotBlank() || llmApiKey(ctx).isNotBlank()
+
     /**
      * Rejects anything that isn't HTTPS and reports whether it took the value.
      * The device token, every customer conversation, and the payment feed all

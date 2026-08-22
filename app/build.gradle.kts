@@ -6,13 +6,14 @@ plugins {
 android {
     namespace = "tech.yaya.agente"
     compileSdk = 36
+    ndkVersion = "27.2.12479018"
 
     defaultConfig {
         applicationId = "yaya.tech.agento"
         minSdk = 26
         targetSdk = 36
-        versionCode = 30
-        versionName = "1.0.1"
+        versionCode = 32
+        versionName = "1.2.0"
 
         // Client API key: supplied per-build, never committed.
         val appKey = System.getenv("AGENTO_APP_KEY")
@@ -24,6 +25,10 @@ android {
     buildFeatures {
         buildConfig = true
     }
+
+    // The agent core's schemas (core.yml + vertical bundles) ship inside the
+    // APK, copied from the core crate at build time so there is one source.
+    sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/coreAssets"))
 
     // Distribution channel. `direct` = APK from agento.ceo with the
     // self-hosted update channel (needs REQUEST_INSTALL_PACKAGES, which Play
@@ -82,6 +87,36 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+}
+
+// ---------------------------------------------------------------- core
+//
+// libagento_core.so is cross-compiled from ../server with cargo-ndk into
+// src/main/jniLibs (gitignored). `-PskipCore` reuses whatever is there.
+
+val coreDir = rootProject.file("../server")
+val jniLibs = file("src/main/jniLibs")
+
+val copyCoreSchemas by tasks.registering(Copy::class) {
+    from(File(coreDir, "schemas"))
+    into(layout.buildDirectory.dir("generated/coreAssets/schemas"))
+}
+
+val buildCore by tasks.registering(Exec::class) {
+    onlyIf { !project.hasProperty("skipCore") }
+    workingDir = coreDir
+    val ndk = System.getenv("ANDROID_NDK_HOME")
+        ?: android.ndkDirectory.absolutePath
+    environment("ANDROID_NDK_HOME", ndk)
+    environment("PATH", System.getProperty("user.home") + "/.cargo/bin:" + System.getenv("PATH"))
+    commandLine(
+        "cargo", "ndk", "-t", "arm64-v8a", "-t", "armeabi-v7a",
+        "-o", jniLibs.absolutePath, "build", "--release"
+    )
+}
+
+tasks.named("preBuild") {
+    dependsOn(copyCoreSchemas, buildCore)
 }
 
 dependencies {

@@ -169,11 +169,11 @@ object ServerClient {
         readTimeoutMs: Int,
     ): Response {
         return try {
-            val conn = URL(Prefs.serverUrl(ctx) + path).openConnection() as HttpURLConnection
+            val conn = URL(AgentoCore.baseUrl(ctx) + path).openConnection() as HttpURLConnection
             try {
                 conn.connectTimeout = 10_000
                 conn.readTimeout = readTimeoutMs
-                conn.setRequestProperty("X-App-Key", APP_KEY)
+                conn.setRequestProperty("X-App-Key", AgentoCore.appKey(ctx))
                 if (bearer) conn.setRequestProperty(
                     "Authorization", "Bearer " + Prefs.deviceToken(ctx)
                 )

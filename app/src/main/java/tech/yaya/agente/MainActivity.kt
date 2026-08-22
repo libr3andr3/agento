@@ -186,18 +186,48 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    /** AI engine: blank = yaya.tech (free). Owners who want total control
+     *  enter any OpenAI-compatible endpoint and their own key. Takes effect
+     *  after the app restarts (the core reads its config at boot). */
     private fun editServerUrl() {
-        val input = EditText(this).apply { setText(Prefs.serverUrl(this@MainActivity)) }
+        val pad = (16 * resources.displayMetrics.density).toInt()
+        val url = EditText(this).apply {
+            hint = getString(R.string.ai_engine_url_hint)
+            setText(Prefs.llmBaseUrl(this@MainActivity))
+        }
+        val key = EditText(this).apply {
+            hint = getString(R.string.ai_engine_key_hint)
+            setText(Prefs.llmApiKey(this@MainActivity))
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        val model = EditText(this).apply {
+            hint = getString(R.string.ai_engine_model_hint)
+            setText(Prefs.llmModel(this@MainActivity))
+        }
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(pad, pad / 2, pad, 0)
+            addView(url); addView(key); addView(model)
+        }
         MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.server_url_title)
-            .setView(input)
+            .setTitle(R.string.ai_engine_title)
+            .setMessage(R.string.ai_engine_explainer)
+            .setView(box)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                if (Prefs.setServerUrl(this, input.text.toString())) {
-                    refresh()
-                } else {
-                    Toast.makeText(this, R.string.server_url_must_be_https, Toast.LENGTH_LONG)
-                        .show()
+                val u = url.text.toString().trim()
+                if (u.isNotEmpty() && !u.startsWith("https://") && !u.startsWith("http://")) {
+                    Toast.makeText(this, R.string.server_url_must_be_https, Toast.LENGTH_LONG).show()
+                    return@setPositiveButton
                 }
+                Prefs.setLlm(this, u, key.text.toString(), model.text.toString())
+                Toast.makeText(this, R.string.ai_engine_saved, Toast.LENGTH_LONG).show()
+                refresh()
+            }
+            .setNeutralButton(R.string.ai_engine_reset) { _, _ ->
+                Prefs.setLlm(this, "", "", "")
+                Toast.makeText(this, R.string.ai_engine_saved, Toast.LENGTH_LONG).show()
+                refresh()
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()

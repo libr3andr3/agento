@@ -11,5 +11,8 @@ class AgenteApp : Application() {
         // dark palette exists.
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         OwnerAlerts.ensureChannel(this)
+        // Boot the on-device agent early so the first customer message does
+        // not pay the startup cost. Safe to call again from any thread.
+        Thread({ AgentoCore.ensureStarted(this) }, "agento-core-boot").start()
     }
 }

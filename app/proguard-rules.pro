@@ -9,6 +9,10 @@
 # would be shrunk away and auto-reply would silently stop working.
 -keep class tech.yaya.agente.AgenteNotificationListener { *; }
 -keep class tech.yaya.agente.DownloadReceiver { *; }
+# JNI entry points of the on-device agent core (libagento_core.so) are resolved
+# by name at runtime.
+-keep class tech.yaya.agente.AgentoCore { *; }
+-keepclasseswithmembernames class * { native <methods>; }
 
 # Keystore-backed crypto is reached through JCA provider names, not direct
 # references.

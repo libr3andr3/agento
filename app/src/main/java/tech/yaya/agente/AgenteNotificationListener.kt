@@ -33,6 +33,7 @@ class AgenteNotificationListener : NotificationListenerService() {
         super.onListenerConnected()
         Log.i(TAG, "listener connected")
         ServerClient.IO_EXECUTOR.execute {
+            runCatching { AgentoCore.ensureStarted(applicationContext) }
             runCatching { Prefs.refreshLearnedSources(applicationContext) }
             runCatching { UpdateCheck.checkInBackground(applicationContext) }
         }

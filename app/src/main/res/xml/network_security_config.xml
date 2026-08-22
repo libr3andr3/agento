@@ -18,6 +18,12 @@
         </trust-anchors>
     </base-config>
 
+    <!-- The agent core runs inside this process and listens on the loopback;
+         traffic never leaves the device, so plain HTTP is the right tool. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+
     <!-- Debug builds only: the local server reached over `adb reverse` is
          plain HTTP. Never applies to a release APK. -->
     <debug-overrides>
