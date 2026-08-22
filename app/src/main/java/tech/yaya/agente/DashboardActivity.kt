@@ -148,8 +148,8 @@ class DashboardActivity : AppCompatActivity() {
         refreshStatus(lastFetchOk)
     }
 
-    /** Last trial payload from the server; null until the first good fetch. */
-    private var trial: JSONObject? = null
+    /** Last plan/usage payload from the server; null until the first good fetch. */
+    private var plan: JSONObject? = null
 
     /** Tint an informational chip from color tokens. */
     private fun styleChip(chip: Chip, bgRes: Int, fgRes: Int) {
@@ -205,40 +205,55 @@ class DashboardActivity : AppCompatActivity() {
     }
 
     /**
-     * The trial banner sells the whole week, not just the funeral: a running
-     * "ends in N days — talk to our agent" countdown while active, the red
-     * it's-over version once the agent has gone quiet. Same button either way.
+     * Plan banner: always visible. Free tier shows today's usage against the
+     * caps with the upgrade button; a hit cap turns it red. The single
+     * button everywhere is "raise limits + web dashboard" → WhatsApp to sales.
      */
-    private fun refreshTrialBanner() {
-        val t = trial
+    private fun refreshPlanBanner() {
+        val p = plan
         val banner = findViewById<MaterialCardView>(R.id.trial_banner)
-        if (t == null) {
+        if (p == null) {
             banner.visibility = View.GONE
             return
         }
         banner.visibility = View.VISIBLE
         val text = findViewById<TextView>(R.id.trial_banner_text)
-        val active = t.optBoolean("active", true)
-        if (active) {
-            val days = t.optLong("daysLeft", 0).coerceAtLeast(0)
-            text.text = if (days == 0L) getString(R.string.trial_banner_today)
-                        else getString(R.string.trial_banner_days, days)
-            text.setTextColor(getColor(R.color.agento_on_secondary_container))
-            banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
-        } else {
-            text.text = getString(R.string.trial_banner_text)
-            text.setTextColor(getColor(R.color.agento_error))
-            banner.setCardBackgroundColor(getColor(R.color.agento_error_container))
+        val name = p.optString("name", "free")
+        val mu = p.optInt("messagesUsed"); val mc = p.optInt("messagesCap")
+        val cu = p.optInt("customersUsed"); val cc = p.optInt("customersCap")
+        val limit = p.optBoolean("limitReached", false)
+        val full = p.optBoolean("customersFull", false)
+        when {
+            limit -> {
+                text.text = getString(R.string.plan_banner_limit)
+                text.setTextColor(getColor(R.color.agento_error))
+                banner.setCardBackgroundColor(getColor(R.color.agento_error_container))
+            }
+            full -> {
+                text.text = getString(R.string.plan_banner_customers_full, cc)
+                text.setTextColor(getColor(R.color.agento_error))
+                banner.setCardBackgroundColor(getColor(R.color.agento_error_container))
+            }
+            name == "free" -> {
+                text.text = getString(R.string.plan_banner_usage, mu, mc, cu, cc)
+                text.setTextColor(getColor(R.color.agento_on_secondary_container))
+                banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
+            }
+            else -> {
+                text.text = getString(R.string.plan_banner_paid, name.replaceFirstChar { it.uppercase() }, mu, cu)
+                text.setTextColor(getColor(R.color.agento_on_secondary_container))
+                banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
+            }
         }
-        val sales = t.optString("salesPhone").filter { it.isDigit() }
-        findViewById<View>(R.id.sales_button).setOnClickListener {
+        val sales = p.optString("salesPhone").filter { it.isDigit() }
+        val button = findViewById<View>(R.id.sales_button)
+        button.visibility = if (sales.isEmpty()) View.GONE else View.VISIBLE
+        button.setOnClickListener {
             if (sales.isEmpty()) return@setOnClickListener
-            val msg = Uri.encode(getString(R.string.trial_sales_message,
-                businessName.text.toString()))
+            val msg = Uri.encode(getString(R.string.plan_sales_message, businessName.text.toString()))
             // wa.me opens the chat in whichever WhatsApp app is installed;
             // the browser fallback covers phones with neither.
-            startActivity(Intent(Intent.ACTION_VIEW,
-                Uri.parse("https://wa.me/$sales?text=$msg")))
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$sales?text=$msg")))
         }
     }
 
@@ -247,8 +262,8 @@ class DashboardActivity : AppCompatActivity() {
         val alive = hasNotificationAccess() && Prefs.isEnabled(this)
         agentSwitch.isChecked = alive
         offBanner.visibility = if (alive) View.GONE else View.VISIBLE
-        refreshTrialBanner()
-        val t = trial
+        refreshPlanBanner()
+        val p = plan
         when {
             !alive -> {
                 statusChip.text = getString(R.string.status_off_banner)
@@ -261,8 +276,8 @@ class DashboardActivity : AppCompatActivity() {
             }
             // The server has stopped answering customers; being "active" here
             // would be a lie the owner discovers from an angry customer.
-            t != null && !t.optBoolean("active", true) -> {
-                statusChip.text = getString(R.string.status_trial_expired)
+            p != null && p.optBoolean("limitReached", false) -> {
+                statusChip.text = getString(R.string.status_limit_reached)
                 styleChip(statusChip, R.color.agento_error_container, R.color.agento_error)
             }
             else -> {
@@ -271,9 +286,9 @@ class DashboardActivity : AppCompatActivity() {
                     R.string.status_active_last,
                     DateUtils.getRelativeTimeSpanString(lastReply.timestamp).toString()
                 ) else getString(R.string.status_active)
-                val days = t?.optLong("daysLeft", Long.MAX_VALUE) ?: Long.MAX_VALUE
-                statusChip.text = if (days in 0..7)
-                    getString(R.string.status_trial_days, base, days) else base
+                val cap = p?.optInt("messagesCap") ?: 0
+                statusChip.text = if (cap > 0)
+                    getString(R.string.status_plan_usage, base, p!!.optInt("messagesUsed"), cap) else base
                 styleChip(statusChip, R.color.agento_primary_container,
                     R.color.agento_on_primary_container)
             }
@@ -315,7 +330,7 @@ class DashboardActivity : AppCompatActivity() {
     private fun render(d: JSONObject) {
         d.optJSONObject("locale")?.let { Prefs.setLocale(this, it) }
         businessName.text = d.optString("businessName", getString(R.string.app_name))
-        trial = d.optJSONObject("trial")
+        plan = d.optJSONObject("plan")
         val e = d.optJSONObject("earnings") ?: JSONObject()
         earnToday.text = soles(e.optDouble("today", 0.0))
         earnWeek.text = soles(e.optDouble("week", 0.0))

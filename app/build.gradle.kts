@@ -11,8 +11,8 @@ android {
         applicationId = "yaya.tech.agento"
         minSdk = 26
         targetSdk = 36
-        versionCode = 29
-        versionName = "1.0.0"
+        versionCode = 30
+        versionName = "1.0.1"
 
         // Client API key: supplied per-build, never committed.
         val appKey = System.getenv("AGENTO_APP_KEY")

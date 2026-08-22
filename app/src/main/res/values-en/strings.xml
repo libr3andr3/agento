@@ -101,12 +101,12 @@
     <string name="log_payment_recorded">Payment recorded — no matching pending booking</string>
 
     <string name="default_reply">Hi! Thanks for writing. We got your message and will reply in a moment. 🙌</string>
-    <!-- Beta: app toggles + free trial -->
+    <!-- App toggles + free plan limits -->
     <string name="app_not_installed">%1$s (not installed)</string>
-    <string name="log_trial_expired">Free week ended — the agent did not reply</string>
-    <string name="trial_expired_alert">Your free week ended. The agent stopped answering your customers — contact us to continue.</string>
-    <string name="status_trial_expired">Trial ended — agent is not replying</string>
-    <string name="status_trial_days">%1$s · Free: %2$d days</string>
+    <string name="log_limit_reached">Today\'s free limit reached — the agent did not reply</string>
+    <string name="limit_reached_alert">You hit today\'s free limit. Your customers get a holding message; upgrade your plan to keep replying.</string>
+    <string name="status_limit_reached">Daily limit reached — back tomorrow</string>
+    <string name="status_plan_usage">%1$s · %2$d/%3$d today</string>
     <!-- Phone verification (OTP) + talk-to-sales -->
     <string name="verify_sending">Sending verification code…</string>
     <string name="verify_sent">Code sent via WhatsApp to %1$s</string>
@@ -120,11 +120,12 @@
     <string name="verify_resend">Resend</string>
     <string name="verify_ok">Number verified</string>
     <string name="verify_wrong_code">Wrong code</string>
-    <string name="trial_banner_text">Your free week ended — the agent stopped replying</string>
-    <string name="trial_talk_to_sales">💬 Talk to our agent</string>
-    <string name="trial_sales_message">Hi! The free agento week for %1$s ended and I want to continue with the service.</string>
-    <string name="trial_banner_days">Your free week ends in %1$d days — talk to our agent to keep your service</string>
-    <string name="trial_banner_today">Your free week ends today — talk to our agent to keep your service</string>
+    <string name="plan_banner_limit">Today\'s free limit reached — your agent replies again tomorrow</string>
+    <string name="plan_upgrade_button">💬 Raise limits &amp; get the web dashboard</string>
+    <string name="plan_sales_message">Hi! I use agento at %1$s and want to raise my limits and get the web dashboard.</string>
+    <string name="plan_banner_usage">Free plan · Today %1$d/%2$d messages · %3$d/%4$d customers</string>
+    <string name="plan_banner_customers_full">Today\'s new-customer slots are full (%1$d) — today\'s customers are still served</string>
+    <string name="plan_banner_paid">%1$s plan · Today %2$d messages · %3$d customers</string>
     <!-- Catalog photo (onboarding) -->
     <string name="catalog_photo_title">Photo of your catalog or menu</string>
     <string name="catalog_photo_take">Take a photo</string>

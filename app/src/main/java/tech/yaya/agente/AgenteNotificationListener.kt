@@ -217,21 +217,30 @@ class AgenteNotificationListener : NotificationListenerService() {
                 }
             }
         }
-        // Trial over: the server answered (so this is not an outage — no canned
-        // fallback, which would be answering customers for free) but the agent
-        // is off. Tell the owner, throttled so a busy inbox doesn't become a
-        // notification storm.
-        if (resp?.optString("action") == "trial_expired") {
-            log(app, parsed, sent = false, detail = ctx.getString(R.string.log_trial_expired))
+        // Daily cap hit: the server answered (not an outage — no canned
+        // fallback) with one holding line for the customer. Send it at most
+        // once per conversation per cooldown so a chatty customer isn't
+        // spammed, and tell the owner, throttled.
+        if (resp?.optString("action") == "limit_reached") {
+            val holding = resp.optString("agentResponse").takeIf { it.isNotBlank() && it != "null" }
+            val convKey = "limit|${app.packageName}|${parsed.sender}"
             val now = System.currentTimeMillis()
+            val sendHolding = synchronized(lastReplied) {
+                lastReplied.entries.removeAll { now - it.value > MAX_COOLDOWN_MS }
+                val fresh = now - (lastReplied[convKey] ?: 0L) > LIMIT_HOLDING_COOLDOWN_MS
+                if (fresh) lastReplied[convKey] = now
+                fresh
+            }
+            val sent = holding != null && sendHolding && sendReply(replyAction, holding)
+            log(app, parsed, sent = sent, detail = ctx.getString(R.string.log_limit_reached))
             if (now - lastTrialAlert > TRIAL_ALERT_INTERVAL_MS) {
                 lastTrialAlert = now
                 OwnerAlerts.notify(
                     ctx,
                     urgent = true,
                     sender = ctx.getString(R.string.app_name),
-                    question = ctx.getString(R.string.trial_expired_alert),
-                    gapId = "trial_expired"
+                    question = ctx.getString(R.string.limit_reached_alert),
+                    gapId = "limit_reached"
                 )
             }
             return
@@ -378,6 +387,8 @@ class AgenteNotificationListener : NotificationListenerService() {
         /** Longest cooldown Settings allows (24 h) — prune horizon for lastReplied. */
         private const val MAX_COOLDOWN_MS = 25 * 60 * 60_000L
         private const val TRIAL_ALERT_INTERVAL_MS = 6 * 60 * 60_000L
+        /** One holding line per customer conversation per this window. */
+        private const val LIMIT_HOLDING_COOLDOWN_MS = 60 * 60_000L
         @Volatile private var lastTrialAlert = 0L
     }
 }

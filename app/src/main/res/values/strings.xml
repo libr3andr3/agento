@@ -115,12 +115,12 @@
 
     <!-- Fallback reply sent to customers when offline -->
     <string name="default_reply">¡Hola! Gracias por escribirnos. Ya recibimos tu mensaje y te respondemos en un momento. 🙌</string>
-    <!-- Beta: app toggles + free trial -->
+    <!-- App toggles + free plan limits -->
     <string name="app_not_installed">%1$s (no instalado)</string>
-    <string name="log_trial_expired">Semana gratis terminada — el agente no respondió</string>
-    <string name="trial_expired_alert">Tu semana gratis terminó. El agente dejó de responder a tus clientes — escríbenos para continuar.</string>
-    <string name="status_trial_expired">Prueba terminada — el agente no responde</string>
-    <string name="status_trial_days">%1$s · Gratis: %2$d días</string>
+    <string name="log_limit_reached">Límite gratis de hoy alcanzado — el agente no respondió</string>
+    <string name="limit_reached_alert">Llegaste al límite gratis de hoy. Tus clientes reciben un mensaje de espera; amplía tu plan para seguir respondiendo.</string>
+    <string name="status_limit_reached">Límite de hoy alcanzado — vuelve mañana</string>
+    <string name="status_plan_usage">%1$s · %2$d/%3$d hoy</string>
     <!-- Phone verification (OTP) + talk-to-sales -->
     <string name="verify_sending">Enviando código de verificación…</string>
     <string name="verify_sent">Código enviado por WhatsApp a %1$s</string>
@@ -134,11 +134,12 @@
     <string name="verify_resend">Reenviar</string>
     <string name="verify_ok">Número verificado</string>
     <string name="verify_wrong_code">Código incorrecto</string>
-    <string name="trial_banner_text">Tu semana gratis terminó — el agente dejó de responder</string>
-    <string name="trial_talk_to_sales">💬 Hablar con nuestro agente</string>
-    <string name="trial_sales_message">Hola! Mi semana gratis de agento para %1$s terminó y quiero continuar con el servicio.</string>
-    <string name="trial_banner_days">Tu semana gratis termina en %1$d días — habla con nuestro agente para mantener tu servicio</string>
-    <string name="trial_banner_today">Tu semana gratis termina hoy — habla con nuestro agente para mantener tu servicio</string>
+    <string name="plan_banner_limit">Límite gratis de hoy alcanzado — tu agente vuelve a responder mañana</string>
+    <string name="plan_upgrade_button">💬 Ampliar límites y panel web</string>
+    <string name="plan_sales_message">Hola! Uso agento en %1$s y quiero ampliar mis límites y tener el panel web.</string>
+    <string name="plan_banner_usage">Plan gratis · Hoy %1$d/%2$d mensajes · %3$d/%4$d clientes</string>
+    <string name="plan_banner_customers_full">Cupo de clientes nuevos de hoy lleno (%1$d) — tus clientes de hoy siguen atendidos</string>
+    <string name="plan_banner_paid">Plan %1$s · Hoy %2$d mensajes · %3$d clientes</string>
     <!-- Catalog photo (onboarding) -->
     <string name="catalog_photo_button" translatable="false">📷</string>
     <string name="catalog_photo_title">Foto de tu catálogo o carta</string>
