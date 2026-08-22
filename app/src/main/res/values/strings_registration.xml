@@ -8,7 +8,7 @@
 
     <!-- Step 1 — business -->
     <string name="reg_business_headline">Cuéntanos de tu negocio</string>
-    <string name="reg_business_sub">agento atiende a tus clientes por WhatsApp, agenda citas y cobra — mientras tú trabajas. 🌱</string>
+    <string name="reg_business_sub">agento atiende a tus clientes en tus apps de chat, agenda citas y cobra — mientras tú trabajas. 🌱</string>
     <string name="reg_business_name_hint">Nombre de tu negocio</string>
     <string name="reg_business_industry_hint">Rubro</string>
     <string name="reg_business_industry_helper">Ej.: peluquería, restaurante, taller</string>
@@ -18,7 +18,7 @@
 
     <!-- Step 2 — owner phone -->
     <string name="reg_phone_headline">¿Cuál es tu número?</string>
-    <string name="reg_phone_sub">El WhatsApp del dueño del negocio. Te enviaremos un código para confirmarlo.</string>
+    <string name="reg_phone_sub">El número del dueño del negocio. Te enviaremos un código para confirmarlo.</string>
     <string name="reg_phone_hint">Número de celular</string>
     <string name="reg_country_cd">Elegir país. Actual: %1$s, %2$s</string>
     <string name="reg_phone_len_error">Revisa el número: debe tener entre 8 y 12 dígitos</string>
@@ -33,12 +33,12 @@
 
     <!-- Step 3 — verification code -->
     <string name="reg_otp_headline">Ingresa el código</string>
-    <string name="reg_otp_sub">Te enviamos un código de 6 dígitos por WhatsApp al %1$s</string>
+    <string name="reg_otp_sub">Te enviamos un código de 6 dígitos por mensaje al %1$s</string>
     <string name="reg_otp_field_cd">Código de verificación de 6 dígitos</string>
     <string name="reg_verify">Verificar</string>
     <string name="reg_resend">Reenviar código</string>
     <string name="reg_resend_wait">Reenviar código (%1$d s)</string>
-    <string name="reg_resent">Código reenviado. Revisa tu WhatsApp.</string>
+    <string name="reg_resent">Código reenviado. Revisa tus mensajes.</string>
     <string name="reg_change_number">Cambiar número</string>
     <string name="reg_code_len_error">Ingresa los 6 dígitos del código</string>
     <string name="reg_code_wrong_error">Código incorrecto. Revísalo e inténtalo de nuevo.</string>

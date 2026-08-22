@@ -8,7 +8,7 @@
 
     <!-- Step 1 — business -->
     <string name="reg_business_headline">Tell us about your business</string>
-    <string name="reg_business_sub">agento answers your customers on WhatsApp, books appointments and collects payments — while you work. 🌱</string>
+    <string name="reg_business_sub">agento answers your customers in your chat apps, books appointments and collects payments — while you work. 🌱</string>
     <string name="reg_business_name_hint">Business name</string>
     <string name="reg_business_industry_hint">Line of business</string>
     <string name="reg_business_industry_helper">E.g.: hair salon, restaurant, repair shop</string>
@@ -18,7 +18,7 @@
 
     <!-- Step 2 — owner phone -->
     <string name="reg_phone_headline">What\'s your number?</string>
-    <string name="reg_phone_sub">The owner\'s WhatsApp number. We\'ll send you a code to confirm it.</string>
+    <string name="reg_phone_sub">The owner\'s phone number. We\'ll send you a code to confirm it.</string>
     <string name="reg_phone_hint">Mobile number</string>
     <string name="reg_country_cd">Choose country. Current: %1$s, %2$s</string>
     <string name="reg_phone_len_error">Check the number: it should be 8 to 12 digits</string>
@@ -33,12 +33,12 @@
 
     <!-- Step 3 — verification code -->
     <string name="reg_otp_headline">Enter the code</string>
-    <string name="reg_otp_sub">We sent a 6-digit code by WhatsApp to %1$s</string>
+    <string name="reg_otp_sub">We sent a 6-digit code by message to %1$s</string>
     <string name="reg_otp_field_cd">6-digit verification code</string>
     <string name="reg_verify">Verify</string>
     <string name="reg_resend">Resend code</string>
     <string name="reg_resend_wait">Resend code (%1$d s)</string>
-    <string name="reg_resent">Code resent. Check your WhatsApp.</string>
+    <string name="reg_resent">Code resent. Check your messages.</string>
     <string name="reg_change_number">Change number</string>
     <string name="reg_code_len_error">Enter the 6-digit code</string>
     <string name="reg_code_wrong_error">Wrong code. Check it and try again.</string>

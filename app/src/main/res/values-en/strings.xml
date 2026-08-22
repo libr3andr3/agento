@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_subtitle">Your AI receptionist for WhatsApp and Instagram</string>
+    <string name="app_subtitle">Your AI receptionist for your chat apps</string>
 
-    <string name="welcome_tagline">agento answers your WhatsApp, books appointments and collects payments — for you.</string>
+    <string name="welcome_tagline">agento answers your chats, books appointments and collects payments — for you.</string>
     <string name="welcome_cta">Create my agent</string>
 
     <string name="permission_banner_text">To reply for you, agento needs to read your notifications. Nothing leaves your phone: replies go out through each app\'s own reply button.</string>
@@ -84,7 +84,7 @@
     <string name="gap_answer_failed">Couldn\'t send. Check your connection and try again.</string>
     <string name="dash_agenda">Upcoming appointments</string>
     <string name="dash_today_header">Today · %1$s</string>
-    <string name="dash_empty">No appointments yet.\nShare your WhatsApp and your agent will book the first one 💪</string>
+    <string name="dash_empty">No appointments yet.\nShare your number and your agent will book the first one 💪</string>
     <string name="dash_paid">✓ paid</string>
     <string name="dash_pending">pending</string>
     <string name="dash_convos">Recent conversations</string>
@@ -116,12 +116,12 @@
     <string name="status_plan_usage">%1$s · %2$d/%3$d today</string>
     <!-- Phone verification (OTP) + talk-to-sales -->
     <string name="verify_sending">Sending verification code…</string>
-    <string name="verify_sent">Code sent via WhatsApp to %1$s</string>
+    <string name="verify_sent">Code sent by message to %1$s</string>
     <string name="verify_skipped">Verification unavailable — continuing</string>
     <string name="verify_bad_phone">Invalid number — include the country code (+51…)</string>
     <string name="verify_throttled">Too many attempts — wait a moment and try again</string>
     <string name="verify_title">Verify your number</string>
-    <string name="verify_message">We sent a 6-digit code via WhatsApp to %1$s</string>
+    <string name="verify_message">We sent a 6-digit code by message to %1$s</string>
     <string name="verify_code_hint">6-digit code</string>
     <string name="verify_confirm">Verify</string>
     <string name="verify_resend">Resend</string>

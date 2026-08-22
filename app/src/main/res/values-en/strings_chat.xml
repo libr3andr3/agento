@@ -5,7 +5,7 @@
     <string name="chat_retry">Not sent · Retry</string>
     <string name="chat_recording_hint">Recording — tap ⏹ to send</string>
 
-    <!-- WhatsApp-style hold-to-record gesture. -->
+    <!-- Hold-to-record gesture. -->
     <string name="chat_slide_cancel_hint">◀ Slide to cancel</string>
     <string name="chat_locked_hint">Recording — tap ➤ to send</string>
     <string name="chat_hold_to_record">Hold 🎤 to record, release to send</string>

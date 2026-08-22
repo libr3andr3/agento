@@ -2,10 +2,10 @@
 <resources>
     <string name="app_name">agento</string>
     <string name="app_title">agento</string>
-    <string name="app_subtitle">Tu recepcionista con IA para WhatsApp e Instagram</string>
+    <string name="app_subtitle">Tu recepcionista con IA para tus apps de chat</string>
 
     <!-- Welcome (first run) -->
-    <string name="welcome_tagline">agento contesta tus WhatsApp, agenda citas y cobra por Yape — por ti.</string>
+    <string name="welcome_tagline">agento contesta tus chats, agenda citas y cobra — por ti.</string>
     <string name="welcome_cta">Crear mi agente</string>
 
     <!-- Permission -->
@@ -96,7 +96,7 @@
     <string name="gap_answer_failed">No se pudo enviar. Revisa tu conexión e intenta de nuevo.</string>
     <string name="dash_agenda">Próximas citas</string>
     <string name="dash_today_header">Hoy · %1$s</string>
-    <string name="dash_empty">Aún no hay citas.\nComparte tu WhatsApp y tu agente agendará la primera 💪</string>
+    <string name="dash_empty">Aún no hay citas.\nComparte tu número y tu agente agendará la primera 💪</string>
     <string name="dash_paid">✓ pagado</string>
     <string name="dash_pending">pendiente</string>
     <string name="dash_convos">Conversaciones recientes</string>
@@ -130,12 +130,12 @@
     <string name="status_plan_usage">%1$s · %2$d/%3$d hoy</string>
     <!-- Phone verification (OTP) + talk-to-sales -->
     <string name="verify_sending">Enviando código de verificación…</string>
-    <string name="verify_sent">Código enviado por WhatsApp a %1$s</string>
+    <string name="verify_sent">Código enviado por mensaje a %1$s</string>
     <string name="verify_skipped">Verificación no disponible — continuando</string>
     <string name="verify_bad_phone">Número inválido — incluye el código de país (+51…)</string>
     <string name="verify_throttled">Demasiados intentos — espera un momento y vuelve a intentar</string>
     <string name="verify_title">Verifica tu número</string>
-    <string name="verify_message">Te enviamos un código de 6 dígitos por WhatsApp a %1$s</string>
+    <string name="verify_message">Te enviamos un código de 6 dígitos por mensaje a %1$s</string>
     <string name="verify_code_hint">Código de 6 dígitos</string>
     <string name="verify_confirm">Verificar</string>
     <string name="verify_resend">Reenviar</string>
