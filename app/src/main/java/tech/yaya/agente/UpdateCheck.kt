@@ -132,7 +132,7 @@ object UpdateCheck {
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL, ctx.getString(R.string.update_channel), NotificationManager.IMPORTANCE_DEFAULT)
         )
-        val intent = Intent(ctx, DashboardActivity::class.java)
+        val intent = Intent(ctx, Edition.HOME)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pi = PendingIntent.getActivity(ctx, NOTIF_ID, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val mandatory = u.mandatoryFor(installedVersionCode(ctx))

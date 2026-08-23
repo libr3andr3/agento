@@ -9,11 +9,11 @@ android {
     ndkVersion = "27.2.12479018"
 
     defaultConfig {
-        applicationId = "yaya.tech.agento"
+        // Each edition sets its own applicationId below.
         minSdk = 26
         targetSdk = 36
-        versionCode = 34
-        versionName = "1.3.0"
+        versionCode = 36
+        versionName = "1.5.0"
 
         // Client API key: supplied per-build, never committed.
         val appKey = System.getenv("AGENTO_APP_KEY")
@@ -30,13 +30,32 @@ android {
     // APK, copied from the core crate at build time so there is one source.
     sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/coreAssets"))
 
-    // Distribution channel. `direct` = APK from agento.ceo with the
-    // self-hosted update channel (needs REQUEST_INSTALL_PACKAGES, which Play
-    // policy forbids for an app like this). `play` = Google Play build: no
-    // install permission, Play handles updates. Same applicationId — a phone
-    // carries one or the other, never both.
-    flavorDimensions += "channel"
+    // Two products from one codebase and one on-device core:
+    //   client   — "agento", the consumer app on Google Play: a personal
+    //              assistant (general chat now; finds + books local
+    //              businesses through the yaya network in phase 2).
+    //   business — "agento business", the receptionist for business owners,
+    //              distributed from agento.ceo / F-Droid only (its
+    //              notification-listener + sideload-update permissions are
+    //              what Play policy objects to).
+    // Distribution channel. `direct` = APK with the self-hosted update channel
+    // (needs REQUEST_INSTALL_PACKAGES). `play` = Google Play build: no install
+    // permission, Play handles updates. Within an edition the applicationId
+    // is the same — a phone carries one channel or the other, never both.
+    flavorDimensions += listOf("edition", "channel")
     productFlavors {
+        create("client") {
+            dimension = "edition"
+            applicationId = "yaya.tech.agento"
+            resValue("string", "app_name", "agento")
+            buildConfigField("String", "EDITION", "\"client\"")
+        }
+        create("business") {
+            dimension = "edition"
+            applicationId = "yaya.tech.agento.business"
+            resValue("string", "app_name", "agento business")
+            buildConfigField("String", "EDITION", "\"business\"")
+        }
         create("direct") {
             dimension = "channel"
             buildConfigField("boolean", "SELF_UPDATE", "true")
@@ -127,4 +146,6 @@ dependencies {
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    // Consumer subscriptions (Pro / Max) through Google Play.
+    "clientImplementation"("com.android.billingclient:billing-ktx:7.1.1")
 }

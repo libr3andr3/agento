@@ -227,6 +227,60 @@ object ServerClient {
 
     // -------------------------------------------------------------- endpoints
 
+    // Plans (both editions). Bearer when a business is paired; the core
+    // talks to yaya.tech with its identity either way. [IO_EXECUTOR].
+
+    fun plan(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/plan", body = null, contentType = null,
+            bearer = Prefs.serverConfigured(ctx), readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    fun planRequest(ctx: Context, plan: String, months: Int): Response =
+        postRaw(ctx, "/api/plan/request", JSONObject().put("plan", plan).put("months", months),
+            bearer = Prefs.serverConfigured(ctx))
+
+    fun planRequestStatus(ctx: Context, ref: String): JSONObject? {
+        val r = exchange(ctx, "/api/plan/request/$ref", body = null, contentType = null,
+            bearer = Prefs.serverConfigured(ctx), readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    fun planPlay(ctx: Context, pkg: String, productId: String, token: String): Response =
+        postRaw(ctx, "/api/plan/play",
+            JSONObject().put("package", pkg).put("productId", productId).put("purchaseToken", token),
+            bearer = Prefs.serverConfigured(ctx), retry = Retry.IDEMPOTENT)
+
+    /** Coarse location → the core (public offer for a business, private
+     *  profile for a person). Idempotent. [IO_EXECUTOR]. */
+    fun postLocation(ctx: Context, body: JSONObject, bearer: Boolean): Boolean =
+        postRaw(ctx, "/api/location", body, bearer = bearer, retry = Retry.IDEMPOTENT).code in 200..299
+
+    // Personal assistant (client edition). The phone owner is the tenant: no
+    // device token, the loopback app key is the whole authorization.
+
+    /** One assistant turn. Side-effectful (persists + may `remember`):
+     *  never auto-retried. [EXECUTOR]. */
+    fun assistantMessage(ctx: Context, message: String): Response =
+        postRaw(ctx, "/api/assistant/message", JSONObject().put("message", message), bearer = false)
+
+    /** Stored transcript + profile, oldest first. Idempotent. [IO_EXECUTOR]. */
+    fun assistantHistory(ctx: Context, limit: Int = 200): JSONObject? {
+        val r = exchange(
+            ctx, "/api/assistant/history?limit=$limit",
+            body = null, contentType = null, bearer = false,
+            readTimeoutMs = 15_000, retry = Retry.IDEMPOTENT,
+        )
+        return if (r.code in 200..299) r.json else null
+    }
+
+    /** Wipes the transcript (and the profile when [forgetProfile]). [EXECUTOR]. */
+    fun assistantReset(ctx: Context, forgetProfile: Boolean): Boolean =
+        postRaw(
+            ctx, "/api/assistant/reset",
+            JSONObject().put("forget_profile", forgetProfile), bearer = false,
+        ).code in 200..299
+
     /**
      * Customer message in, agent reply out. Null = server unreachable/error.
      * The conversation history lives server-side and is not sent from here —

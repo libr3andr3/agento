@@ -187,6 +187,10 @@ class OnboardingActivity : AppCompatActivity() {
         }
 
         setContentView(R.layout.activity_onboarding)
+        // Where the business is: asked once, right after registration, so the
+        // card can say "Miraflores" before the interview even gets there.
+        if (!LocationHelper.asked(this) && !LocationHelper.granted(this)) LocationHelper.ask(this)
+        else LocationHelper.sync(this, bearer = true)
         recycler = findViewById(R.id.chat_recycler)
         input = findViewById(R.id.chat_input)
         sendButton = findViewById(R.id.chat_send)
@@ -558,10 +562,19 @@ class OnboardingActivity : AppCompatActivity() {
         timerHandler.postDelayed({ tickTimer() }, 500)
     }
 
+    private fun onLocationPermission(requestCode: Int, grantResults: IntArray): Boolean {
+        if (requestCode != LocationHelper.REQUEST_CODE) return false
+        if (grantResults.firstOrNull() == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            LocationHelper.sync(this, bearer = true, force = true)
+        }
+        return true
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (onLocationPermission(requestCode, grantResults)) return
         if (requestCode == RC_VOICE_LISTEN) {
             // First hands-free listen. Grant → open the mic; denial → text
             // mode, no nagging dialog (session-only, so a later grant can

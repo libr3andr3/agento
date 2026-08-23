@@ -128,7 +128,7 @@
     <string name="verify_ok">Number verified</string>
     <string name="verify_wrong_code">Wrong code</string>
     <string name="plan_banner_limit">Today\'s free limit reached — your agent replies again tomorrow</string>
-    <string name="plan_upgrade_button">💬 Raise limits &amp; get the web dashboard</string>
+    <string name="plan_upgrade_button">⭐ See plans and raise limits</string>
     <string name="plan_sales_message">Hi! I use agento at %1$s and want to raise my limits and get the web dashboard.</string>
     <string name="plan_banner_usage">Free plan · Today %1$d/%2$d messages · %3$d/%4$d customers</string>
     <string name="plan_banner_customers_full">Today\'s new-customer slots are full (%1$d) — today\'s customers are still served</string>
@@ -147,4 +147,43 @@
     <string name="order_paid">paid</string>
     <string name="order_pending">unpaid</string>
     <string name="dash_talk_to_business">Talk to your business</string>
+
+    <!-- Plans (both editions) -->
+    <string name="plan_menu">My plan</string>
+    <string name="plan_title">Plans</string>
+    <string name="plan_current">Your plan: %1$s</string>
+    <string name="plan_current_until">Your plan: %1$s · until %2$s</string>
+    <string name="plan_usage_today">Today: %1$d of %2$d calls</string>
+    <string name="plan_usage_unlimited">Today: %1$d calls · unlimited</string>
+    <string name="plan_free_name">Free</string>
+    <string name="plan_pro_name">Pro</string>
+    <string name="plan_max_name">Max</string>
+    <string name="plan_per_month">%1$s / month</string>
+    <string name="plan_choose">Choose %1$s</string>
+    <string name="plan_active">Active</string>
+    <string name="plan_client_free_desc">Personal assistant with voice, memory and the yaya business network. %1$d messages a day.</string>
+    <string name="plan_client_pro_desc">For all-day use: %1$d messages a day, bookings and orders without waiting.</string>
+    <string name="plan_client_max_desc">No daily limits and priority at peak hours. For people who delegate everything to their agent.</string>
+    <string name="plan_biz_free_desc">Your AI receptionist: %1$d messages and %2$d new customers a day, presence on the yaya network.</string>
+    <string name="plan_biz_pro_desc">%1$d messages and %2$d new customers a day. For busy businesses.</string>
+    <string name="plan_biz_max_desc">No limits: every message, every customer, every day. Priority support.</string>
+    <string name="plan_play_unavailable">Subscriptions are purchased in the Google Play version of agento.</string>
+    <string name="plan_play_error">Could not reach Google Play (%1$s).</string>
+    <string name="plan_activating">Activating your plan…</string>
+    <string name="plan_activated">Done! Your %1$s plan is active.</string>
+    <string name="plan_activate_error">Your purchase went through but we could not activate it: %1$s. Open this screen again later.</string>
+    <string name="plan_pay_title">Pay by Yape or Plin</string>
+    <string name="plan_pay_body">Send %1$s to %2$s and write this reference in the message:</string>
+    <string name="plan_pay_yape">Yape: %1$s</string>
+    <string name="plan_pay_plin">Plin: %1$s</string>
+    <string name="plan_pay_payee">Payee: %1$s</string>
+    <string name="plan_pay_unconfigured">Message us on WhatsApp and we activate the plan right away.</string>
+    <string name="plan_pay_copy">Copy reference</string>
+    <string name="plan_pay_copied">Reference copied</string>
+    <string name="plan_pay_check">I paid — verify</string>
+    <string name="plan_pay_pending">We don\'t see the payment yet. It usually confirms within the hour; we\'ll tell you here.</string>
+    <string name="plan_pay_paid">Payment confirmed! Your %1$s plan is active.</string>
+    <string name="plan_sales_whatsapp">Questions? Message us on WhatsApp</string>
+    <string name="plan_error">Could not load the plan. Check your connection.</string>
+    <string name="assistant_status_plan">%1$s plan</string>
 </resources>

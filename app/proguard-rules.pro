@@ -7,7 +7,9 @@
 # NotificationListenerService is instantiated by the system from the manifest
 # entry, so nothing in our code references the constructor. Without this it
 # would be shrunk away and auto-reply would silently stop working.
+# (business edition only; the client build has no such class — harmless there.)
 -keep class tech.yaya.agente.AgenteNotificationListener { *; }
+-dontwarn tech.yaya.agente.AgenteNotificationListener
 -keep class tech.yaya.agente.DownloadReceiver { *; }
 # JNI entry points of the on-device agent core (libagento_core.so) are resolved
 # by name at runtime.

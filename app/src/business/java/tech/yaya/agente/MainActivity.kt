@@ -86,7 +86,12 @@ class MainActivity : AppCompatActivity() {
 
         groupSwitch.setOnCheckedChangeListener { _, on -> Prefs.setReplyToGroups(this, on) }
 
-        findViewById<MaterialButton>(R.id.server_config_button).setOnClickListener { editServerUrl() }
+        // Bring-your-own-model is a developer setting: every business API
+        // goes through yaya.tech with the agent identity. Debug builds only.
+        findViewById<MaterialButton>(R.id.server_config_button).apply {
+            visibility = if (BuildConfig.DEBUG) View.VISIBLE else View.GONE
+            setOnClickListener { editServerUrl() }
+        }
         findViewById<MaterialButton>(R.id.onboarding_button).setOnClickListener {
             startActivity(Intent(this, OnboardingActivity::class.java))
         }

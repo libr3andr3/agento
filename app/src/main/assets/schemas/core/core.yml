@@ -16,6 +16,10 @@ fields:
     type: "enum[services|products|both]"
     ask_in_onboarding: true
     question_es: "¿Vendes productos, servicios (con citas), o ambos?"
+  location:
+    type: "string"
+    ask_in_onboarding: true
+    question_es: "¿En qué distrito o ciudad está tu negocio? (así los clientes cercanos te encuentran)"
   businessHours:
     type: "map[day -> range]"
     ask_in_onboarding: true

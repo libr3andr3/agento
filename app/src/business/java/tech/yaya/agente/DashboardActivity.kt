@@ -245,16 +245,11 @@ class DashboardActivity : AppCompatActivity() {
                 banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
             }
         }
-        val sales = p.optString("salesPhone").filter { it.isDigit() }
+        // Upgrading is a plan screen now (Pro / Max, paid by Yape/Plin);
+        // the WhatsApp-to-sales link lives inside it.
         val button = findViewById<View>(R.id.sales_button)
-        button.visibility = if (sales.isEmpty()) View.GONE else View.VISIBLE
-        button.setOnClickListener {
-            if (sales.isEmpty()) return@setOnClickListener
-            val msg = Uri.encode(getString(R.string.plan_sales_message, businessName.text.toString()))
-            // wa.me opens the chat in whichever WhatsApp app is installed;
-            // the browser fallback covers phones with neither.
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$sales?text=$msg")))
-        }
+        button.visibility = View.VISIBLE
+        button.setOnClickListener { startActivity(Intent(this, PlanActivity::class.java)) }
     }
 
     /** The truth chip: is the agent actually able to answer right now? */

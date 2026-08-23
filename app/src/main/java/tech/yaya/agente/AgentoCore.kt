@@ -81,8 +81,19 @@ object AgentoCore {
         Prefs.llmBaseUrl(app).takeIf { it.isNotBlank() }?.let { o.put("LLM_BASE_URL", it) }
         Prefs.llmApiKey(app).takeIf { it.isNotBlank() }?.let { o.put("LLM_API_KEY", it) }
         Prefs.llmModel(app).takeIf { it.isNotBlank() }?.let { o.put("LLM_MODEL", it) }
-        // Voice/vision go through the same gateway later; off until then.
-        o.put("TTS_PROVIDER", "none")
+        // Business edition: speech and vision go through yaya.tech with the
+        // agent identity (no keys on the phone). Consumer edition speaks
+        // with the phone's own TTS, so the core stays silent.
+        if (Edition.CLIENT) {
+            o.put("TTS_PROVIDER", "none")
+            // Consumer app: the core runs a personal assistant for the phone's
+            // owner (no business, no network presence). The device locale
+            // seeds language + country so the first answer already fits.
+            val loc = java.util.Locale.getDefault()
+            o.put("AGENT_MODE", "client")
+            o.put("COUNTRY", loc.country.takeIf { it.length == 2 } ?: "PE")
+            o.put("LANGUAGE", loc.language.takeIf { it.length == 2 } ?: "es")
+        }
         return o
     }
 

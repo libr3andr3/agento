@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Plan screen, shared by both editions: header · current plan · tier cards
+     (filled from code) · payment/activation panel. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/agento_surface"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_m">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textColor="@color/agento_on_surface"
+            android:text="@string/plan_title" />
+
+        <TextView
+            android:id="@+id/plan_current"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="@color/agento_primary" />
+
+        <TextView
+            android:id="@+id/plan_usage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="@color/agento_on_surface_muted" />
+
+        <LinearLayout
+            android:id="@+id/plan_tiers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_m"
+            android:orientation="vertical" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/plan_pay_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_m"
+            android:visibility="gone"
+            app:cardCornerRadius="@dimen/corner_card"
+            app:cardElevation="@dimen/card_elevation"
+            xmlns:app="http://schemas.android.com/apk/res-auto">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/space_m">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/agento_on_surface"
+                    android:text="@string/plan_pay_title" />
+
+                <TextView
+                    android:id="@+id/plan_pay_body"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="@color/agento_on_surface" />
+
+                <TextView
+                    android:id="@+id/plan_pay_ref"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                    android:textColor="@color/agento_primary"
+                    android:textIsSelectable="true" />
+
+                <TextView
+                    android:id="@+id/plan_pay_channels"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="@color/agento_on_surface" />
+
+                <TextView
+                    android:id="@+id/plan_pay_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="@color/agento_on_surface_muted" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/plan_pay_copy"
+                        style="@style/Widget.Agento.Button.Tonal"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/plan_pay_copy" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/plan_pay_check"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_s"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/plan_pay_check" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/plan_sales"
+            style="@style/Widget.Agento.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_m"
+            android:minHeight="@dimen/touch_min"
+            android:visibility="gone"
+            android:text="@string/plan_sales_whatsapp" />
+
+        <TextView
+            android:id="@+id/plan_note"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_m"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="@color/agento_on_surface_muted" />
+    </LinearLayout>
+</ScrollView>
