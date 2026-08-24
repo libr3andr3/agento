@@ -99,28 +99,87 @@
                     android:inputType="textEmailAddress" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/account_phone_til"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                app:hintEnabled="true"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/account_phone_hint"
-                app:boxCornerRadiusBottomEnd="@dimen/corner_control"
-                app:boxCornerRadiusBottomStart="@dimen/corner_control"
-                app:boxCornerRadiusTopEnd="@dimen/corner_control"
-                app:boxCornerRadiusTopStart="@dimen/corner_control"
-                app:errorEnabled="true"
-                app:helperText="@string/account_phone_helper">
+                android:orientation="horizontal">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/account_phone"
-                    android:layout_width="match_parent"
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/account_country_card"
+                    android:layout_width="wrap_content"
+                    android:layout_height="56dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/agento_surface_card"
+                    app:cardCornerRadius="@dimen/corner_control"
+                    app:cardElevation="0dp"
+                    app:rippleColor="@color/agento_primary_container"
+                    app:strokeColor="@color/agento_outline"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="@dimen/space_m"
+                        android:paddingEnd="@dimen/space_m">
+
+                        <TextView
+                            android:id="@+id/account_country_flag"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:importantForAccessibility="no"
+                            android:text="🇵🇪"
+                            android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                        <TextView
+                            android:id="@+id/account_country_dial"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_s"
+                            android:text="+51"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="@color/agento_on_surface" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_xs"
+                            android:importantForAccessibility="no"
+                            android:text="▾"
+                            android:textAppearance="?attr/textAppearanceLabelMedium"
+                            android:textColor="@color/agento_on_surface_muted" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/account_phone_til"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    app:hintEnabled="true"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:autofillHints="phone"
-                    android:imeOptions="actionDone"
-                    android:inputType="phone" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_weight="1"
+                    android:layout_marginStart="@dimen/space_s"
+                    android:hint="@string/account_phone_hint"
+                    app:boxCornerRadiusBottomEnd="@dimen/corner_control"
+                    app:boxCornerRadiusBottomStart="@dimen/corner_control"
+                    app:boxCornerRadiusTopEnd="@dimen/corner_control"
+                    app:boxCornerRadiusTopStart="@dimen/corner_control"
+                    app:errorEnabled="true"
+                    app:helperTextEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/account_phone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:autofillHints="phoneNational"
+                        android:digits="0123456789 "
+                        android:imeOptions="actionDone"
+                        android:inputType="phone"
+                        android:maxLength="16" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/account_error"

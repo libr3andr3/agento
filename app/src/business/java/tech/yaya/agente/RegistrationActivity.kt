@@ -441,84 +441,16 @@ class RegistrationActivity : AppCompatActivity() {
     // ------------------------------------------------------------ country picker
 
     private fun openCountryPicker() {
-        val dialog = BottomSheetDialog(this)
-        val view = LayoutInflater.from(this).inflate(R.layout.sheet_country_picker, null)
-        val sheetHeight = (resources.displayMetrics.heightPixels * 0.72f).toInt()
-        dialog.setContentView(
-            view, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, sheetHeight)
-        )
-        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-        dialog.behavior.skipCollapsed = true
-
-        val list = view.findViewById<RecyclerView>(R.id.country_list)
-        val empty = view.findViewById<TextView>(R.id.country_empty)
-        val search = view.findViewById<TextInputEditText>(R.id.country_search_input)
-
-        val adapter = CountryAdapter(Countries.ALL) { picked ->
+        CountryPicker.show(this) { picked ->
             country = picked
             updateCountryViews()
             updatePhonePreview()
             phoneTil.error = null
-            dialog.dismiss()
             phoneInput.requestFocus()
-        }
-        list.layoutManager = LinearLayoutManager(this)
-        list.adapter = adapter
-
-        search.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val results = Countries.search(s?.toString().orEmpty())
-                adapter.submit(results)
-                empty.visibility = if (results.isEmpty()) View.VISIBLE else View.GONE
-                list.visibility = if (results.isEmpty()) View.GONE else View.VISIBLE
-            }
-        })
-        dialog.show()
-    }
-
-    private class CountryAdapter(
-        initial: List<Country>,
-        private val onPick: (Country) -> Unit
-    ) : RecyclerView.Adapter<CountryAdapter.Holder>() {
-
-        private var items: List<Country> = initial
-
-        class Holder(v: View) : RecyclerView.ViewHolder(v) {
-            val flag: TextView = v.findViewById(R.id.country_flag)
-            val name: TextView = v.findViewById(R.id.country_name)
-            val dial: TextView = v.findViewById(R.id.country_dial)
-        }
-
-        fun submit(list: List<Country>) {
-            items = list
-            notifyDataSetChanged()
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder =
-            Holder(
-                LayoutInflater.from(parent.context)
-                    .inflate(R.layout.item_country, parent, false)
-            )
-
-        override fun getItemCount() = items.size
-
-        override fun onBindViewHolder(holder: Holder, position: Int) {
-            val c = items[position]
-            holder.flag.text = c.flag
-            holder.name.text = c.nameEs
-            holder.dial.text = "+" + c.dial
-            holder.itemView.setOnClickListener { onPick(c) }
         }
     }
 
     // ------------------------------------------------------------ helpers
 
-    /** "+51987654321" → "+51 987 654 321" for subtitles and helper text. */
-    private fun prettyPhone(e164: String): String {
-        val dial = country.dial
-        val local = e164.removePrefix("+").removePrefix(dial)
-        return "+" + dial + " " + local.chunked(3).joinToString(" ")
-    }
+    private fun prettyPhone(e164: String): String = CountryPicker.pretty(country, e164)
 }

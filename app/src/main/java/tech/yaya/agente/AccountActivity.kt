@@ -10,6 +10,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -38,6 +39,10 @@ class AccountActivity : AppCompatActivity() {
     private lateinit var email: TextInputEditText
     private lateinit var phoneTil: TextInputLayout
     private lateinit var phone: TextInputEditText
+    private lateinit var countryCard: MaterialCardView
+    private lateinit var countryFlag: TextView
+    private lateinit var countryDial: TextView
+    private var country: Country = Countries.DEFAULT
     private lateinit var error: TextView
     private lateinit var primary: MaterialButton
     private lateinit var codeSent: TextView
@@ -66,6 +71,9 @@ class AccountActivity : AppCompatActivity() {
         email = findViewById(R.id.account_email)
         phoneTil = findViewById(R.id.account_phone_til)
         phone = findViewById(R.id.account_phone)
+        countryCard = findViewById(R.id.account_country_card)
+        countryFlag = findViewById(R.id.account_country_flag)
+        countryDial = findViewById(R.id.account_country_dial)
         error = findViewById(R.id.account_error)
         primary = findViewById(R.id.account_primary)
         codeSent = findViewById(R.id.account_code_sent)
@@ -93,15 +101,42 @@ class AccountActivity : AppCompatActivity() {
                 if (s?.length == 6 && !busy) checkCode()
             }
         })
-        // The phone's own country: the owner completes, never hunts for a prefix.
-        if (phone.text.isNullOrBlank()) phone.setText(Countries.defaultFor(this).dial.let { if (it.startsWith("+")) "$it " else "+$it " })
+        // The phone's own country (SIM, network, locale): confirm, don't hunt.
+        country = Countries.byIso(savedInstanceState?.getString("iso")) .takeIf { savedInstanceState != null } ?: Countries.defaultFor(this)
+        updateCountryViews()
+        countryCard.setOnClickListener {
+            CountryPicker.show(this) { picked -> country = picked; updateCountryViews(); phoneTil.error = null; updatePhonePreview(); phone.requestFocus() }
+        }
+        phone.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: Editable?) { phoneTil.error = null; updatePhonePreview() }
+        })
 
         if (intent.getBooleanExtra(EXTRA_MANAGE, false) && Prefs.accountEmail(this).isNotEmpty()) showSigned() else showForm()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("iso", country.iso)
     }
 
     override fun onDestroy() {
         timer?.cancel()
         super.onDestroy()
+    }
+
+    private fun updateCountryViews() {
+        countryFlag.text = country.flag
+        countryDial.text = "+" + country.dial
+        countryCard.contentDescription = getString(R.string.reg_country_cd, country.nameEs, "+" + country.dial)
+    }
+
+    private fun localDigits(): String = phone.text?.toString().orEmpty().filter(Char::isDigit).trimStart('0')
+
+    private fun updatePhonePreview() {
+        val local = localDigits()
+        phoneTil.helperText = if (local.isEmpty()) null else CountryPicker.pretty(country, "+" + country.dial + local)
     }
 
     private fun showForm() {
@@ -138,14 +173,15 @@ class AccountActivity : AppCompatActivity() {
     }
 
     private fun currentEmail() = email.text?.toString()?.trim().orEmpty()
-    private fun currentPhone() = phone.text?.toString()?.trim().orEmpty()
+    /** E.164 with '+', or "" when the local part is empty. */
+    private fun currentPhone(): String = localDigits().let { if (it.isEmpty()) "" else "+" + country.dial + it }
     private fun currentName() = name.text?.toString()?.trim().orEmpty().ifEmpty { null }
 
     private fun sendCode(resend: Boolean = false) {
         val e = currentEmail(); val p = currentPhone()
         emailTil.error = null; phoneTil.error = null; error.visibility = View.GONE
         if (!android.util.Patterns.EMAIL_ADDRESS.matcher(e).matches()) { emailTil.error = getString(R.string.account_error_email); if (!resend) return }
-        if (p.filter { it.isDigit() }.length < 9) { phoneTil.error = getString(R.string.account_error_phone); if (!resend) return }
+        if (localDigits().length !in 6..12) { phoneTil.error = getString(R.string.account_error_phone); if (!resend) return }
         setBusy(true)
         val my = ++seq
         ServerClient.IO_EXECUTOR.execute {
