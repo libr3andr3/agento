@@ -40,10 +40,12 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!-- Update channel: DownloadManager finished fetching a new APK. -->
+        <!-- Update channel: DownloadManager finished fetching a new APK. The
+             system targets this broadcast at our package, so it need not be
+             exported to every app on the phone. -->
         <receiver
             android:name=".DownloadReceiver"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
             </intent-filter>

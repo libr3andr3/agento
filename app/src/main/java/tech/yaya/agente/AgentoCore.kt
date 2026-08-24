@@ -76,6 +76,10 @@ object AgentoCore {
         o.put("BIND_ADDR", "127.0.0.1:0")
         o.put("APP_KEY", appKey(app))
         o.put("ADMIN_KEY", secret(app, "core_admin_key"))
+        // The agent's identity seed is sealed at rest under this key, which
+        // itself lives Keystore-wrapped in SecureStore: a copy of agento.db
+        // is not the business's identity.
+        o.put("IDENTITY_KEK_HEX", hexSecret(app, "core_identity_kek"))
         // AI engine: blank values mean "yaya.tech gateway, authenticated by
         // this agent's own identity" — the core's defaults.
         Prefs.llmBaseUrl(app).takeIf { it.isNotBlank() }?.let { o.put("LLM_BASE_URL", it) }
@@ -85,7 +89,7 @@ object AgentoCore {
         // agent identity (no keys on the phone). Consumer edition speaks
         // with the phone's own TTS, so the core stays silent.
         if (Edition.CLIENT) {
-            o.put("TTS_PROVIDER", "none")
+            o.put("AUDIO", "0")
             // Consumer app: the core runs a personal assistant for the phone's
             // owner (no business, no network presence). The device locale
             // seeds language + country so the first answer already fits.
@@ -107,6 +111,16 @@ object AgentoCore {
         val alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
         val rnd = SecureRandom()
         val s = (1..40).map { alphabet[rnd.nextInt(alphabet.length)] }.joinToString("")
+        SecureStore.putString(sp, key, s)
+        return s
+    }
+
+    /** 32 random bytes as hex, minted once and kept Keystore-wrapped. */
+    private fun hexSecret(app: Context, key: String): String {
+        val sp = Prefs.sp(app)
+        SecureStore.getString(sp, key)?.takeIf { it.length == 64 }?.let { return it }
+        val bytes = ByteArray(32).also { SecureRandom().nextBytes(it) }
+        val s = bytes.joinToString("") { "%02x".format(it) }
         SecureStore.putString(sp, key, s)
         return s
     }
