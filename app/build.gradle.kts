@@ -20,6 +20,9 @@ android {
             ?: (project.findProperty("AGENTO_APP_KEY") as String?)
             ?: "agente-app-dev"
         buildConfigField("String", "APP_KEY", "\"$appKey\"")
+        // Where accounts and plans are managed (the gateway's web app).
+        val webApp = System.getenv("AGENTO_WEB_APP") ?: "https://llm.yaya.tech/app"
+        buildConfigField("String", "WEB_APP_URL", "\"$webApp\"")
     }
 
     buildFeatures {
@@ -146,6 +149,4 @@ dependencies {
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    // Consumer subscriptions (Pro / Max) through Google Play.
-    "clientImplementation"("com.android.billingclient:billing-ktx:7.1.1")
 }

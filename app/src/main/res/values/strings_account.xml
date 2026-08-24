@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_title_signin">Continúa con Yaya</string>
+    <string name="account_title_register">Crea tu cuenta Yaya</string>
+    <string name="account_sub">Tu identidad es tuya: una cuenta para tu negocio, tus dispositivos y tu panel web.</string>
+    <string name="account_name_hint">Tu nombre</string>
+    <string name="account_email_hint">Correo</string>
+    <string name="account_password_hint">Contraseña</string>
+    <string name="account_primary_signin">Continuar con Yaya</string>
+    <string name="account_primary_register">Crear cuenta Yaya</string>
+    <string name="account_switch_to_register">¿Nuevo aquí? Crear cuenta Yaya</string>
+    <string name="account_switch_to_signin">¿Ya tienes cuenta? Continuar con Yaya</string>
+    <string name="account_error_email">Escribe un correo válido.</string>
+    <string name="account_error_short_password">La contraseña necesita al menos 8 caracteres.</string>
+    <string name="account_error_wrong">Correo o contraseña incorrectos.</string>
+    <string name="account_error_conflict">Ese correo ya tiene cuenta — continúa con Yaya.</string>
+    <string name="account_error_rate">Demasiados intentos. Espera un momento.</string>
+    <string name="account_error_offline">Sin conexión. Revisa tu internet.</string>
+    <string name="account_error_generic">No se pudo completar: %1$s</string>
+    <string name="account_restore_title">¿Vienes de otro teléfono?</string>
+    <string name="account_restore_body">Si tu plan incluye copias de seguridad, traemos tu negocio tal como lo dejaste.</string>
+    <string name="account_restore">Restaurar mi negocio</string>
+    <string name="account_fresh">Empezar de cero</string>
+    <string name="account_restore_none">No hay ninguna copia en esta cuenta. Empecemos de cero.</string>
+    <string name="account_restored">🟢 Tu negocio está de vuelta en este teléfono.</string>
+    <string name="account_signed_as">Sesión iniciada como %1$s</string>
+    <string name="account_logout">Cerrar sesión</string>
+    <string name="account_continue">Continuar</string>
+    <string name="account_manage_web">Gestionar mi cuenta en la web</string>
+    <string name="plan_web_only">Los planes se gestionan desde tu cuenta Yaya en la web, para todos tus dispositivos.</string>
+    <string name="plan_client_web_only">No se puede cambiar de plan desde la app.</string>
+    <string name="plan_account_line">Cuenta: %1$s</string>
+</resources>

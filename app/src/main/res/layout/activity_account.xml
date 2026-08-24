@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Yaya ID: sign in ("Continuar con Yaya") or create an account. Shown
+     before anything else in both editions; after sign-in, a phone with no
+     business yet may restore one from the account's backup. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/agento_surface"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_l">
+
+        <View
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_marginTop="@dimen/space_xl"
+            android:background="@drawable/bg_brand_mark"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/account_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_l"
+            android:text="@string/account_title_signin"
+            android:textAppearance="?attr/textAppearanceHeadlineMedium"
+            android:textColor="@color/agento_on_surface" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_s"
+            android:text="@string/account_sub"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/agento_on_surface_muted" />
+
+        <LinearLayout
+            android:id="@+id/account_form"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/account_name_til"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xl"
+                android:hint="@string/account_name_hint"
+                android:visibility="gone"
+                app:boxCornerRadiusBottomEnd="@dimen/corner_control"
+                app:boxCornerRadiusBottomStart="@dimen/corner_control"
+                app:boxCornerRadiusTopEnd="@dimen/corner_control"
+                app:boxCornerRadiusTopStart="@dimen/corner_control">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/account_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName|textCapWords" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/account_email_til"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_m"
+                android:hint="@string/account_email_hint"
+                app:boxCornerRadiusBottomEnd="@dimen/corner_control"
+                app:boxCornerRadiusBottomStart="@dimen/corner_control"
+                app:boxCornerRadiusTopEnd="@dimen/corner_control"
+                app:boxCornerRadiusTopStart="@dimen/corner_control"
+                app:errorEnabled="true">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/account_email"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/account_password_til"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/account_password_hint"
+                app:boxCornerRadiusBottomEnd="@dimen/corner_control"
+                app:boxCornerRadiusBottomStart="@dimen/corner_control"
+                app:boxCornerRadiusTopEnd="@dimen/corner_control"
+                app:boxCornerRadiusTopStart="@dimen/corner_control"
+                app:endIconMode="password_toggle"
+                app:errorEnabled="true">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/account_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionDone"
+                    android:inputType="textPassword" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:id="@+id/account_error"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/agento_error"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/account_primary"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/cta_height"
+                android:layout_marginTop="@dimen/space_m"
+                android:text="@string/account_primary_signin" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/account_switch"
+                style="@style/Widget.Agento.Button.Text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_s"
+                android:text="@string/account_switch_to_register" />
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/account_progress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_m"
+                android:indeterminate="true"
+                android:visibility="invisible" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/account_restore_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xl"
+            android:visibility="gone"
+            app:cardCornerRadius="@dimen/corner_card"
+            app:cardElevation="@dimen/card_elevation">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/space_m">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/account_restore_title"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/agento_on_surface" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:text="@string/account_restore_body"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/agento_on_surface_muted" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/account_restore"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/cta_height"
+                    android:layout_marginTop="@dimen/space_m"
+                    android:text="@string/account_restore" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/account_fresh"
+                    style="@style/Widget.Agento.Button.Text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/account_fresh" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/account_signed_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xl"
+            android:visibility="gone"
+            app:cardCornerRadius="@dimen/corner_card"
+            app:cardElevation="@dimen/card_elevation">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/space_m">
+
+                <TextView
+                    android:id="@+id/account_signed_as"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/agento_on_surface" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/account_continue"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/cta_height"
+                    android:layout_marginTop="@dimen/space_m"
+                    android:text="@string/account_continue" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/account_logout"
+                    style="@style/Widget.Agento.Button.Text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/account_logout" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+</ScrollView>

@@ -181,11 +181,6 @@
     <string name="plan_biz_free_desc">Tu recepcionista con IA: %1$d mensajes y %2$d clientes nuevos al día, presencia en la red yaya.</string>
     <string name="plan_biz_pro_desc">%1$d mensajes y %2$d clientes nuevos al día. Para negocios con movimiento.</string>
     <string name="plan_biz_max_desc">Sin límites: todos los mensajes, todos los clientes, todos los días. Atención prioritaria.</string>
-    <string name="plan_play_unavailable">Las suscripciones se compran en la versión de Google Play de agento.</string>
-    <string name="plan_play_error">No se pudo conectar con Google Play (%1$s).</string>
-    <string name="plan_activating">Activando tu plan…</string>
-    <string name="plan_activated">¡Listo! Tu plan %1$s está activo.</string>
-    <string name="plan_activate_error">Tu compra se registró pero no pudimos activarla: %1$s. Abre esta pantalla de nuevo más tarde.</string>
     <string name="plan_pay_title">Paga por Yape o Plin</string>
     <string name="plan_pay_body">Envía %1$s a %2$s y escribe esta referencia en el mensaje:</string>
     <string name="plan_pay_yape">Yape: %1$s</string>

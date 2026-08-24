@@ -80,6 +80,8 @@ object AgentoCore {
         // itself lives Keystore-wrapped in SecureStore: a copy of agento.db
         // is not the business's identity.
         o.put("IDENTITY_KEK_HEX", hexSecret(app, "core_identity_kek"))
+        // Shown on the account page's device list.
+        o.put("DEVICE_LABEL", (android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL).trim().take(60))
         // AI engine: blank values mean "yaya.tech gateway, authenticated by
         // this agent's own identity" — the core's defaults.
         Prefs.llmBaseUrl(app).takeIf { it.isNotBlank() }?.let { o.put("LLM_BASE_URL", it) }

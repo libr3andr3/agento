@@ -6,9 +6,10 @@ import androidx.appcompat.app.AppCompatActivity
 
 /**
  * Launcher: a pure router, no UI (see BOUNDARIES.md flow contract).
- *  - not registered            → RegistrationActivity (full-screen step flow)
- *  - registered, no interview  → OnboardingActivity (chat)
- *  - registered + interviewed  → DashboardActivity
+ *  - no Yaya account            → AccountActivity (sign in / create)
+ *  - not registered             → RegistrationActivity (full-screen step flow)
+ *  - registered, no interview   → OnboardingActivity (chat)
+ *  - registered + interviewed   → DashboardActivity
  *
  * "Interviewed" is inferred from the persisted chat transcript until Prefs
  * grows an explicit onboarded flag; DashboardActivity keeps the chat reachable
@@ -18,6 +19,7 @@ class WelcomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val next = when {
+            Prefs.accountEmail(this).isEmpty() -> AccountActivity::class.java
             !Prefs.serverConfigured(this) -> RegistrationActivity::class.java
             Prefs.chatTranscript(this).isNullOrBlank() -> OnboardingActivity::class.java
             else -> DashboardActivity::class.java

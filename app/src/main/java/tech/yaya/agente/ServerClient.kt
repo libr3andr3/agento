@@ -236,20 +236,37 @@ object ServerClient {
         return if (r.code in 200..299) r.json else null
     }
 
-    fun planRequest(ctx: Context, plan: String, months: Int): Response =
-        postRaw(ctx, "/api/plan/request", JSONObject().put("plan", plan).put("months", months),
-            bearer = Prefs.serverConfigured(ctx))
+    // Yaya ID (both editions). No device token: the account comes first.
+    // [IO_EXECUTOR].
 
-    fun planRequestStatus(ctx: Context, ref: String): JSONObject? {
-        val r = exchange(ctx, "/api/plan/request/$ref", body = null, contentType = null,
-            bearer = Prefs.serverConfigured(ctx), readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
+    fun account(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/account", body = null, contentType = null, bearer = false,
+            readTimeoutMs = 15_000, retry = Retry.IDEMPOTENT)
         return if (r.code in 200..299) r.json else null
     }
 
-    fun planPlay(ctx: Context, pkg: String, productId: String, token: String): Response =
-        postRaw(ctx, "/api/plan/play",
-            JSONObject().put("package", pkg).put("productId", productId).put("purchaseToken", token),
-            bearer = Prefs.serverConfigured(ctx), retry = Retry.IDEMPOTENT)
+    fun accountRegister(ctx: Context, email: String, password: String, name: String?): Response =
+        postRaw(ctx, "/api/account/register",
+            JSONObject().put("email", email).put("password", password).apply { name?.let { put("name", it) } },
+            bearer = false)
+
+    fun accountLogin(ctx: Context, email: String, password: String): Response =
+        postRaw(ctx, "/api/account/login", JSONObject().put("email", email).put("password", password), bearer = false)
+
+    fun accountLogout(ctx: Context): Boolean =
+        postRaw(ctx, "/api/account/logout", JSONObject(), bearer = false).code in 200..299
+
+    /** Upload an encrypted snapshot now (paid plans). */
+    fun backupNow(ctx: Context): Response = postRaw(ctx, "/api/backup", JSONObject(), bearer = false)
+
+    /** Bring the account's latest snapshot onto this phone. Slow: it downloads
+     *  and rewrites every table. Side-effectful: never retried. */
+    fun restore(ctx: Context, force: Boolean): Response = exchange(
+        ctx, "/api/restore",
+        body = JSONObject().put("force", force).toString().toByteArray(),
+        contentType = "application/json", bearer = false,
+        readTimeoutMs = 180_000, retry = Retry.NEVER,
+    )
 
     /** Coarse location → the core (public offer for a business, private
      *  profile for a person). Idempotent. [IO_EXECUTOR]. */

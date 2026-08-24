@@ -28,6 +28,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Agente">
 
+        <!-- Yaya ID: sign in / create account, before anything else. -->
+        <activity
+            android:name=".AccountActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- Hands the camera app a writable cache file for the catalog-photo
              capture (ACTION_IMAGE_CAPTURE + EXTRA_OUTPUT, no CAMERA perm). -->
         <provider

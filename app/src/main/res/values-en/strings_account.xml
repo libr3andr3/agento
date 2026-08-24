@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_title_signin">Continue with Yaya</string>
+    <string name="account_title_register">Create your Yaya account</string>
+    <string name="account_sub">Your identity is yours: one account for your business, your devices and your web dashboard.</string>
+    <string name="account_name_hint">Your name</string>
+    <string name="account_email_hint">Email</string>
+    <string name="account_password_hint">Password</string>
+    <string name="account_primary_signin">Continue with Yaya</string>
+    <string name="account_primary_register">Create Yaya account</string>
+    <string name="account_switch_to_register">New here? Create a Yaya account</string>
+    <string name="account_switch_to_signin">Already have an account? Continue with Yaya</string>
+    <string name="account_error_email">Enter a valid email.</string>
+    <string name="account_error_short_password">The password needs at least 8 characters.</string>
+    <string name="account_error_wrong">Wrong email or password.</string>
+    <string name="account_error_conflict">That email already has an account — continue with Yaya.</string>
+    <string name="account_error_rate">Too many attempts. Wait a moment.</string>
+    <string name="account_error_offline">No connection. Check your internet.</string>
+    <string name="account_error_generic">Could not complete: %1$s</string>
+    <string name="account_restore_title">Coming from another phone?</string>
+    <string name="account_restore_body">If your plan includes backups, we bring your business back exactly as you left it.</string>
+    <string name="account_restore">Restore my business</string>
+    <string name="account_fresh">Start fresh</string>
+    <string name="account_restore_none">There is no backup on this account. Let\'s start fresh.</string>
+    <string name="account_restored">🟢 Your business is back on this phone.</string>
+    <string name="account_signed_as">Signed in as %1$s</string>
+    <string name="account_logout">Sign out</string>
+    <string name="account_continue">Continue</string>
+    <string name="account_manage_web">Manage my account on the web</string>
+    <string name="plan_web_only">Plans are managed from your Yaya account on the web, for all your devices.</string>
+    <string name="plan_client_web_only">Plans can\'t be changed from the app.</string>
+    <string name="plan_account_line">Account: %1$s</string>
+</resources>

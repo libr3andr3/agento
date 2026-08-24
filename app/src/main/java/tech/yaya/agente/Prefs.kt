@@ -159,6 +159,12 @@ object Prefs {
     fun setDeviceToken(ctx: Context, t: String) =
         SecureStore.putString(sp(ctx), KEY_DEVICE_TOKEN, t)
 
+    /** Mirror of the core's signed-in account (the core is the truth; this
+     *  lets the launcher route without a loopback round-trip). */
+    fun accountEmail(ctx: Context): String = sp(ctx).getString("account_email", "") ?: ""
+    fun setAccountEmail(ctx: Context, email: String) =
+        sp(ctx).edit().putString("account_email", email).apply()
+
     fun businessId(ctx: Context): String = sp(ctx).getString("business_id", "") ?: ""
     fun setBusinessId(ctx: Context, id: String) =
         sp(ctx).edit().putString("business_id", id).apply()

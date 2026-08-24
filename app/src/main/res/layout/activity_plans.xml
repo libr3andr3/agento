@@ -142,5 +142,20 @@
             android:layout_marginTop="@dimen/space_m"
             android:textAppearance="?attr/textAppearanceLabelMedium"
             android:textColor="@color/agento_on_surface_muted" />
-    </LinearLayout>
+            <TextView
+            android:id="@+id/plan_account"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xl"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="@color/agento_on_surface_muted" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/plan_logout"
+            style="@style/Widget.Agento.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/account_logout" />
+
+</LinearLayout>
 </ScrollView>
