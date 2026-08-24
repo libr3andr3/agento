@@ -63,6 +63,15 @@ class DashboardActivity : AppCompatActivity() {
         // "Habla con tu negocio": the onboarding chat lives on after setup as
         // the owner's management console — same voice, camera and text, now
         // wired to the server's manager agent.
+        findViewById<TextView>(R.id.dash_contacts).setOnClickListener {
+            startActivity(Intent(this, CrmListActivity::class.java).putExtra(CrmListActivity.EXTRA_MODE, CrmListActivity.MODE_CONTACTS))
+        }
+        findViewById<TextView>(R.id.dash_convos_all).setOnClickListener {
+            startActivity(Intent(this, CrmListActivity::class.java).putExtra(CrmListActivity.EXTRA_MODE, CrmListActivity.MODE_CONVERSATIONS))
+        }
+        findViewById<View>(R.id.backup_banner_button).setOnClickListener {
+            startActivity(Intent(this, BackupUpsellActivity::class.java))
+        }
         findViewById<TextView>(R.id.dash_chat).setOnClickListener {
             startActivity(Intent(this, OnboardingActivity::class.java))
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
@@ -210,6 +219,9 @@ class DashboardActivity : AppCompatActivity() {
      * button everywhere is "raise limits + web dashboard" → WhatsApp to sales.
      */
     private fun refreshPlanBanner() {
+        // Free plan = the agent lives on this phone only: keep the backup pitch visible.
+        findViewById<View>(R.id.backup_banner).visibility =
+            if ((plan?.optString("plan") ?: "free") == "free") View.VISIBLE else View.GONE
         val p = plan
         val banner = findViewById<MaterialCardView>(R.id.trial_banner)
         if (p == null) {
@@ -306,7 +318,7 @@ class DashboardActivity : AppCompatActivity() {
                     Prefs.dashboardCache(this)?.let { runCatching { render(JSONObject(it)) } }
                 }
                 refreshStatus(lastFetchOk)
-                renderConversations()
+                loadConversations()
             }
         }
     }
@@ -460,40 +472,33 @@ class DashboardActivity : AppCompatActivity() {
 
     private fun renderConversations() {
         convos.removeAllViews()
-        val events = ReplyLog.load(this).take(8)
-        if (events.isEmpty()) {
+        val rows = conversations
+        if (rows == null || rows.length() == 0) {
             convos.addView(emptyState(convos, getString(R.string.dash_convos_empty)))
             return
         }
-        val time = SimpleDateFormat("HH:mm", Locale.getDefault())
-        events.forEach { e ->
-            val payment = e.detail.startsWith("💰")
+        for (i in 0 until minOf(rows.length(), 6)) {
+            val r = rows.getJSONObject(i)
+            val contact = r.optJSONObject("contact")
+            val name = Crm.displayName(this, contact, r.optString("peer"))
             val card = inflateIn(R.layout.item_dash_convo, convos) as MaterialCardView
-            if (payment) {
-                card.setCardBackgroundColor(getColor(R.color.agento_primary_container))
-                card.strokeWidth = 0
-            }
-            card.findViewById<TextView>(R.id.dash_convo_meta).apply {
-                text = "${e.sender} · ${e.appName} · ${time.format(e.timestamp)}"
-                if (payment) setTextColor(getColor(R.color.agento_on_primary_container))
-            }
-            card.findViewById<TextView>(R.id.dash_convo_incoming).apply {
-                text = e.incomingText
-                if (payment) setTextColor(getColor(R.color.agento_on_primary_container))
-            }
+            card.findViewById<TextView>(R.id.dash_convo_meta).text = "$name · ${Crm.shortTime(r.optString("lastAt"))}"
+            card.findViewById<TextView>(R.id.dash_convo_incoming).text = r.optString("lastText")
             card.findViewById<TextView>(R.id.dash_convo_detail).apply {
-                text = when {
-                    payment -> e.detail
-                    e.replySent -> "↩ ${e.detail}"
-                    else -> e.detail
-                }
-                setTextColor(getColor(when {
-                    payment -> R.color.agento_on_primary_container
-                    e.replySent -> R.color.agento_primary
-                    else -> R.color.agento_on_surface_muted
-                }))
+                text = if (r.optString("lastRole") == "assistant") "🤖 " + getString(R.string.crm_messages_count, r.optInt("messages")) else getString(R.string.crm_messages_count, r.optInt("messages"))
+                setTextColor(getColor(R.color.agento_on_surface_muted))
             }
+            card.setOnClickListener { startActivity(Intent(this, ConversationActivity::class.java).putExtra(ConversationActivity.EXTRA_PEER, r.optString("peer"))) }
             convos.addView(card)
+        }
+    }
+
+    private var conversations: org.json.JSONArray? = null
+
+    private fun loadConversations() {
+        ServerClient.IO_EXECUTOR.execute {
+            val v = ServerClient.conversations(this)?.optJSONArray("conversations")
+            runOnUiThread { conversations = v; renderConversations() }
         }
     }
 

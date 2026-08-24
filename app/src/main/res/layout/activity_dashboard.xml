@@ -37,6 +37,16 @@
             android:contentDescription="@string/dash_agent_switch_desc" />
 
         <TextView
+            android:id="@+id/dash_contacts"
+            android:layout_width="@dimen/touch_min"
+            android:layout_height="@dimen/touch_min"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/crm_contacts_title"
+            android:gravity="center"
+            android:text="👥"
+            android:textSize="22sp" />
+
+        <TextView
             android:id="@+id/dash_chat"
             android:layout_width="@dimen/touch_min"
             android:layout_height="@dimen/touch_min"
@@ -193,7 +203,44 @@
 
                 <!-- Trial banner: secondary_container while active,
                      error_container once expired (bound in code). -->
-                <com.google.android.material.card.MaterialCardView
+                                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/backup_banner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_s"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/agento_secondary_container"
+                    app:cardCornerRadius="@dimen/corner_card"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="@dimen/space_m">
+
+                        <TextView
+                            android:id="@+id/backup_banner_text"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/dash_backup_banner"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="@color/agento_on_surface" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/backup_banner_button"
+                            style="@style/Widget.Agento.Button.Tonal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_s"
+                            android:text="@string/dash_backup_button" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+<com.google.android.material.card.MaterialCardView
                     android:id="@+id/trial_banner"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -361,14 +408,34 @@
                     android:paddingTop="@dimen/space_s" />
 
                 <!-- Conversaciones recientes -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_m"
                     android:layout_marginStart="@dimen/space_s"
                     android:text="@string/dash_convos"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:textColor="@color/agento_on_surface" />
+
+                <TextView
+                    android:id="@+id/dash_convos_all"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/touch_min"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:gravity="center"
+                    android:paddingStart="@dimen/space_s"
+                    android:paddingEnd="@dimen/space_s"
+                    android:text="@string/crm_see_all"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="@color/agento_primary" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/convos_container"

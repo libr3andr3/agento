@@ -67,6 +67,19 @@
             android:exported="false" />
 
         <activity
+            android:name=".CrmListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ConversationActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".BackupUpsellActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".PayoutActivity"
             android:exported="false"
             android:screenOrientation="portrait"

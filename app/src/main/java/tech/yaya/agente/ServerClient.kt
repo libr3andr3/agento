@@ -400,6 +400,25 @@ object ServerClient {
     fun paymentEvent(ctx: Context, notification: JSONObject): JSONObject? =
         post(ctx, "/api/payment_event", notification, bearer = true)
 
+    // CRM (business edition). [IO_EXECUTOR].
+
+    fun conversations(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/conversations", body = null, contentType = null, bearer = true, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    fun conversation(ctx: Context, peer: String): JSONObject? {
+        val r = exchange(ctx, "/api/conversations/" + java.net.URLEncoder.encode(peer, "UTF-8"), body = null, contentType = null, bearer = true, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    fun contacts(ctx: Context, q: String): JSONObject? {
+        val r = exchange(ctx, "/api/contacts" + (if (q.isBlank()) "" else "?q=" + java.net.URLEncoder.encode(q, "UTF-8")), body = null, contentType = null, bearer = true, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    fun updateContact(ctx: Context, id: String, patch: JSONObject): JSONObject? = post(ctx, "/api/contacts/$id", patch, bearer = true)
+
     // Cobros (business edition). [IO_EXECUTOR].
 
     /** Wallet names people use in this country, as suggestions. */

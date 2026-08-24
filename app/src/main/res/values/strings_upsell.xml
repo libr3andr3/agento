@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="upsell_kicker">Tu agente ya sabe cómo trabajas</string>
+    <string name="upsell_title">Nunca pierdas a tu agente</string>
+    <string name="upsell_body">Acabas de entrenarlo con todo lo que sabe de %1$s. Hoy vive solo en este teléfono: si lo pierdes o lo cambias, empiezas de cero.</string>
+    <string name="upsell_body_generic">Acabas de entrenarlo con todo lo que sabe de tu negocio. Hoy vive solo en este teléfono: si lo pierdes o lo cambias, empiezas de cero.</string>
+    <string name="upsell_pitch">Con un plan, tu agente se respalda cifrado en la nube. Cambias de celular, entras con tu cuenta Yaya y vuelve tal cual: tus clientes, tus citas, tu forma de atender.</string>
+    <string name="upsell_f1">☁️ Copia cifrada automática de tu agente</string>
+    <string name="upsell_f2">🖥️ Panel web en agento.ceo</string>
+    <string name="upsell_f3">💬 Más mensajes y clientes nuevos cada día</string>
+    <string name="upsell_f4">🛰️ Créditos para clientes que llegan por la red Yaya</string>
+    <string name="upsell_tier_line">%1$s · %2$s al mes · +%3$s en créditos</string>
+    <string name="upsell_cta">Respaldar mi agente</string>
+    <string name="upsell_web_note">Se contrata en la web, en agento.ceo, con tu cuenta Yaya (%1$s).</string>
+    <string name="upsell_later">Ahora no</string>
+    <string name="dash_backup_banner">Tu agente vive solo en este teléfono. Respáldalo para no perderlo.</string>
+    <string name="dash_backup_button">Respaldar</string>
+    <string name="dash_backup_ok">☁️ Respaldado %1$s</string>
+</resources>

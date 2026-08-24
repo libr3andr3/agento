@@ -418,6 +418,7 @@ class RegistrationActivity : AppCompatActivity() {
                 if (deviceToken.isNotEmpty()) {
                     Prefs.setDeviceToken(this, deviceToken)
                     Prefs.setBusinessId(this, resp!!.optString("businessId"))
+                    Prefs.sp(this).edit().putString("business_name", name).apply()
                     Prefs.setLocale(this, resp.optJSONObject("locale"), fallbackCountry = country.iso)
                     // The interview's opening line rides the registration
                     // response; without seeding it the chat opened silent and
