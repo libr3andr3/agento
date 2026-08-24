@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Yaya ID: sign in ("Continuar con Yaya") or create an account. Shown
-     before anything else in both editions; after sign-in, a phone with no
-     business yet may restore one from the account's backup. -->
+<!-- Yaya ID, without passwords. Step 1: name · email · phone → "Continuar
+     con Yaya" sends a code by WhatsApp and email. Step 2: the code. Shown
+     before anything else in both editions; a business phone with nothing
+     on it yet may then restore from the account's backup. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -15,12 +16,20 @@
         android:orientation="vertical"
         android:padding="@dimen/space_l">
 
-        <View
+        <FrameLayout
             android:layout_width="72dp"
             android:layout_height="72dp"
             android:layout_marginTop="@dimen/space_xl"
-            android:background="@drawable/bg_brand_mark"
-            android:contentDescription="@null" />
+            android:background="@drawable/bg_brand_mark">
+
+            <ImageView
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_yaya_alien"
+                app:tint="@color/agento_on_primary" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/account_title"
@@ -32,6 +41,7 @@
             android:textColor="@color/agento_on_surface" />
 
         <TextView
+            android:id="@+id/account_sub"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_s"
@@ -39,6 +49,7 @@
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="@color/agento_on_surface_muted" />
 
+        <!-- Step 1 -->
         <LinearLayout
             android:id="@+id/account_form"
             android:layout_width="match_parent"
@@ -48,12 +59,11 @@
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/account_name_til"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            app:hintEnabled="true"
+                app:hintEnabled="true"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_xl"
                 android:hint="@string/account_name_hint"
-                android:visibility="gone"
                 app:boxCornerRadiusBottomEnd="@dimen/corner_control"
                 app:boxCornerRadiusBottomStart="@dimen/corner_control"
                 app:boxCornerRadiusTopEnd="@dimen/corner_control"
@@ -63,16 +73,17 @@
                     android:id="@+id/account_name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:autofillHints="name"
                     android:inputType="textPersonName|textCapWords" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/account_email_til"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            app:hintEnabled="true"
+                app:hintEnabled="true"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_m"
+                android:layout_marginTop="@dimen/space_s"
                 android:hint="@string/account_email_hint"
                 app:boxCornerRadiusBottomEnd="@dimen/corner_control"
                 app:boxCornerRadiusBottomStart="@dimen/corner_control"
@@ -84,29 +95,31 @@
                     android:id="@+id/account_email"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:autofillHints="emailAddress"
                     android:inputType="textEmailAddress" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/account_password_til"
+                android:id="@+id/account_phone_til"
                 style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            app:hintEnabled="true"
+                app:hintEnabled="true"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/account_password_hint"
+                android:hint="@string/account_phone_hint"
                 app:boxCornerRadiusBottomEnd="@dimen/corner_control"
                 app:boxCornerRadiusBottomStart="@dimen/corner_control"
                 app:boxCornerRadiusTopEnd="@dimen/corner_control"
                 app:boxCornerRadiusTopStart="@dimen/corner_control"
-                app:endIconMode="password_toggle"
-                app:errorEnabled="true">
+                app:errorEnabled="true"
+                app:helperText="@string/account_phone_helper">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/account_password"
+                    android:id="@+id/account_phone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:autofillHints="phone"
                     android:imeOptions="actionDone"
-                    android:inputType="textPassword" />
+                    android:inputType="phone" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <TextView
@@ -122,24 +135,102 @@
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/cta_height"
                 android:layout_marginTop="@dimen/space_m"
-                android:text="@string/account_primary_signin" />
+                android:text="@string/account_primary_signin"
+                app:icon="@drawable/ic_yaya_alien"
+                app:iconGravity="textStart"
+                app:iconPadding="@dimen/space_s"
+                app:iconSize="22dp"
+                app:iconTint="@color/agento_on_primary" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/account_switch"
-                style="@style/Widget.Agento.Button.Text"
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_s"
-                android:text="@string/account_switch_to_register" />
+                android:gravity="center"
+                android:text="@string/account_no_password"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="@color/agento_on_surface_muted" />
+        </LinearLayout>
 
-            <com.google.android.material.progressindicator.LinearProgressIndicator
-                android:id="@+id/account_progress"
+        <!-- Step 2 -->
+        <LinearLayout
+            android:id="@+id/account_code_form"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/account_code_sent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xl"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/agento_on_surface" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/account_code_til"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                app:hintEnabled="true"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_m"
-                android:indeterminate="true"
-                android:visibility="invisible" />
+                android:hint="@string/account_code_hint"
+                app:boxCornerRadiusBottomEnd="@dimen/corner_control"
+                app:boxCornerRadiusBottomStart="@dimen/corner_control"
+                app:boxCornerRadiusTopEnd="@dimen/corner_control"
+                app:boxCornerRadiusTopStart="@dimen/corner_control"
+                app:errorEnabled="true">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/account_code"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:autofillHints="smsOTPCode"
+                    android:inputType="number"
+                    android:letterSpacing="0.3"
+                    android:maxLength="6"
+                    android:textAlignment="center"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/account_code_cta"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/cta_height"
+                android:text="@string/account_code_cta" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/account_resend"
+                    style="@style/Widget.Agento.Button.Text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/account_resend" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/account_change"
+                    style="@style/Widget.Agento.Button.Text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/account_change" />
+            </LinearLayout>
         </LinearLayout>
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/account_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_m"
+            android:indeterminate="true"
+            android:visibility="invisible" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/account_restore_card"

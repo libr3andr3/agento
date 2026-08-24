@@ -1,19 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="account_title_signin">Continue with Yaya</string>
-    <string name="account_title_register">Create your Yaya account</string>
     <string name="account_sub">Your identity is yours: one account for your business, your devices and your web dashboard.</string>
     <string name="account_name_hint">Your name</string>
     <string name="account_email_hint">Email</string>
-    <string name="account_password_hint">Password</string>
     <string name="account_primary_signin">Continue with Yaya</string>
-    <string name="account_primary_register">Create Yaya account</string>
-    <string name="account_switch_to_register">New here? Create a Yaya account</string>
-    <string name="account_switch_to_signin">Already have an account? Continue with Yaya</string>
     <string name="account_error_email">Enter a valid email.</string>
-    <string name="account_error_short_password">The password needs at least 8 characters.</string>
-    <string name="account_error_wrong">Wrong email or password.</string>
-    <string name="account_error_conflict">That email already has an account — continue with Yaya.</string>
+    <string name="account_error_wrong">Wrong code.</string>
     <string name="account_error_rate">Too many attempts. Wait a moment.</string>
     <string name="account_error_offline">No connection. Check your internet.</string>
     <string name="account_error_generic">Could not complete: %1$s</string>
@@ -34,4 +27,19 @@
     <string name="plan_biz_enterprise_desc">No limits, priority support and several locations.</string>
     <string name="plan_credits_line">Network credits: %1$s · each new customer who finds you through the network spends %2$s</string>
     <string name="plan_credits_hint">Paid plans return half their value as credits every month.</string>
+    <string name="account_phone_hint">Mobile</string>
+    <string name="account_phone_helper">With country code, e.g. +51 999 888 777</string>
+    <string name="account_no_password">No passwords — we send you a code by WhatsApp and email.</string>
+    <string name="account_error_phone">Enter your mobile with the country code.</string>
+    <string name="account_code_sent">We sent you a code by %1$s. Valid for 10 minutes.</string>
+    <string name="account_code_sent_whatsapp">WhatsApp</string>
+    <string name="account_code_sent_email">email</string>
+    <string name="account_code_sent_both">WhatsApp and email</string>
+    <string name="account_code_hint">6-digit code</string>
+    <string name="account_code_cta">Sign in</string>
+    <string name="account_resend">Resend code</string>
+    <string name="account_resend_in">Resend in %1$ds</string>
+    <string name="account_change">Change details</string>
+    <string name="account_error_expired">The code expired. Request another.</string>
+    <string name="account_error_delivery">We couldn\'t send the code right now. Try again in a minute.</string>
 </resources>

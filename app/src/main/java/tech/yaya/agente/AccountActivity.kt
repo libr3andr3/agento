@@ -2,6 +2,9 @@ package tech.yaya.agente
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.CountDownTimer
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
@@ -12,84 +15,121 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 
 /**
- * Yaya ID — the door to both editions. Sign in ("Continuar con Yaya") or
- * create an account; the core links this phone's agent to the account and
- * everything the app does on the network is then done by a real person who
- * signed up. Opened with [EXTRA_MANAGE] it shows who is signed in and lets
- * them sign out.
+ * Yaya ID — the door to both editions, without passwords. Name, email and
+ * phone; "Continuar con Yaya" sends one code by WhatsApp and email; the
+ * code signs the person in (creating the account the first time) and the
+ * core links this phone's agent to it. Opened with [EXTRA_MANAGE] it shows
+ * who is signed in and lets them sign out.
  */
 class AccountActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_MANAGE = "manage"
+        private const val RESEND_SECONDS = 60
     }
 
-    private var registering = false
     private lateinit var title: TextView
+    private lateinit var sub: TextView
     private lateinit var form: View
+    private lateinit var codeForm: View
     private lateinit var nameTil: TextInputLayout
     private lateinit var name: TextInputEditText
     private lateinit var emailTil: TextInputLayout
     private lateinit var email: TextInputEditText
-    private lateinit var passwordTil: TextInputLayout
-    private lateinit var password: TextInputEditText
+    private lateinit var phoneTil: TextInputLayout
+    private lateinit var phone: TextInputEditText
     private lateinit var error: TextView
     private lateinit var primary: MaterialButton
-    private lateinit var switchMode: MaterialButton
+    private lateinit var codeSent: TextView
+    private lateinit var codeTil: TextInputLayout
+    private lateinit var code: TextInputEditText
+    private lateinit var codeCta: MaterialButton
+    private lateinit var resend: MaterialButton
     private lateinit var progress: LinearProgressIndicator
     private lateinit var restoreCard: View
     private lateinit var signedCard: View
+    private var timer: CountDownTimer? = null
+    private var busy = false
+    /** Bumped on every step change so a stale response can't act. */
+    private var seq = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_account)
         title = findViewById(R.id.account_title)
+        sub = findViewById(R.id.account_sub)
         form = findViewById(R.id.account_form)
+        codeForm = findViewById(R.id.account_code_form)
         nameTil = findViewById(R.id.account_name_til)
         name = findViewById(R.id.account_name)
         emailTil = findViewById(R.id.account_email_til)
         email = findViewById(R.id.account_email)
-        passwordTil = findViewById(R.id.account_password_til)
-        password = findViewById(R.id.account_password)
+        phoneTil = findViewById(R.id.account_phone_til)
+        phone = findViewById(R.id.account_phone)
         error = findViewById(R.id.account_error)
         primary = findViewById(R.id.account_primary)
-        switchMode = findViewById(R.id.account_switch)
+        codeSent = findViewById(R.id.account_code_sent)
+        codeTil = findViewById(R.id.account_code_til)
+        code = findViewById(R.id.account_code)
+        codeCta = findViewById(R.id.account_code_cta)
+        resend = findViewById(R.id.account_resend)
         progress = findViewById(R.id.account_progress)
         restoreCard = findViewById(R.id.account_restore_card)
         signedCard = findViewById(R.id.account_signed_card)
 
-        primary.setOnClickListener { submit() }
-        switchMode.setOnClickListener { setMode(!registering) }
+        primary.setOnClickListener { sendCode() }
+        codeCta.setOnClickListener { checkCode() }
+        resend.setOnClickListener { sendCode(resend = true) }
+        findViewById<View>(R.id.account_change).setOnClickListener { showForm() }
         findViewById<View>(R.id.account_restore).setOnClickListener { restore() }
         findViewById<View>(R.id.account_fresh).setOnClickListener { goHome() }
         findViewById<View>(R.id.account_continue).setOnClickListener { goHome() }
         findViewById<View>(R.id.account_logout).setOnClickListener { logout() }
+        code.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                codeTil.error = null
+                if (s?.length == 6 && !busy) checkCode()
+            }
+        })
+        // The phone's own country: the owner completes, never hunts for a prefix.
+        if (phone.text.isNullOrBlank()) phone.setText(Countries.defaultFor(this).dial.let { if (it.startsWith("+")) "$it " else "+$it " })
 
-        if (intent.getBooleanExtra(EXTRA_MANAGE, false) && Prefs.accountEmail(this).isNotEmpty()) showSigned()
-        else setMode(false)
+        if (intent.getBooleanExtra(EXTRA_MANAGE, false) && Prefs.accountEmail(this).isNotEmpty()) showSigned() else showForm()
     }
 
-    private fun setMode(register: Boolean) {
-        registering = register
-        title.setText(if (register) R.string.account_title_register else R.string.account_title_signin)
-        primary.setText(if (register) R.string.account_primary_register else R.string.account_primary_signin)
-        switchMode.setText(if (register) R.string.account_switch_to_signin else R.string.account_switch_to_register)
-        nameTil.visibility = if (register) View.VISIBLE else View.GONE
+    override fun onDestroy() {
+        timer?.cancel()
+        super.onDestroy()
+    }
+
+    private fun showForm() {
+        seq++
+        timer?.cancel()
+        form.visibility = View.VISIBLE
+        codeForm.visibility = View.GONE
+        signedCard.visibility = View.GONE
+        restoreCard.visibility = View.GONE
         error.visibility = View.GONE
+        title.setText(R.string.account_title_signin)
+        setBusy(false)
     }
 
     private fun showSigned() {
         form.visibility = View.GONE
+        codeForm.visibility = View.GONE
         restoreCard.visibility = View.GONE
         signedCard.visibility = View.VISIBLE
-        title.setText(R.string.account_title_signin)
         findViewById<TextView>(R.id.account_signed_as).text = getString(R.string.account_signed_as, Prefs.accountEmail(this))
     }
 
     private fun setBusy(b: Boolean) {
+        busy = b
         progress.visibility = if (b) View.VISIBLE else View.INVISIBLE
         primary.isEnabled = !b
-        switchMode.isEnabled = !b
+        codeCta.isEnabled = !b
+        code.isEnabled = !b
     }
 
     private fun showError(msg: String) {
@@ -97,36 +137,88 @@ class AccountActivity : AppCompatActivity() {
         error.visibility = View.VISIBLE
     }
 
-    private fun submit() {
-        val e = email.text?.toString()?.trim().orEmpty()
-        val p = password.text?.toString().orEmpty()
-        emailTil.error = null; passwordTil.error = null; error.visibility = View.GONE
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(e).matches()) { emailTil.error = getString(R.string.account_error_email); return }
-        if (p.length < 8) { passwordTil.error = getString(R.string.account_error_short_password); return }
+    private fun currentEmail() = email.text?.toString()?.trim().orEmpty()
+    private fun currentPhone() = phone.text?.toString()?.trim().orEmpty()
+    private fun currentName() = name.text?.toString()?.trim().orEmpty().ifEmpty { null }
+
+    private fun sendCode(resend: Boolean = false) {
+        val e = currentEmail(); val p = currentPhone()
+        emailTil.error = null; phoneTil.error = null; error.visibility = View.GONE
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(e).matches()) { emailTil.error = getString(R.string.account_error_email); if (!resend) return }
+        if (p.filter { it.isDigit() }.length < 9) { phoneTil.error = getString(R.string.account_error_phone); if (!resend) return }
         setBusy(true)
+        val my = ++seq
         ServerClient.IO_EXECUTOR.execute {
-            val r = if (registering) ServerClient.accountRegister(this, e, p, name.text?.toString()?.trim().orEmpty().ifEmpty { null })
-                    else ServerClient.accountLogin(this, e, p)
+            val r = ServerClient.accountOtpStart(this, e, p, currentName())
             runOnUiThread {
+                if (my != seq || isFinishing) return@runOnUiThread
                 setBusy(false)
-                if (r.code in 200..299 && r.json?.optBoolean("signedIn") == true) {
-                    Prefs.setAccountEmail(this, r.json.optString("email", e))
-                    afterSignIn()
+                val j = r.json
+                if (r.code in 200..299 && j != null) {
+                    val sent = j.optJSONObject("sent")
+                    val via = when {
+                        sent?.optBoolean("whatsapp") == true && sent.optBoolean("email") -> getString(R.string.account_code_sent_both)
+                        sent?.optBoolean("whatsapp") == true -> getString(R.string.account_code_sent_whatsapp)
+                        else -> getString(R.string.account_code_sent_email)
+                    }
+                    codeSent.text = getString(R.string.account_code_sent, via)
+                    form.visibility = View.GONE
+                    codeForm.visibility = View.VISIBLE
+                    code.setText("")
+                    code.requestFocus()
+                    startCountdown()
                 } else showError(when (ServerClient.classify(r)) {
                     ServerClient.Kind.OFFLINE -> getString(R.string.account_error_offline)
-                    ServerClient.Kind.AUTH -> getString(R.string.account_error_wrong)
                     ServerClient.Kind.RATE_LIMITED -> getString(R.string.account_error_rate)
-                    else -> if (r.code == 409) getString(R.string.account_error_conflict)
-                            else getString(R.string.account_error_generic, r.json?.optString("error").orEmpty().ifEmpty { r.code.toString() })
+                    ServerClient.Kind.UNAVAILABLE -> getString(R.string.account_error_delivery)
+                    else -> getString(R.string.account_error_generic, j?.optString("error").orEmpty().ifEmpty { r.code.toString() })
                 })
+            }
+        }
+    }
+
+    private fun startCountdown() {
+        timer?.cancel()
+        resend.isEnabled = false
+        timer = object : CountDownTimer(RESEND_SECONDS * 1000L, 1000L) {
+            override fun onTick(ms: Long) { resend.text = getString(R.string.account_resend_in, (ms / 1000L).toInt() + 1) }
+            override fun onFinish() { resend.isEnabled = true; resend.setText(R.string.account_resend) }
+        }.start()
+    }
+
+    private fun checkCode() {
+        val c = code.text?.toString()?.trim().orEmpty()
+        if (c.length != 6) { codeTil.error = getString(R.string.account_code_hint); return }
+        setBusy(true)
+        val my = ++seq
+        ServerClient.IO_EXECUTOR.execute {
+            val r = ServerClient.accountOtpCheck(this, currentEmail(), currentPhone(), c, currentName())
+            runOnUiThread {
+                if (my != seq || isFinishing) return@runOnUiThread
+                setBusy(false)
+                val j = r.json
+                if (r.code in 200..299 && j?.optBoolean("signedIn") == true) {
+                    Prefs.setAccountEmail(this, j.optString("email", currentEmail()))
+                    Prefs.setAccountPhone(this, j.optString("phone").takeIf { it != "null" }.orEmpty())
+                    afterSignIn()
+                } else {
+                    codeTil.error = when {
+                        r.code == 401 -> getString(R.string.account_error_wrong)
+                        r.code == 410 -> getString(R.string.account_error_expired)
+                        ServerClient.classify(r) == ServerClient.Kind.OFFLINE -> getString(R.string.account_error_offline)
+                        else -> getString(R.string.account_error_generic, j?.optString("error").orEmpty().ifEmpty { r.code.toString() })
+                    }
+                }
             }
         }
     }
 
     /** A business phone with nothing on it yet may come from a backup. */
     private fun afterSignIn() {
+        timer?.cancel()
         if (Edition.CLIENT || Prefs.serverConfigured(this)) { goHome(); return }
         form.visibility = View.GONE
+        codeForm.visibility = View.GONE
         restoreCard.visibility = View.VISIBLE
     }
 
@@ -158,10 +250,8 @@ class AccountActivity : AppCompatActivity() {
             ServerClient.accountLogout(this)
             runOnUiThread {
                 Prefs.setAccountEmail(this, "")
-                signedCard.visibility = View.GONE
-                form.visibility = View.VISIBLE
-                setBusy(false)
-                setMode(false)
+                Prefs.setAccountPhone(this, "")
+                showForm()
             }
         }
     }

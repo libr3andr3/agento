@@ -245,13 +245,18 @@ object ServerClient {
         return if (r.code in 200..299) r.json else null
     }
 
-    fun accountRegister(ctx: Context, email: String, password: String, name: String?): Response =
-        postRaw(ctx, "/api/account/register",
-            JSONObject().put("email", email).put("password", password).apply { name?.let { put("name", it) } },
-            bearer = false)
+    /** Sends a one-time code by WhatsApp and email. Retries once only on
+     *  code 0 (never left the phone). */
+    fun accountOtpStart(ctx: Context, email: String, phone: String, name: String?): Response =
+        postRaw(ctx, "/api/account/otp/start",
+            JSONObject().put("email", email).put("phone", phone).apply { name?.let { put("name", it) } },
+            bearer = false, retry = Retry.NETWORK_FAILURE_ONLY)
 
-    fun accountLogin(ctx: Context, email: String, password: String): Response =
-        postRaw(ctx, "/api/account/login", JSONObject().put("email", email).put("password", password), bearer = false)
+    /** Proves the code; creates the account on first sign-in; links this phone. Never retried. */
+    fun accountOtpCheck(ctx: Context, email: String, phone: String, code: String, name: String?): Response =
+        postRaw(ctx, "/api/account/otp/check",
+            JSONObject().put("email", email).put("phone", phone).put("code", code).apply { name?.let { put("name", it) } },
+            bearer = false)
 
     fun accountLogout(ctx: Context): Boolean =
         postRaw(ctx, "/api/account/logout", JSONObject(), bearer = false).code in 200..299

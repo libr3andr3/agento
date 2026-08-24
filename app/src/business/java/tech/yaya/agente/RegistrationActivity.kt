@@ -106,6 +106,13 @@ class RegistrationActivity : AppCompatActivity() {
             step = it.getInt("step", 1).coerceIn(1, 3)
         }
         updateCountryViews()
+        // The account's verified phone is usually the business phone too:
+        // prefill it (the owner can still change it).
+        if (savedInstanceState == null && phoneInput.text.isNullOrBlank()) {
+            val acct = Prefs.accountPhone(this)
+            val dial = country.dial.trimStart('+')
+            if (acct.startsWith(dial) && acct.length > dial.length) phoneInput.setText(acct.removePrefix(dial))
+        }
         showStep(step)
         if (step == 3 && resendDeadline > 0L) startCountdown(resendDeadline)
     }

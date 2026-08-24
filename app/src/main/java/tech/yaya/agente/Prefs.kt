@@ -175,6 +175,10 @@ object Prefs {
     fun accountEmail(ctx: Context): String = sp(ctx).getString("account_email", "") ?: ""
     fun setAccountEmail(ctx: Context, email: String) =
         sp(ctx).edit().putString("account_email", email).apply()
+    /** E.164 digits of the account's verified phone, "" when unknown. */
+    fun accountPhone(ctx: Context): String = sp(ctx).getString("account_phone", "") ?: ""
+    fun setAccountPhone(ctx: Context, phone: String) =
+        sp(ctx).edit().putString("account_phone", phone).apply()
 
     fun businessId(ctx: Context): String = sp(ctx).getString("business_id", "") ?: ""
     fun setBusinessId(ctx: Context, id: String) =
