@@ -12,8 +12,8 @@ android {
         // Each edition sets its own applicationId below.
         minSdk = 26
         targetSdk = 36
-        versionCode = 36
-        versionName = "1.5.0"
+        versionCode = 37
+        versionName = "1.6.0"
 
         // Client API key: supplied per-build, never committed.
         val appKey = System.getenv("AGENTO_APP_KEY")
@@ -21,7 +21,7 @@ android {
             ?: "agente-app-dev"
         buildConfigField("String", "APP_KEY", "\"$appKey\"")
         // Where accounts and plans are managed (the gateway's web app).
-        val webApp = System.getenv("AGENTO_WEB_APP") ?: "https://llm.yaya.tech/app"
+        val webApp = System.getenv("AGENTO_WEB_APP") ?: "https://agento.ceo/app"
         buildConfigField("String", "WEB_APP_URL", "\"$webApp\"")
     }
 

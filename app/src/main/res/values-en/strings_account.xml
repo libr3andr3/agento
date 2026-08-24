@@ -30,4 +30,8 @@
     <string name="plan_web_only">Plans are managed from your Yaya account on the web, for all your devices.</string>
     <string name="plan_client_web_only">Plans can\'t be changed from the app.</string>
     <string name="plan_account_line">Account: %1$s</string>
+    <string name="plan_enterprise_name">Enterprise</string>
+    <string name="plan_biz_enterprise_desc">No limits, priority support and several locations.</string>
+    <string name="plan_credits_line">Network credits: %1$s · each new customer who finds you through the network spends %2$s</string>
+    <string name="plan_credits_hint">Paid plans return half their value as credits every month.</string>
 </resources>

@@ -41,7 +41,7 @@ class PlanActivity : AppCompatActivity() {
             setText(R.string.account_manage_web)
             setOnClickListener { openWeb() }
         }
-        note.setText(R.string.plan_web_only)
+        note.text = getString(R.string.plan_web_only) + "\n" + getString(R.string.plan_credits_hint)
         render()
         load()
     }
@@ -58,7 +58,7 @@ class PlanActivity : AppCompatActivity() {
         }
     }
 
-    private fun tierName(t: String) = getString(when (t) { "pro" -> R.string.plan_pro_name; "max" -> R.string.plan_max_name; else -> R.string.plan_free_name })
+    private fun tierName(t: String) = getString(when (t) { "pro" -> R.string.plan_pro_name; "max" -> R.string.plan_max_name; "enterprise" -> R.string.plan_enterprise_name; else -> R.string.plan_free_name })
 
     private fun render() {
         val p = info
@@ -67,7 +67,10 @@ class PlanActivity : AppCompatActivity() {
         current.text = if (until.isNotEmpty() && plan != "free") getString(R.string.plan_current_until, tierName(plan), until)
                        else getString(R.string.plan_current, tierName(plan))
         val used = p?.optInt("used") ?: 0; val cap = p?.optInt("cap") ?: 0
-        usage.text = if (cap > 0) getString(R.string.plan_usage_today, used, cap) else getString(R.string.plan_usage_unlimited, used)
+        val credits = p?.optJSONObject("credits")
+        val usageLine = if (cap > 0) getString(R.string.plan_usage_today, used, cap) else getString(R.string.plan_usage_unlimited, used)
+        usage.text = if (credits == null) usageLine else usageLine + "\n" + getString(
+            R.string.plan_credits_line, Prefs.money(this, credits.optLong("balance") / 100.0), Prefs.money(this, credits.optLong("leadPrice") / 100.0))
         val tiersJson = p?.optJSONArray("tiers")
         fun tier(t: String): JSONObject? {
             if (tiersJson == null) return null
@@ -79,13 +82,14 @@ class PlanActivity : AppCompatActivity() {
         val sym = if (cur == "PEN") "S/" else cur
         tiers.removeAllViews()
         val inf = LayoutInflater.from(this)
-        for (t in listOf("free", "pro", "max")) {
+        for (t in listOf("free", "pro", "max", "enterprise")) {
             val v = inf.inflate(R.layout.item_plan_tier, tiers, false)
             v.findViewById<TextView>(R.id.tier_name).text = tierName(t)
             val tj = tier(t)
             v.findViewById<TextView>(R.id.tier_desc).text = when (t) {
                 "pro" -> getString(R.string.plan_biz_pro_desc, tj?.optInt("messagesPerDay") ?: 1000, tj?.optInt("customersPerDay") ?: 250)
                 "max" -> getString(R.string.plan_biz_max_desc)
+                "enterprise" -> getString(R.string.plan_biz_enterprise_desc)
                 else -> getString(R.string.plan_biz_free_desc, tj?.optInt("messagesPerDay") ?: 100, tj?.optInt("customersPerDay") ?: 25)
             }
             val price = prices?.optDouble(t, 0.0) ?: 0.0
