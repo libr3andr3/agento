@@ -8,6 +8,11 @@
     <!-- Xiaomi/Huawei & friends kill background listeners; we ask the user to
          exempt agente so the notification listener survives. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- The notification listener already sees every app; this lets the
+         Cobros screen check whether the wallet the owner named is installed
+         on THIS phone (no fixed list of wallets exists anywhere). Not a Play
+         build, so the permission is acceptable. -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
     <!-- Android 11+ package visibility: Settings shows which supported chat
          apps are actually installed, which needs an explicit allowlist to
@@ -60,6 +65,11 @@
         <activity
             android:name=".PlanActivity"
             android:exported="false" />
+
+        <activity
+            android:name=".PayoutActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
         <service
             android:name=".AgenteNotificationListener"

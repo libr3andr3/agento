@@ -92,6 +92,9 @@ class MainActivity : AppCompatActivity() {
             visibility = if (BuildConfig.DEBUG) View.VISIBLE else View.GONE
             setOnClickListener { editServerUrl() }
         }
+        findViewById<MaterialButton>(R.id.payout_button).setOnClickListener {
+            startActivity(Intent(this, PayoutActivity::class.java))
+        }
         findViewById<MaterialButton>(R.id.onboarding_button).setOnClickListener {
             startActivity(Intent(this, OnboardingActivity::class.java))
         }

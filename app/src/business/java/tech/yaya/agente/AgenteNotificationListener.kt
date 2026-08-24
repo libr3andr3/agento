@@ -173,13 +173,18 @@ class AgenteNotificationListener : NotificationListenerService() {
         }
         ServerClient.IO_EXECUTOR.execute {
             try {
-                val resp = ServerClient.paymentEvent(ctx, app.displayName, app.packageName, title, text, hit.envelope)
-                // A new bank just earned fleet-wide trust: refresh the learned list now.
-                if (resp?.optBoolean("sourcePromoted") == true) Prefs.invalidateLearnedSources(ctx)
+                val resp = ServerClient.paymentEvent(ctx, hit.envelope)
+                // The agent read it. "mute" = no money in this app; ask again later.
+                if (resp?.optBoolean("mute") == true) {
+                    Prefs.muteSource(ctx, app.packageName, resp.optLong("untilMs", System.currentTimeMillis() + 7L * 24 * 3600 * 1000))
+                    return@execute
+                }
+                if (resp?.optBoolean("handled") != true) return@execute
                 val detail = when {
-                    resp == null -> ctx.getString(R.string.log_payment_unreachable)
                     !resp.isNull("matchedAppointment") ->
                         ctx.getString(R.string.log_payment_matched, resp.optJSONObject("matchedAppointment")?.optString("customer") ?: "")
+                    !resp.isNull("matchedOrder") ->
+                        ctx.getString(R.string.log_payment_matched, resp.optJSONObject("matchedOrder")?.optString("customer") ?: "")
                     else -> ctx.getString(R.string.log_payment_recorded)
                 }
                 log(app, parsed, sent = false, detail = "💰 $detail")

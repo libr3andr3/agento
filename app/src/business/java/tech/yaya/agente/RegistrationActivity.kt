@@ -418,7 +418,9 @@ class RegistrationActivity : AppCompatActivity() {
                     resp.optString("conversationStarterMessage")
                         .takeIf { it.isNotBlank() }
                         ?.let { Prefs.setChatTranscript(this, "🟢 $it") }
-                    startActivity(Intent(this, OnboardingActivity::class.java))
+                    // Step 4: where customers pay — before the interview, so the
+                    // agent never has to ask for numbers in chat.
+                    startActivity(Intent(this, PayoutActivity::class.java).putExtra(PayoutActivity.EXTRA_FROM_REGISTRATION, true))
                     overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
                     finish()
                 } else {

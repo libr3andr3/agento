@@ -40,6 +40,11 @@ fields:
     type: "bool"
     ask_in_onboarding: false
     question_es: "¿Necesitas el correo del cliente para agendar? (reuniones virtuales, confirmaciones por email)"
+  payout:
+    # Where customers send money: entered by the owner in the app (Cobros),
+    # never inferred. {holder, cashOnly, destinations: [{rail, handle}]}.
+    type: "{holder: string, cashOnly: bool, destinations: [{wallet: string, handle: string}]}"
+    ask_in_onboarding: false
   paymentMethod:
     type: "enum[upfront|atVisit|transfer]"
     ask_in_onboarding: true

@@ -103,6 +103,17 @@ object Prefs {
             .apply()
     }
 
+    // ------------------------------------------------------------ notification sources
+    //
+    // The agent's verdicts about apps: "no money here, ask me again in a
+    // week". Kept as package → epoch millis. Money apps are never muted.
+
+    fun isSourceMuted(ctx: Context, pkg: String): Boolean =
+        sp(ctx).getLong("mute_src_$pkg", 0L) > System.currentTimeMillis()
+
+    fun muteSource(ctx: Context, pkg: String, untilMs: Long) =
+        sp(ctx).edit().putLong("mute_src_$pkg", untilMs).apply()
+
     // ------------------------------------------------------------ server sync
 
     fun serverUrl(ctx: Context): String =

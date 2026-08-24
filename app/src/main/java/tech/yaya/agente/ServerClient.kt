@@ -392,16 +392,24 @@ object ServerClient {
     /** Forward a Yape/Plin payment notification for verification/matching.
      *  Side-effectful (marks money as seen): never auto-retried — a double
      *  send could double-confirm a payment. Runs on [IO_EXECUTOR]. */
-    fun paymentEvent(
-        ctx: Context, source: String, sourcePackage: String, title: String, text: String,
-        notification: JSONObject,
-    ): JSONObject? =
-        post(
-            ctx, "/api/payment_event",
-            JSONObject().put("source", source).put("sourcePackage", sourcePackage)
-                .put("title", title).put("text", text).put("notification", notification),
-            bearer = true
-        )
+    fun paymentEvent(ctx: Context, notification: JSONObject): JSONObject? =
+        post(ctx, "/api/payment_event", notification, bearer = true)
+
+    // Cobros (business edition). [IO_EXECUTOR].
+
+    /** Wallet names people use in this country, as suggestions. */
+    fun rails(ctx: Context, country: String): JSONObject? {
+        val r = exchange(ctx, "/api/rails?country=" + java.net.URLEncoder.encode(country, "UTF-8"),
+            body = null, contentType = null, bearer = false, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    fun payout(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/payout", body = null, contentType = null, bearer = true, readTimeoutMs = 15_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    fun setPayout(ctx: Context, body: JSONObject): Response = postRaw(ctx, "/api/payout", body, bearer = true)
 
     /**
      * Asks the server to WhatsApp a 6-digit code to the owner's phone.
