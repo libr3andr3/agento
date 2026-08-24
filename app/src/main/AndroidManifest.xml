@@ -32,6 +32,7 @@
         <activity
             android:name=".AccountActivity"
             android:exported="false"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
         <!-- Hands the camera app a writable cache file for the catalog-photo

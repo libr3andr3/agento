@@ -81,6 +81,7 @@
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/reg_phone_til"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            app:hintEnabled="true"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
