@@ -11,7 +11,7 @@
     <string name="upsell_f4">🛰️ Créditos para clientes que llegan por la red Yaya</string>
     <string name="upsell_tier_line">%1$s · %2$s al mes · +%3$s en créditos</string>
     <string name="upsell_cta">Respaldar mi agente</string>
-    <string name="upsell_web_note">Se contrata en la web, en agento.ceo, con tu cuenta Yaya (%1$s).</string>
+    <string name="upsell_web_note">Desde S/ 100 al mes o S/ 1 000 al año. Se paga aquí por Yape o Plin, con tu cuenta Yaya (%1$s).</string>
     <string name="upsell_later">Ahora no</string>
     <string name="dash_backup_banner">Tu agente vive solo en este teléfono. Respáldalo para no perderlo.</string>
     <string name="dash_backup_button">Respaldar</string>

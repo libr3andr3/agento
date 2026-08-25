@@ -295,57 +295,95 @@ class MainActivity : AppCompatActivity() {
         val (installed, missing) = SupportedApps.ALL.partition { isInstalled(it.packageName) }
         (installed + missing).forEach { app ->
             val here = isInstalled(app.packageName)
-
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                minimumHeight = minH
-                alpha = if (here) 1f else 0.45f
-            }
-
-            val icon = ImageView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(iconSize, iconSize)
-                    .apply { marginEnd = gap }
-                setImageDrawable(appIcon(app.packageName))
-                // Decorative: the name TextView right next to it carries the label.
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-            }
-            row.addView(icon)
-
-            val labels = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(
-                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
-                )
-            }
-            labels.addView(TextView(this).apply {
-                text = app.displayName
-                setTextAppearance(R.style.TextAppearance_Agento_Body)
-                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface))
-            })
-            if (!here) {
-                labels.addView(TextView(this).apply {
-                    text = getString(R.string.settings_app_not_installed)
-                    setTextAppearance(R.style.TextAppearance_Agento_Label)
-                    setTextColor(
-                        ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface_muted)
-                    )
-                })
-            }
-            row.addView(labels)
-
-            val sw = MaterialSwitch(this).apply {
-                isEnabled = here
-                isChecked = here && Prefs.isAppEnabled(this@MainActivity, app.packageName)
-                contentDescription = app.displayName
-                setOnCheckedChangeListener { _, on ->
-                    Prefs.setAppEnabled(this@MainActivity, app.packageName, on)
-                }
-            }
-            row.addView(sw)
-
-            appTogglesContainer.addView(row)
+            addAppRow(
+                app, here, iconSize, gap, minH,
+                subLabel = if (here) null else getString(R.string.settings_app_not_installed),
+                switchEnabled = here,
+                onToggle = { on -> Prefs.setAppEnabled(this, app.packageName, on) }
+            )
         }
+        // Apps this phone taught itself (UnknownAppObserver). The switch is
+        // offered once the profile earned it; flipping it on after a pause
+        // gives the profile a clean window.
+        ProfileStore.all(this).forEach { p ->
+            val app = SupportedApp(p.packageName, p.displayName)
+            val here = isInstalled(p.packageName)
+            val sub = when {
+                !here -> getString(R.string.settings_app_not_installed)
+                p.paused -> getString(R.string.settings_app_learned_paused)
+                p.eligible -> getString(R.string.settings_app_learned_ready)
+                else -> getString(R.string.settings_app_learned_observing, p.parsedOk, NotificationProfile.GRADUATE_OK)
+            }
+            addAppRow(
+                app, here, iconSize, gap, minH,
+                subLabel = sub,
+                switchEnabled = here && (p.eligible || p.paused),
+                onToggle = { on ->
+                    if (on && p.paused) ProfileStore.resume(this, p.packageName)
+                    Prefs.setAppEnabled(this, p.packageName, on)
+                    if (on && p.paused) appTogglesContainer.post { buildAppToggles() }
+                }
+            )
+        }
+    }
+
+    private fun addAppRow(
+        app: SupportedApp,
+        here: Boolean,
+        iconSize: Int,
+        gap: Int,
+        minH: Int,
+        subLabel: String?,
+        switchEnabled: Boolean,
+        onToggle: (Boolean) -> Unit
+    ) {
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = minH
+            alpha = if (here) 1f else 0.45f
+        }
+
+        val icon = ImageView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(iconSize, iconSize)
+                .apply { marginEnd = gap }
+            setImageDrawable(appIcon(app.packageName))
+            // Decorative: the name TextView right next to it carries the label.
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        row.addView(icon)
+
+        val labels = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
+            )
+        }
+        labels.addView(TextView(this).apply {
+            text = app.displayName
+            setTextAppearance(R.style.TextAppearance_Agento_Body)
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface))
+        })
+        if (subLabel != null) {
+            labels.addView(TextView(this).apply {
+                text = subLabel
+                setTextAppearance(R.style.TextAppearance_Agento_Label)
+                setTextColor(
+                    ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface_muted)
+                )
+            })
+        }
+        row.addView(labels)
+
+        val sw = MaterialSwitch(this).apply {
+            isEnabled = switchEnabled
+            isChecked = here && Prefs.isAppEnabled(this@MainActivity, app.packageName)
+            contentDescription = app.displayName
+            setOnCheckedChangeListener { _, on -> onToggle(on) }
+        }
+        row.addView(sw)
+
+        appTogglesContainer.addView(row)
     }
 
     private fun isInstalled(pkg: String): Boolean = try {

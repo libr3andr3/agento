@@ -12,8 +12,8 @@ android {
         // Each edition sets its own applicationId below.
         minSdk = 26
         targetSdk = 36
-        versionCode = 45
-        versionName = "1.9.1"
+        versionCode = 48
+        versionName = "1.11.0"
 
         // Client API key: supplied per-build, never committed.
         val appKey = System.getenv("AGENTO_APP_KEY")

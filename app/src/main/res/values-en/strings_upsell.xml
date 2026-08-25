@@ -11,7 +11,7 @@
     <string name="upsell_f4">🛰️ Credits for customers who arrive through the Yaya network</string>
     <string name="upsell_tier_line">%1$s · %2$s per month · +%3$s in credits</string>
     <string name="upsell_cta">Back up my agent</string>
-    <string name="upsell_web_note">Purchased on the web, at agento.ceo, with your Yaya account (%1$s).</string>
+    <string name="upsell_web_note">From S/ 100 a month or S/ 1,000 a year. Paid here by Yape or Plin, with your Yaya account (%1$s).</string>
     <string name="upsell_later">Not now</string>
     <string name="dash_backup_banner">Your agent lives only on this phone. Back it up so you never lose it.</string>
     <string name="dash_backup_button">Back up</string>

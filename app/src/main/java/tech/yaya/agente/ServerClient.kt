@@ -1,6 +1,7 @@
 package tech.yaya.agente
 
 import android.content.Context
+import android.net.Uri
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.util.Log
@@ -263,6 +264,16 @@ object ServerClient {
 
     fun accountShare(ctx: Context, share: Boolean): Boolean =
         postRaw(ctx, "/api/account/share", JSONObject().put("share", share), bearer = false).code in 200..299
+
+    /** Opens a plan purchase for the account (months = 1 or 12): amount,
+     *  Yape/Plin numbers and the reference to write in the transfer. */
+    fun planRequest(ctx: Context, plan: String, months: Int): Response =
+        postRaw(ctx, "/api/account/plan/request", JSONObject().put("plan", plan).put("months", months), bearer = false)
+
+    /** Where a purchase stands (`pending` / `paid`). [IO_EXECUTOR]. */
+    fun planRequestStatus(ctx: Context, ref: String): Response =
+        exchange(ctx, "/api/account/plan/request/" + Uri.encode(ref), body = null, contentType = null, bearer = false,
+            readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
 
     fun accountLogout(ctx: Context): Boolean =
         postRaw(ctx, "/api/account/logout", JSONObject(), bearer = false).code in 200..299

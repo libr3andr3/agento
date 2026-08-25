@@ -35,7 +35,7 @@ class BackupUpsellActivity : AppCompatActivity() {
         if (guest) findViewById<com.google.android.material.button.MaterialButton>(R.id.upsell_cta).setText(R.string.upsell_cta_guest)
         findViewById<View>(R.id.upsell_cta).setOnClickListener {
             if (guest) startActivity(Intent(this, AccountActivity::class.java))
-            else startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(BuildConfig.WEB_APP_URL)))
+            else startActivity(Intent(this, PlanActivity::class.java))
         }
         findViewById<View>(R.id.upsell_later).setOnClickListener { done() }
         loadTiers()

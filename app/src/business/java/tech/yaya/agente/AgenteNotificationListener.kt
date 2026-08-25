@@ -72,13 +72,23 @@ class AgenteNotificationListener : NotificationListenerService() {
         val ctx = applicationContext
         if (!Prefs.isEnabled(ctx)) return
 
-        PaymentDetector.inspect(ctx, this, sbn)?.let { hit ->
-            handlePaymentNotification(hit, sbn)
+        val pkg = sbn.packageName
+        // Built-in apps first; then the ones this phone taught itself
+        // (ProfileStore). Anything else is either a chat app we are about to
+        // learn (it carries an inline reply) or a candidate money notification.
+        val profile = if (SupportedApps.isSupported(pkg)) null else ProfileStore.get(ctx, pkg)
+        val app = SupportedApps.get(pkg) ?: profile?.let { SupportedApp(it.packageName, it.displayName) }
+        if (app == null) {
+            if (UnknownAppObserver.observe(ctx, sbn) { parseMessage(it) != null }) return
+            PaymentDetector.inspect(ctx, this, sbn)?.let { hit ->
+                handlePaymentNotification(hit, sbn)
+            }
             return
         }
-
-        val app = SupportedApps.get(sbn.packageName) ?: return
-        if (!Prefs.isAppEnabled(ctx, app.packageName)) return
+        // A learned app is read even while the owner's switch is off: that is
+        // how it earns the switch. Built-in apps are simply skipped when off.
+        val live = profile == null || ProfileStore.isLive(ctx, profile)
+        if (profile == null && !Prefs.isAppEnabled(ctx, app.packageName)) return
 
         val n = sbn.notification ?: return
 
@@ -87,7 +97,31 @@ class AgenteNotificationListener : NotificationListenerService() {
         if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return
         if (n.flags and Notification.FLAG_ONGOING_EVENT != 0) return
 
-        val parsed = parseMessage(n) ?: return
+        val parsedOrNull = parseMessage(n)
+        if (profile != null) {
+            // Every read is evidence for the trial: a clean parse with a
+            // reply action counts for the profile, anything else against it.
+            val readOk = parsedOrNull != null && findReplyAction(n) != null
+            ProfileStore.record(ctx, profile.packageName, readOk)?.let { (p, pausedNow) ->
+                if (pausedNow) {
+                    ReplyLog.add(ctx, ReplyEvent(
+                        timestamp = System.currentTimeMillis(), appPackage = p.packageName, appName = p.displayName,
+                        sender = p.displayName, incomingText = "", replySent = false,
+                        detail = ctx.getString(R.string.log_learned_paused, p.displayName)
+                    ))
+                    OwnerAlerts.notify(ctx, urgent = false, sender = p.displayName,
+                        question = ctx.getString(R.string.learned_paused_question, p.displayName),
+                        gapId = "profile:${p.packageName}")
+                }
+            }
+            if (!live) {
+                if (parsedOrNull != null && !parsedOrNull.fromSelf) {
+                    log(app, parsedOrNull, sent = false, detail = ctx.getString(R.string.log_shadow))
+                }
+                return
+            }
+        }
+        val parsed = parsedOrNull ?: return
 
         // Ignore our own outgoing messages echoed back into the conversation
         // notification (MessagingStyle marks them as coming from the device user).
