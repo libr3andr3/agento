@@ -70,7 +70,7 @@ class DashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, CrmListActivity::class.java).putExtra(CrmListActivity.EXTRA_MODE, CrmListActivity.MODE_CONVERSATIONS))
         }
         findViewById<View>(R.id.backup_banner_button).setOnClickListener {
-            startActivity(Intent(this, BackupUpsellActivity::class.java))
+            startActivity(Intent(this, if (Prefs.isGuest(this)) AccountActivity::class.java else BackupUpsellActivity::class.java))
         }
         findViewById<TextView>(R.id.dash_chat).setOnClickListener {
             startActivity(Intent(this, OnboardingActivity::class.java))
@@ -219,9 +219,13 @@ class DashboardActivity : AppCompatActivity() {
      * button everywhere is "raise limits + web dashboard" → WhatsApp to sales.
      */
     private fun refreshPlanBanner() {
-        // Free plan = the agent lives on this phone only: keep the backup pitch visible.
+        // Free plan = the agent lives on this phone only: keep the backup pitch
+        // visible. A guest sees the account pitch instead.
+        val guest = Prefs.isGuest(this)
         findViewById<View>(R.id.backup_banner).visibility =
-            if ((plan?.optString("plan") ?: "free") == "free") View.VISIBLE else View.GONE
+            if (guest || (plan?.optString("plan") ?: "free") == "free") View.VISIBLE else View.GONE
+        findViewById<TextView>(R.id.backup_banner_text).setText(if (guest) R.string.dash_guest_banner else R.string.dash_backup_banner)
+        findViewById<TextView>(R.id.backup_banner_button).setText(if (guest) R.string.dash_guest_button else R.string.dash_backup_button)
         val p = plan
         val banner = findViewById<MaterialCardView>(R.id.trial_banner)
         if (p == null) {

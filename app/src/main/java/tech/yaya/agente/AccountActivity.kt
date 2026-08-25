@@ -9,7 +9,9 @@ import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.google.android.material.textfield.TextInputEditText
@@ -93,6 +95,7 @@ class AccountActivity : AppCompatActivity() {
         findViewById<View>(R.id.account_fresh).setOnClickListener { goHome() }
         findViewById<View>(R.id.account_continue).setOnClickListener { goHome() }
         findViewById<View>(R.id.account_logout).setOnClickListener { logout() }
+        findViewById<View>(R.id.account_guest).setOnClickListener { guestSheet() }
         code.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -114,6 +117,8 @@ class AccountActivity : AppCompatActivity() {
         })
 
         if (intent.getBooleanExtra(EXTRA_MANAGE, false) && Prefs.accountEmail(this).isNotEmpty()) showSigned() else showForm()
+        // A guest coming back here wants the real thing: hide the guest link.
+        findViewById<View>(R.id.account_guest).visibility = if (Prefs.isGuest(this)) View.GONE else View.VISIBLE
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -236,6 +241,7 @@ class AccountActivity : AppCompatActivity() {
                 if (r.code in 200..299 && j?.optBoolean("signedIn") == true) {
                     Prefs.setAccountEmail(this, j.optString("email", currentEmail()))
                     Prefs.setAccountPhone(this, j.optString("phone").takeIf { it != "null" }.orEmpty())
+                    Prefs.setGuest(this, false)
                     afterSignIn()
                 } else {
                     codeTil.error = when {
@@ -247,6 +253,33 @@ class AccountActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    /** "Continuar sin cuenta": the trade in plain words, then the switch. */
+    private fun guestSheet() {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.sheet_guest, null)
+        dialog.setContentView(view)
+        val share = view.findViewById<MaterialSwitch>(R.id.guest_share)
+        view.findViewById<View>(R.id.guest_continue).setOnClickListener {
+            dialog.dismiss()
+            setBusy(true)
+            ServerClient.IO_EXECUTOR.execute {
+                val r = ServerClient.accountGuest(this, share.isChecked)
+                runOnUiThread {
+                    setBusy(false)
+                    if (r.code in 200..299) {
+                        Prefs.setGuest(this, true)
+                        Prefs.setAccountEmail(this, "")
+                        goHome()
+                    } else showError(when (ServerClient.classify(r)) {
+                        ServerClient.Kind.OFFLINE -> getString(R.string.account_error_offline)
+                        else -> getString(R.string.account_error_generic, r.json?.optString("error").orEmpty().ifEmpty { r.code.toString() })
+                    })
+                }
+            }
+        }
+        dialog.show()
     }
 
     /** A business phone with nothing on it yet may come from a backup. */

@@ -31,8 +31,11 @@ class BackupUpsellActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.upsell_body).text =
             if (name.isBlank()) getString(R.string.upsell_body_generic) else getString(R.string.upsell_body, name)
         findViewById<TextView>(R.id.upsell_web_note).text = getString(R.string.upsell_web_note, Prefs.accountEmail(this))
+        val guest = Prefs.isGuest(this)
+        if (guest) findViewById<com.google.android.material.button.MaterialButton>(R.id.upsell_cta).setText(R.string.upsell_cta_guest)
         findViewById<View>(R.id.upsell_cta).setOnClickListener {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(BuildConfig.WEB_APP_URL)))
+            if (guest) startActivity(Intent(this, AccountActivity::class.java))
+            else startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(BuildConfig.WEB_APP_URL)))
         }
         findViewById<View>(R.id.upsell_later).setOnClickListener { done() }
         loadTiers()

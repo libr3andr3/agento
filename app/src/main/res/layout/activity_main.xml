@@ -301,6 +301,21 @@
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textColor="@color/agento_on_surface" />
 
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/share_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:minHeight="@dimen/touch_min"
+                    android:text="@string/settings_share_label" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_share_hint"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="@color/agento_on_surface_muted" />
+
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"

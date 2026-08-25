@@ -175,6 +175,12 @@ object Prefs {
     fun accountEmail(ctx: Context): String = sp(ctx).getString("account_email", "") ?: ""
     fun setAccountEmail(ctx: Context, email: String) =
         sp(ctx).edit().putString("account_email", email).apply()
+    /** "Continuar sin cuenta": the core is the truth; mirrored for the launcher. */
+    fun isGuest(ctx: Context): Boolean = sp(ctx).getBoolean("account_guest", false)
+    fun setGuest(ctx: Context, on: Boolean) = sp(ctx).edit().putBoolean("account_guest", on).apply()
+    /** Anyone signed in, with or without an account. */
+    fun hasIdentity(ctx: Context): Boolean = accountEmail(ctx).isNotEmpty() || isGuest(ctx)
+
     /** E.164 digits of the account's verified phone, "" when unknown. */
     fun accountPhone(ctx: Context): String = sp(ctx).getString("account_phone", "") ?: ""
     fun setAccountPhone(ctx: Context, phone: String) =

@@ -258,6 +258,12 @@ object ServerClient {
             JSONObject().put("email", email).put("phone", phone).put("code", code).apply { name?.let { put("name", it) } },
             bearer = false)
 
+    fun accountGuest(ctx: Context, share: Boolean): Response =
+        postRaw(ctx, "/api/account/guest", JSONObject().put("share", share), bearer = false)
+
+    fun accountShare(ctx: Context, share: Boolean): Boolean =
+        postRaw(ctx, "/api/account/share", JSONObject().put("share", share), bearer = false).code in 200..299
+
     fun accountLogout(ctx: Context): Boolean =
         postRaw(ctx, "/api/account/logout", JSONObject(), bearer = false).code in 200..299
 

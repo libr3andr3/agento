@@ -85,6 +85,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         groupSwitch.setOnCheckedChangeListener { _, on -> Prefs.setReplyToGroups(this, on) }
+        val shareSwitch = findViewById<MaterialSwitch>(R.id.share_switch)
+        ServerClient.IO_EXECUTOR.execute {
+            val a = ServerClient.account(this)
+            runOnUiThread { shareSwitch.isChecked = a?.optBoolean("shareTraining") == true }
+        }
+        shareSwitch.setOnCheckedChangeListener { _, on -> ServerClient.IO_EXECUTOR.execute { ServerClient.accountShare(this, on) } }
 
         // Bring-your-own-model is a developer setting: every business API
         // goes through yaya.tech with the agent identity. Debug builds only.

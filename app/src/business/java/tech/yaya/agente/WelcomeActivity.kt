@@ -19,7 +19,7 @@ class WelcomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val next = when {
-            Prefs.accountEmail(this).isEmpty() -> AccountActivity::class.java
+            !Prefs.hasIdentity(this) -> AccountActivity::class.java
             !Prefs.serverConfigured(this) -> RegistrationActivity::class.java
             Prefs.chatTranscript(this).isNullOrBlank() -> OnboardingActivity::class.java
             else -> DashboardActivity::class.java

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Continuar sin cuenta": the trade, in plain words, before agreeing. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/space_l">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/guest_title"
+        android:textAppearance="?attr/textAppearanceTitleLarge"
+        android:textColor="@color/agento_on_surface" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:text="@string/guest_body"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="@color/agento_on_surface_muted" />
+
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_m" android:text="@string/guest_get" android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="@color/agento_on_surface" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_xs" android:text="@string/guest_lose" android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="@color/agento_on_surface" />
+
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/guest_share"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_m"
+        android:checked="true"
+        android:minHeight="@dimen/touch_min"
+        android:text="@string/guest_share_label" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/guest_share_hint"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="@color/agento_on_surface_muted" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/guest_continue"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/cta_height"
+        android:layout_marginTop="@dimen/space_m"
+        android:text="@string/guest_cta" />
+</LinearLayout>

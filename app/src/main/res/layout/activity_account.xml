@@ -201,10 +201,18 @@
                 app:iconSize="22dp"
                 app:iconTint="@color/agento_on_primary" />
 
-            <TextView
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/account_guest"
+                style="@style/Widget.Agento.Button.Text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_s"
+                android:text="@string/account_guest_link" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
                 android:gravity="center"
                 android:text="@string/account_no_password"
                 android:textAppearance="?attr/textAppearanceLabelMedium"

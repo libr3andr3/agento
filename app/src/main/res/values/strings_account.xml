@@ -41,4 +41,17 @@
     <string name="account_change">Cambiar datos</string>
     <string name="account_error_expired">El código venció. Pide otro.</string>
     <string name="account_error_delivery">No pudimos enviar el código ahora mismo. Inténtalo en un minuto.</string>
+    <string name="account_guest_link">Continuar sin cuenta</string>
+    <string name="guest_title">Sin cuenta, un trato justo</string>
+    <string name="guest_body">Tu agente responde en tus canales igual. A cambio, ayudas a mejorar agento: lo que tu agente aprende (sin datos personales) entrena a los agentes de tu rubro.</string>
+    <string name="guest_get">✓ Recepcionista con IA en tus chats, gratis</string>
+    <string name="guest_lose">✗ Sin red Yaya (ni clientes nuevos ni reputación), sin respaldo ni panel web</string>
+    <string name="guest_share_label">Ayuda a mejorar agento</string>
+    <string name="guest_share_hint">Compartes cómo razona tu agente (sin números, montos ni fechas) para que los agentes de tu rubro aprendan. Se apaga en Ajustes.</string>
+    <string name="guest_cta">Continuar sin cuenta</string>
+    <string name="settings_share_label">Ayuda a mejorar agento</string>
+    <string name="settings_share_hint">Comparte cómo razona tu agente, sin números, montos ni fechas. Los agentes de tu rubro aprenden de lo que funciona.</string>
+    <string name="dash_guest_banner">Estás sin cuenta: sin red Yaya ni respaldo. Crea tu cuenta Yaya cuando quieras.</string>
+    <string name="dash_guest_button">Crear cuenta</string>
+    <string name="upsell_cta_guest">Crear mi cuenta Yaya</string>
 </resources>
