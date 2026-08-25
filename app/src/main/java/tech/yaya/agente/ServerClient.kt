@@ -41,7 +41,7 @@ object ServerClient {
     val IO_EXECUTOR: ExecutorService = Executors.newCachedThreadPool()
 
     /** HTTP status + parsed body (null body = network failure or bad JSON). */
-    data class Response(val code: Int, val json: JSONObject?)
+    data class Response(val code: Int, val json: JSONObject?, val text: String? = null)
 
     // ------------------------------------------------------------- taxonomy
 
@@ -188,7 +188,7 @@ object ServerClient {
                 val text = (if (code in 200..299) conn.inputStream else conn.errorStream)
                     ?.bufferedReader()?.readText() ?: ""
                 if (code !in 200..299) Log.w(TAG, "$path -> $code: $text")
-                Response(code, runCatching { JSONObject(text) }.getOrNull())
+                Response(code, runCatching { JSONObject(text) }.getOrNull(), text)
             } finally {
                 conn.disconnect()
             }
@@ -230,6 +230,40 @@ object ServerClient {
 
     // Plans (both editions). Bearer when a business is paired; the core
     // talks to yaya.tech with its identity either way. [IO_EXECUTOR].
+
+    // yaya mesh (business edition): the core keeps keys and peers; the app
+    // only drives the tunnel. App key, loopback. [IO_EXECUTOR].
+
+    fun meshStatus(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/mesh", body = null, contentType = null, bearer = false, readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    fun meshRegister(ctx: Context): JSONObject? = post(ctx, "/api/mesh/register", JSONObject(), bearer = false)
+
+    fun meshLink(ctx: Context, peer: String): JSONObject? = post(ctx, "/api/mesh/link", JSONObject().put("peer", peer), bearer = false)
+
+    fun meshAccept(ctx: Context, peer: String): JSONObject? = post(ctx, "/api/mesh/accept", JSONObject().put("peer", peer), bearer = false)
+
+    /** The wg-quick text the core generated (private key inside; stays on the phone). */
+    fun meshConfig(ctx: Context): String? {
+        val r = exchange(ctx, "/api/mesh/config", body = null, contentType = null, bearer = false, readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.text else null
+    }
+
+    // Coins (business edition): the core signs, verifies and keeps them.
+
+    fun coinsStatus(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/coins", body = null, contentType = null, bearer = false, readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+    fun coinsWithdraw(ctx: Context, amountMinor: Long): JSONObject? = postRaw(ctx, "/api/coins/withdraw", JSONObject().put("amountMinor", amountMinor), bearer = false).json
+    fun coinsDeposit(ctx: Context): JSONObject? = postRaw(ctx, "/api/coins/deposit", JSONObject(), bearer = false).json
+    fun coinsRefresh(ctx: Context): JSONObject? = postRaw(ctx, "/api/coins/refresh", JSONObject(), bearer = false).json
+    fun coinsPay(ctx: Context, to: String, amountMinor: Long, via: String): JSONObject? =
+        postRaw(ctx, "/api/coins/pay", JSONObject().put("to", to).put("amountMinor", amountMinor).put("via", via), bearer = false).json
+    fun coinsReceive(ctx: Context, payment: JSONObject, via: String): JSONObject? =
+        postRaw(ctx, "/api/coins/receive", JSONObject().put("payment", payment).put("via", via), bearer = false).json
 
     fun plan(ctx: Context): JSONObject? {
         val r = exchange(ctx, "/api/plan", body = null, contentType = null,

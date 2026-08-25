@@ -214,6 +214,17 @@
                         app:strokeColor="@color/agento_outline" />
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/coins_button"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/touch_min"
+                        android:layout_marginStart="@dimen/space_s"
+                        android:text="@string/settings_coins"
+                        app:cornerRadius="@dimen/corner_control"
+                        app:strokeColor="@color/agento_outline" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/server_config_button"
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="wrap_content"
@@ -313,6 +324,22 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/settings_share_hint"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="@color/agento_on_surface_muted" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/mesh_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:minHeight="@dimen/touch_min"
+                    android:text="@string/settings_mesh_label" />
+
+                <TextView
+                    android:id="@+id/mesh_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_mesh_hint"
                     android:textAppearance="?attr/textAppearanceLabelMedium"
                     android:textColor="@color/agento_on_surface_muted" />
 

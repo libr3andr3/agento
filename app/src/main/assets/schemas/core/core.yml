@@ -20,6 +20,10 @@ fields:
     type: "string"
     ask_in_onboarding: true
     question_es: "¿En qué distrito o ciudad está tu negocio? (así los clientes cercanos te encuentran)"
+  askPrice:
+    type: "int"                     # céntimos another agent pays per question over the network; 0/absent = free
+    ask_in_onboarding: false
+    question_es: "¿Quieres cobrar por cada consulta que otro agente le haga al tuyo por la red? ¿Cuánto (en soles)?"
   businessHours:
     type: "map[day -> range]"
     ask_in_onboarding: true

@@ -5,6 +5,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Coins hand to hand: classic Bluetooth RFCOMM, no pairing required. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <!-- Xiaomi/Huawei & friends kill background listeners; we ask the user to
          exempt agente so the notification listener survives. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
@@ -79,6 +84,9 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <activity
+            android:name=".CoinsActivity"
+            android:exported="false" />
         <activity
             android:name=".PayoutActivity"
             android:exported="false"

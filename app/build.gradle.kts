@@ -12,8 +12,8 @@ android {
         // Each edition sets its own applicationId below.
         minSdk = 26
         targetSdk = 36
-        versionCode = 48
-        versionName = "1.11.0"
+        versionCode = 50
+        versionName = "1.13.0"
 
         // Client API key: supplied per-build, never committed.
         val appKey = System.getenv("AGENTO_APP_KEY")
@@ -149,4 +149,6 @@ dependencies {
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    // yaya mesh: userspace WireGuard through VpnService (business edition).
+    "businessImplementation"("com.wireguard.android:tunnel:1.0.20260102")
 }
