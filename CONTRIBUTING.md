@@ -8,6 +8,11 @@ so the emulator works.
 
 CI runs `assembleDebug` and `lintDebug` on every push and pull request.
 
+## License
+
+By contributing you agree your changes are released under the
+[AGPL-3.0](LICENSE), like the rest of the project.
+
 ## Ground rules
 
 - **Read `docs/DESIGN.md` before touching a layout.** Tokens only: no

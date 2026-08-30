@@ -143,6 +143,13 @@ scripts/verify-apk.sh               # checks a published download end to end
 
 Full procedure, version numbers and the update channel: `docs/RELEASE.md`.
 
+## License
+
+[GNU AGPL v3](LICENSE). agento is libre software: you may run, study, change
+and redistribute it, and anyone you give a build to — or serve it to over a
+network — gets the same rights and the source. Contributions are accepted
+under the same license.
+
 ## Language
 
 The product is Spanish-first (Peru), with English as the second locale.
