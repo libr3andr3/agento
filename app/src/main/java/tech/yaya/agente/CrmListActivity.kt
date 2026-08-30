@@ -43,6 +43,24 @@ class CrmListActivity : AppCompatActivity() {
         swipe = findViewById(R.id.crm_swipe)
         findViewById<TextView>(R.id.crm_title).setText(if (mode == MODE_CONTACTS) R.string.crm_contacts_title else R.string.crm_conversations_title)
         if (mode == MODE_CONTACTS) {
+            findViewById<TextView>(R.id.crm_export).apply {
+                visibility = View.VISIBLE
+                setOnClickListener {
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(this@CrmListActivity)
+                        .setTitle(R.string.crm_export)
+                        .setItems(arrayOf(getString(R.string.crm_export_vcf), getString(R.string.crm_export_csv))) { _, which ->
+                            ServerClient.IO_EXECUTOR.execute {
+                                val rows = ServerClient.contacts(this@CrmListActivity, "")?.optJSONArray("contacts")
+                                runOnUiThread {
+                                    if (rows == null || rows.length() == 0) { android.widget.Toast.makeText(this@CrmListActivity, R.string.export_nothing, android.widget.Toast.LENGTH_SHORT).show(); return@runOnUiThread }
+                                    if (which == 0) OsSync.shareFile(this@CrmListActivity, "clientes.vcf", "text/x-vcard", OsSync.vcard(rows))
+                                    else OsSync.shareFile(this@CrmListActivity, "clientes.csv", "text/csv", OsSync.csv(rows))
+                                }
+                            }
+                        }
+                        .show()
+                }
+            }
             findViewById<TextInputLayout>(R.id.crm_search_til).visibility = View.VISIBLE
             findViewById<TextInputEditText>(R.id.crm_search).addTextChangedListener(object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}

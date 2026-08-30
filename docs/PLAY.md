@@ -137,3 +137,13 @@ Hoy, Conversaciones, Cobros, Ajustes. Feature graphic 1024×500, icon
 512×512 (`app/src/main/res/mipmap-anydpi-v26` is the adaptive source).
 
 **Release notes (es)**: `Primera versión en Google Play de agento para negocios.`
+
+## D17 additions (1.18.0)
+
+Permissions: `READ_CONTACTS`, `WRITE_CONTACTS`, `READ_CALENDAR`, `WRITE_CALENDAR` —
+requested at runtime only when the owner turns on "Guardar clientes en Contactos" /
+"Guardar citas en el Calendario". Data safety: contacts and calendar events are
+written on the device (the owner's own customers and appointments) and are never
+collected or transmitted; the app reads Contacts only to avoid duplicating what it
+wrote. Feature copy: "Tus clientes se quedan contigo: en tus Contactos y tu
+Calendario, y exportables (.vcf, .csv, .ics)."

@@ -167,6 +167,16 @@ refused by trigger; timestamps never go backwards; and every 25 entries or
 row provably sits between two trusted instants no matter what the phone's
 clock says. Ajustes → Auditoría verifies the whole chain on the phone.
 
+## Your data, on your phone (D17)
+
+With the owner's consent (Ajustes → "Tus datos, en tu teléfono"), `OsSync.kt`
+mirrors the CRM into the OS after every dashboard refresh: customers with a
+phone number into Contacts (tagged with a custom MIME row holding the CRM id,
+so it never duplicates), upcoming appointments into a local "agento" calendar
+(keyed by `CUSTOM_APP_URI`, reminder an hour before, deleted on cancel). The
+same data leaves as files: `.vcf` / `.csv` from Clientes, `.ics` from the week
+view. One-way, idempotent, never sent anywhere.
+
 ## Threads
 
 `ServerClient` documents the contract; keep it:

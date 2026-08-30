@@ -143,6 +143,64 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
+                <!-- D17: tus clientes se quedan contigo — offered once. -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/ossync_banner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_s"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@color/agento_primary_container"
+                    app:cardCornerRadius="@dimen/corner_card"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_m">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/ossync_banner_title"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="@color/agento_on_primary_container" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="@string/ossync_banner_body"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="@color/agento_on_primary_container" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_s"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/ossync_enable"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:minHeight="@dimen/touch_min"
+                                android:text="@string/ossync_banner_enable" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/ossync_later"
+                                style="@style/Widget.Agento.Button.Text"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/space_s"
+                                android:minHeight="@dimen/touch_min"
+                                android:text="@string/ossync_banner_later" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
                 <!-- Update banner: a newer APK is published on agento.ceo. -->
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/update_banner"

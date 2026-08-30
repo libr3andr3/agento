@@ -14,8 +14,8 @@ android {
     defaultConfig {
         minSdk = 26
         targetSdk = 36
-        versionCode = 58
-        versionName = "1.17.0"
+        versionCode = 59
+        versionName = "1.18.0"
 
         resValue("string", "app_name", "agento")
         // Where accounts and plans are managed (the gateway's web app).

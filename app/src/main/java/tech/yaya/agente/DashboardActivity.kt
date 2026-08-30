@@ -94,6 +94,11 @@ class DashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, if (Prefs.isGuest(this)) AccountActivity::class.java else BackupUpsellActivity::class.java))
         }
         findViewById<View>(R.id.off_banner_button).setOnClickListener { activateAgent() }
+        findViewById<View>(R.id.ossync_enable).setOnClickListener {
+            Prefs.setOsSyncOffered(this)
+            requestPermissions(OsSync.CONTACT_PERMS + OsSync.CALENDAR_PERMS, OsSync.RC_CONTACTS)
+        }
+        findViewById<View>(R.id.ossync_later).setOnClickListener { Prefs.setOsSyncOffered(this); findViewById<View>(R.id.ossync_banner).visibility = View.GONE }
         agentSwitch.setOnCheckedChangeListener { btn, on ->
             if (!btn.isPressed) return@setOnCheckedChangeListener
             if (on && !hasNotificationAccess()) {
@@ -123,6 +128,28 @@ class DashboardActivity : AppCompatActivity() {
         maybeAskBatteryExemption()
         refreshUpdateBanner()
         maybeAskNotifPermission()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != OsSync.RC_CONTACTS) return
+        val ok = { names: Array<String> -> names.all { p -> permissions.indexOf(p).let { i -> i >= 0 && grantResults[i] == android.content.pm.PackageManager.PERMISSION_GRANTED } } }
+        Prefs.setSyncContacts(this, ok(OsSync.CONTACT_PERMS))
+        Prefs.setSyncCalendar(this, ok(OsSync.CALENDAR_PERMS))
+        if (!ok(OsSync.CONTACT_PERMS) && !ok(OsSync.CALENDAR_PERMS)) Toast.makeText(this, R.string.ossync_permission_denied, Toast.LENGTH_LONG).show()
+        findViewById<View>(R.id.ossync_banner).visibility = View.GONE
+        OsSync.syncAll(this)
+    }
+
+    /** Export the upcoming agenda as a calendar file anyone can import. */
+    fun exportIcs() {
+        ServerClient.IO_EXECUTOR.execute {
+            val rows = ServerClient.appointments(this)
+            runOnUiThread {
+                if (rows == null || rows.length() == 0) { Toast.makeText(this, R.string.export_nothing, Toast.LENGTH_SHORT).show(); return@runOnUiThread }
+                OsSync.shareFile(this, "agenda.ics", "text/calendar", OsSync.ics(rows))
+            }
+        }
     }
 
     /** Android 13+: owner alerts (customer needs you) require this grant. */
@@ -239,6 +266,9 @@ class DashboardActivity : AppCompatActivity() {
      * against the cap with the upgrade button; a hit cap turns it red.
      */
     private fun refreshPlanBanner() {
+        // D17: offered once, after the interview, until the owner decides.
+        findViewById<View>(R.id.ossync_banner).visibility =
+            if (!Prefs.osSyncOffered(this) && data?.optBoolean("onboarded") == true && !(Prefs.syncContacts(this) && Prefs.syncCalendar(this))) View.VISIBLE else View.GONE
         val guest = Prefs.isGuest(this)
         findViewById<View>(R.id.backup_banner).visibility =
             if (guest || (plan?.optString("plan") ?: "free") == "free") View.VISIBLE else View.GONE
@@ -326,6 +356,8 @@ class DashboardActivity : AppCompatActivity() {
                     Prefs.setDashboardCache(this, d.toString())
                     ServerClient.IO_EXECUTOR.execute { runCatching { Prefs.refreshLearnedSources(applicationContext) } }
                     render(d)
+                    // D17: the OS copies follow every refresh (idempotent, off-thread).
+                    OsSync.syncAll(this)
                 } else {
                     Prefs.dashboardCache(this)?.let { runCatching { render(JSONObject(it)) } }
                 }

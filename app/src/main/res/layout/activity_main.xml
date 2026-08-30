@@ -330,6 +330,38 @@
                     android:minHeight="@dimen/touch_min"
                     android:text="@string/settings_share_label" />
 
+                <!-- D17: your data, on your phone -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_l"
+                    android:text="@string/settings_ossync_header"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/agento_on_surface" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/sync_contacts_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:minHeight="@dimen/touch_min"
+                    android:text="@string/settings_sync_contacts" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/sync_calendar_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="@dimen/touch_min"
+                    android:text="@string/settings_sync_calendar" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:text="@string/settings_ossync_hint"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/agento_on_surface_muted" />
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

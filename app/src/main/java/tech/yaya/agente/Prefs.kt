@@ -232,6 +232,14 @@ object Prefs {
         plan?.optJSONObject("support")?.optString("phone")?.takeIf { it.isNotBlank() && it != "null" }?.let { setSupportPhone(ctx, it) }
     }
 
+    /** D17: mirror customers / appointments into the phone's Contacts / Calendar. */
+    fun syncContacts(ctx: Context): Boolean = sp(ctx).getBoolean("sync_contacts", false)
+    fun setSyncContacts(ctx: Context, on: Boolean) = sp(ctx).edit().putBoolean("sync_contacts", on).apply()
+    fun syncCalendar(ctx: Context): Boolean = sp(ctx).getBoolean("sync_calendar", false)
+    fun setSyncCalendar(ctx: Context, on: Boolean) = sp(ctx).edit().putBoolean("sync_calendar", on).apply()
+    fun osSyncOffered(ctx: Context): Boolean = sp(ctx).getBoolean("os_sync_offered", false)
+    fun setOsSyncOffered(ctx: Context) = sp(ctx).edit().putBoolean("os_sync_offered", true).apply()
+
     /** D15: the first-open guide of the designed app, shown once per business. */
     fun walkthroughSeen(ctx: Context): Boolean = sp(ctx).getBoolean("walkthrough_seen", false)
     fun setWalkthroughSeen(ctx: Context, seen: Boolean) = sp(ctx).edit().putBoolean("walkthrough_seen", seen).apply()

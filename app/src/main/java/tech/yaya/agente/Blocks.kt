@@ -215,7 +215,7 @@ object Blocks {
     // --------------------------------------------------------- agenda week
 
     private fun agendaWeek(a: DashboardActivity, host: LinearLayout, d: JSONObject) {
-        header(a, host, a.getString(R.string.agenda_week_header))
+        header(a, host, a.getString(R.string.agenda_week_header), action = a.getString(R.string.agenda_export) to { a.exportIcs() })
         val card = MaterialCardView(a).apply {
             radius = a.resources.getDimension(R.dimen.corner_card); cardElevation = a.resources.getDimension(R.dimen.card_elevation)
             strokeWidth = 0; setCardBackgroundColor(a.getColor(R.color.agento_surface_card))

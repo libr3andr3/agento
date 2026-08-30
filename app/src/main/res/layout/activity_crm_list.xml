@@ -17,6 +17,21 @@
         android:textAppearance="?attr/textAppearanceHeadlineSmall"
         android:textColor="@color/agento_on_surface" />
 
+    <!-- D17: the list is the owner's — take it as a file. Contacts mode only. -->
+    <TextView
+        android:id="@+id/crm_export"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/touch_min"
+        android:layout_marginStart="@dimen/space_m"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:gravity="center"
+        android:paddingStart="@dimen/space_s"
+        android:paddingEnd="@dimen/space_s"
+        android:text="@string/crm_export"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="@color/agento_primary"
+        android:visibility="gone" />
+
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/crm_search_til"
         style="@style/Widget.Agento.TextInput"

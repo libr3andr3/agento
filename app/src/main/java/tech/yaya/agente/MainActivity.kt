@@ -103,6 +103,20 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<MaterialButton>(R.id.support_button).setOnClickListener { Support.open(this) }
         findViewById<MaterialButton>(R.id.audit_button).setOnClickListener { startActivity(Intent(this, AuditActivity::class.java)) }
+        // D17: the owner's data into the OS. A switch asks for its permission;
+        // the flag is only set once the permission is really granted.
+        findViewById<MaterialSwitch>(R.id.sync_contacts_switch).setOnCheckedChangeListener { btn, on ->
+            if (!btn.isPressed) return@setOnCheckedChangeListener
+            if (!on) { Prefs.setSyncContacts(this, false); return@setOnCheckedChangeListener }
+            if (OsSync.hasContacts(this)) { Prefs.setSyncContacts(this, true); OsSync.syncAll(this) }
+            else requestPermissions(OsSync.CONTACT_PERMS, OsSync.RC_CONTACTS)
+        }
+        findViewById<MaterialSwitch>(R.id.sync_calendar_switch).setOnCheckedChangeListener { btn, on ->
+            if (!btn.isPressed) return@setOnCheckedChangeListener
+            if (!on) { Prefs.setSyncCalendar(this, false); return@setOnCheckedChangeListener }
+            if (OsSync.hasCalendar(this)) { Prefs.setSyncCalendar(this, true); OsSync.syncAll(this) }
+            else requestPermissions(OsSync.CALENDAR_PERMS, OsSync.RC_CALENDAR)
+        }
         // Keep the support line fresh: the server can switch it at any time.
         ServerClient.IO_EXECUTOR.execute { Prefs.rememberSupport(this, ServerClient.plan(this)) }
         findViewById<MaterialButton>(R.id.onboarding_button).setOnClickListener {
@@ -123,7 +137,25 @@ class MainActivity : AppCompatActivity() {
         buildAppToggles()
     }
 
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        val granted = grantResults.isNotEmpty() && grantResults.all { it == android.content.pm.PackageManager.PERMISSION_GRANTED }
+        when (requestCode) {
+            OsSync.RC_CONTACTS -> Prefs.setSyncContacts(this, granted)
+            OsSync.RC_CALENDAR -> Prefs.setSyncCalendar(this, granted)
+            else -> return
+        }
+        if (granted) OsSync.syncAll(this) else android.widget.Toast.makeText(this, R.string.ossync_permission_denied, android.widget.Toast.LENGTH_LONG).show()
+        refreshOsSync()
+    }
+
+    private fun refreshOsSync() {
+        findViewById<MaterialSwitch>(R.id.sync_contacts_switch).isChecked = Prefs.syncContacts(this) && OsSync.hasContacts(this)
+        findViewById<MaterialSwitch>(R.id.sync_calendar_switch).isChecked = Prefs.syncCalendar(this) && OsSync.hasCalendar(this)
+    }
+
     override fun onResume() {
+        refreshOsSync()
         super.onResume()
         refresh()
         ReplyLog.listener = { runOnUiThread { logAdapter.reload() } }

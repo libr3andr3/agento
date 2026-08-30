@@ -390,6 +390,12 @@ object ServerClient {
 
     // CRM. [IO_EXECUTOR].
 
+    /** Upcoming appointments, every status (a bare array). Feeds the OS calendar mirror and .ics export. */
+    fun appointments(ctx: Context): org.json.JSONArray? {
+        val r = exchange(ctx, "/api/appointments", body = null, contentType = null, bearer = true, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) runCatching { org.json.JSONArray(r.text ?: "") }.getOrNull() else null
+    }
+
     fun conversations(ctx: Context): JSONObject? {
         val r = exchange(ctx, "/api/conversations", body = null, contentType = null, bearer = true, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
         return if (r.code in 200..299) r.json else null
