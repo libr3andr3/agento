@@ -1,18 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Shared by both editions (client = agento on Play, business = agento
-     business from agento.ceo/F-Droid). Each edition's source set adds its
-     own launcher, screens, permissions and services. -->
+<!-- agento: the receptionist for business owners. Reads chat-app
+     notifications, answers as the business, detects payments. Distributed
+     from agento.ceo (not Play: the notification-listener and self-update
+     permissions are what Play policy objects to). -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Coarse only: a district is all "near me" needs. Business → public
-         offer location; person → private profile. -->
+    <!-- Voice onboarding: the owner talks to the setup interview. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Coarse only: a district is all "near me" needs. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Self-hosted update channel: hand a downloaded APK to the installer.
-         Removed by the play flavor. -->
+    <!-- Self-hosted update channel: hand a downloaded APK to the installer. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Xiaomi/Huawei & friends kill background listeners; we ask the owner to
+         exempt agento so the notification listener survives. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- The notification listener already sees every app; this lets the
+         Cobros screen check whether the wallet the owner named is installed
+         on THIS phone (no fixed list of wallets exists anywhere). -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+
+    <!-- Android 11+ package visibility: Settings shows which supported chat
+         apps are actually installed, which needs an explicit allowlist to
+         query. Notification delivery itself never needed this. -->
+    <queries>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
+        <package android:name="com.instagram.android" />
+        <package android:name="com.facebook.orca" />
+        <package android:name="com.facebook.mlite" />
+        <package android:name="com.facebook.katana" />
+        <package android:name="org.telegram.messenger" />
+        <package android:name="org.thoughtcrime.securesms" />
+        <package android:name="com.zhiliaoapp.musically" />
+        <package android:name="com.google.android.apps.messaging" />
+    </queries>
 
     <!-- Cleartext is off in release and permitted only for debug builds (local
          server over `adb reverse`); see res/xml/network_security_config.xml.
@@ -28,12 +52,82 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Agente">
 
+        <!-- Launcher: a router with no UI (see WelcomeActivity). -->
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <!-- Yaya ID: sign in / create account, before anything else. -->
         <activity
             android:name=".AccountActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
+
+        <!-- Step-by-step registration; portrait-locked like the chat so the
+             step state machine never fights a rotation mid-request. -->
+        <activity
+            android:name=".RegistrationActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- The setup interview and, later, the manager chat. -->
+        <activity
+            android:name=".OnboardingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Home. -->
+        <activity
+            android:name=".DashboardActivity"
+            android:exported="false" />
+
+        <!-- Settings (gear on the dashboard). -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".PlanActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".CrmListActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".ConversationActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".BackupUpsellActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Cobros: where customers send money. -->
+        <activity
+            android:name=".PayoutActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- The heart of the app: reads chat notifications, replies inline. -->
+        <service
+            android:name=".AgenteNotificationListener"
+            android:label="@string/app_name"
+            android:exported="false"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
 
         <!-- Hands the camera app a writable cache file for the catalog-photo
              capture (ACTION_IMAGE_CAPTURE + EXTRA_OUTPUT, no CAMERA perm). -->

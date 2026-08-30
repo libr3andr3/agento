@@ -47,7 +47,7 @@ object OwnerAlerts {
         // Defensive: the channel is created at app start, but the listener
         // process can outlive data-clears and OEM restarts — recreate if gone.
         ensureChannel(ctx)
-        val intent = Intent(ctx, Edition.HOME)
+        val intent = Intent(ctx, Screens.HOME)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pi = PendingIntent.getActivity(
             ctx, gapId.hashCode(), intent,

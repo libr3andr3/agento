@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
- * Blocking HTTP client for agente-server. Call only from [EXECUTOR] — a single
+ * Blocking HTTP client for the agent core on the loopback. Call only from [EXECUTOR] — a single
  * thread, so replies to the agent stay in conversation order.
  *
  * Threading contract (matches current call sites — keep it that way):
@@ -25,10 +25,6 @@ import java.util.concurrent.Executors
  */
 object ServerClient {
     private const val TAG = "AgenteServer"
-
-    /** Client credential: the server rejects /api requests without it.
-     *  Injected at build time (AGENTO_APP_KEY env/property) — never committed. */
-    private val APP_KEY = BuildConfig.APP_KEY
 
     /** Conversation lane: replies must stay in order, so one thread. */
     val EXECUTOR: ExecutorService = Executors.newSingleThreadExecutor()
@@ -228,42 +224,8 @@ object ServerClient {
 
     // -------------------------------------------------------------- endpoints
 
-    // Plans (both editions). Bearer when a business is paired; the core
-    // talks to yaya.tech with its identity either way. [IO_EXECUTOR].
-
-    // yaya mesh (business edition): the core keeps keys and peers; the app
-    // only drives the tunnel. App key, loopback. [IO_EXECUTOR].
-
-    fun meshStatus(ctx: Context): JSONObject? {
-        val r = exchange(ctx, "/api/mesh", body = null, contentType = null, bearer = false, readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
-        return if (r.code in 200..299) r.json else null
-    }
-
-    fun meshRegister(ctx: Context): JSONObject? = post(ctx, "/api/mesh/register", JSONObject(), bearer = false)
-
-    fun meshLink(ctx: Context, peer: String): JSONObject? = post(ctx, "/api/mesh/link", JSONObject().put("peer", peer), bearer = false)
-
-    fun meshAccept(ctx: Context, peer: String): JSONObject? = post(ctx, "/api/mesh/accept", JSONObject().put("peer", peer), bearer = false)
-
-    /** The wg-quick text the core generated (private key inside; stays on the phone). */
-    fun meshConfig(ctx: Context): String? {
-        val r = exchange(ctx, "/api/mesh/config", body = null, contentType = null, bearer = false, readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
-        return if (r.code in 200..299) r.text else null
-    }
-
-    // Coins (business edition): the core signs, verifies and keeps them.
-
-    fun coinsStatus(ctx: Context): JSONObject? {
-        val r = exchange(ctx, "/api/coins", body = null, contentType = null, bearer = false, readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
-        return if (r.code in 200..299) r.json else null
-    }
-    fun coinsWithdraw(ctx: Context, amountMinor: Long): JSONObject? = postRaw(ctx, "/api/coins/withdraw", JSONObject().put("amountMinor", amountMinor), bearer = false).json
-    fun coinsDeposit(ctx: Context): JSONObject? = postRaw(ctx, "/api/coins/deposit", JSONObject(), bearer = false).json
-    fun coinsRefresh(ctx: Context): JSONObject? = postRaw(ctx, "/api/coins/refresh", JSONObject(), bearer = false).json
-    fun coinsPay(ctx: Context, to: String, amountMinor: Long, via: String): JSONObject? =
-        postRaw(ctx, "/api/coins/pay", JSONObject().put("to", to).put("amountMinor", amountMinor).put("via", via), bearer = false).json
-    fun coinsReceive(ctx: Context, payment: JSONObject, via: String): JSONObject? =
-        postRaw(ctx, "/api/coins/receive", JSONObject().put("payment", payment).put("via", via), bearer = false).json
+    // Plan of the Yaya account (bearer when a business is paired; the core
+    // talks to the gateway with its own identity either way). [IO_EXECUTOR].
 
     fun plan(ctx: Context): JSONObject? {
         val r = exchange(ctx, "/api/plan", body = null, contentType = null,
@@ -271,7 +233,7 @@ object ServerClient {
         return if (r.code in 200..299) r.json else null
     }
 
-    // Yaya ID (both editions). No device token: the account comes first.
+    // Yaya ID. No device token: the account comes first.
     // [IO_EXECUTOR].
 
     fun account(ctx: Context): JSONObject? {
@@ -328,31 +290,6 @@ object ServerClient {
      *  profile for a person). Idempotent. [IO_EXECUTOR]. */
     fun postLocation(ctx: Context, body: JSONObject, bearer: Boolean): Boolean =
         postRaw(ctx, "/api/location", body, bearer = bearer, retry = Retry.IDEMPOTENT).code in 200..299
-
-    // Personal assistant (client edition). The phone owner is the tenant: no
-    // device token, the loopback app key is the whole authorization.
-
-    /** One assistant turn. Side-effectful (persists + may `remember`):
-     *  never auto-retried. [EXECUTOR]. */
-    fun assistantMessage(ctx: Context, message: String): Response =
-        postRaw(ctx, "/api/assistant/message", JSONObject().put("message", message), bearer = false)
-
-    /** Stored transcript + profile, oldest first. Idempotent. [IO_EXECUTOR]. */
-    fun assistantHistory(ctx: Context, limit: Int = 200): JSONObject? {
-        val r = exchange(
-            ctx, "/api/assistant/history?limit=$limit",
-            body = null, contentType = null, bearer = false,
-            readTimeoutMs = 15_000, retry = Retry.IDEMPOTENT,
-        )
-        return if (r.code in 200..299) r.json else null
-    }
-
-    /** Wipes the transcript (and the profile when [forgetProfile]). [EXECUTOR]. */
-    fun assistantReset(ctx: Context, forgetProfile: Boolean): Boolean =
-        postRaw(
-            ctx, "/api/assistant/reset",
-            JSONObject().put("forget_profile", forgetProfile), bearer = false,
-        ).code in 200..299
 
     /**
      * Customer message in, agent reply out. Null = server unreachable/error.
@@ -451,7 +388,7 @@ object ServerClient {
     fun paymentEvent(ctx: Context, notification: JSONObject): JSONObject? =
         post(ctx, "/api/payment_event", notification, bearer = true)
 
-    // CRM (business edition). [IO_EXECUTOR].
+    // CRM. [IO_EXECUTOR].
 
     fun conversations(ctx: Context): JSONObject? {
         val r = exchange(ctx, "/api/conversations", body = null, contentType = null, bearer = true, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
@@ -470,7 +407,7 @@ object ServerClient {
 
     fun updateContact(ctx: Context, id: String, patch: JSONObject): JSONObject? = post(ctx, "/api/contacts/$id", patch, bearer = true)
 
-    // Cobros (business edition). [IO_EXECUTOR].
+    // Cobros. [IO_EXECUTOR].
 
     /** Wallet names people use in this country, as suggestions. */
     fun rails(ctx: Context, country: String): JSONObject? {

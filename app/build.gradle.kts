@@ -4,22 +4,20 @@ plugins {
 }
 
 android {
+    // The Kotlin package is `tech.yaya.agente` (the app's original name).
+    // It cannot change: the agent core's JNI entry points are resolved by
+    // this name (Java_tech_yaya_agente_AgentoCore_*), see AgentoCore.kt.
     namespace = "tech.yaya.agente"
     compileSdk = 36
-    ndkVersion = "27.2.12479018"
 
     defaultConfig {
-        // Each edition sets its own applicationId below.
+        applicationId = "yaya.tech.agento.business"
         minSdk = 26
         targetSdk = 36
-        versionCode = 50
-        versionName = "1.13.0"
+        versionCode = 51
+        versionName = "1.14.0"
 
-        // Client API key: supplied per-build, never committed.
-        val appKey = System.getenv("AGENTO_APP_KEY")
-            ?: (project.findProperty("AGENTO_APP_KEY") as String?)
-            ?: "agente-app-dev"
-        buildConfigField("String", "APP_KEY", "\"$appKey\"")
+        resValue("string", "app_name", "agento")
         // Where accounts and plans are managed (the gateway's web app).
         val webApp = System.getenv("AGENTO_WEB_APP") ?: "https://agento.ceo/app"
         buildConfigField("String", "WEB_APP_URL", "\"$webApp\"")
@@ -29,50 +27,10 @@ android {
         buildConfig = true
     }
 
-    // The agent core's schemas (core.yml + vertical bundles) ship inside the
-    // APK, copied from the core crate at build time so there is one source.
-    sourceSets.getByName("main").assets.srcDir(layout.buildDirectory.dir("generated/coreAssets"))
-
-    // Two products from one codebase and one on-device core:
-    //   client   — "agento", the consumer app on Google Play: a personal
-    //              assistant (general chat now; finds + books local
-    //              businesses through the yaya network in phase 2).
-    //   business — "agento business", the receptionist for business owners,
-    //              distributed from agento.ceo / F-Droid only (its
-    //              notification-listener + sideload-update permissions are
-    //              what Play policy objects to).
-    // Distribution channel. `direct` = APK with the self-hosted update channel
-    // (needs REQUEST_INSTALL_PACKAGES). `play` = Google Play build: no install
-    // permission, Play handles updates. Within an edition the applicationId
-    // is the same — a phone carries one channel or the other, never both.
-    flavorDimensions += listOf("edition", "channel")
-    productFlavors {
-        create("client") {
-            dimension = "edition"
-            applicationId = "yaya.tech.agento"
-            resValue("string", "app_name", "agento")
-            buildConfigField("String", "EDITION", "\"client\"")
-        }
-        create("business") {
-            dimension = "edition"
-            applicationId = "yaya.tech.agento.business"
-            resValue("string", "app_name", "agento business")
-            buildConfigField("String", "EDITION", "\"business\"")
-        }
-        create("direct") {
-            dimension = "channel"
-            buildConfigField("boolean", "SELF_UPDATE", "true")
-        }
-        create("play") {
-            dimension = "channel"
-            buildConfigField("boolean", "SELF_UPDATE", "false")
-        }
-    }
-
-    // Upload key for Play (and any release build). Lives OUTSIDE the repo:
-    // ~/.agento/keystore.env exports AGENTO_KEYSTORE / _PASS / _ALIAS / KEY_PASS.
-    // Without them a release build is unsigned (Play rejects it) but still
-    // compiles, so CI and contributors are not blocked.
+    // Release signing. The upload key lives OUTSIDE the repo; export
+    // AGENTO_KEYSTORE / AGENTO_KEYSTORE_PASS / AGENTO_KEY_ALIAS / AGENTO_KEY_PASS
+    // (docs/RELEASE.md). Without them a release build is unsigned but still
+    // compiles, so CI and contributors are never blocked.
     signingConfigs {
         create("upload") {
             val ks = System.getenv("AGENTO_KEYSTORE")
@@ -90,9 +48,6 @@ android {
             if (System.getenv("AGENTO_KEYSTORE") != null) {
                 signingConfig = signingConfigs.getByName("upload")
             }
-            // Shrinking does not make APP_KEY secret — nothing in a client
-            // binary can be — but it removes the trivial `strings`-and-read
-            // path, and a release build should be minified regardless.
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -111,35 +66,10 @@ android {
     }
 }
 
-// ---------------------------------------------------------------- core
-//
-// libagento_core.so is cross-compiled from ../server with cargo-ndk into
-// src/main/jniLibs (gitignored). `-PskipCore` reuses whatever is there.
-
-val coreDir = rootProject.file("../server")
-val jniLibs = file("src/main/jniLibs")
-
-val copyCoreSchemas by tasks.registering(Copy::class) {
-    from(File(coreDir, "schemas"))
-    into(layout.buildDirectory.dir("generated/coreAssets/schemas"))
-}
-
-val buildCore by tasks.registering(Exec::class) {
-    onlyIf { !project.hasProperty("skipCore") }
-    workingDir = coreDir
-    val ndk = System.getenv("ANDROID_NDK_HOME")
-        ?: android.ndkDirectory.absolutePath
-    environment("ANDROID_NDK_HOME", ndk)
-    environment("PATH", System.getProperty("user.home") + "/.cargo/bin:" + System.getenv("PATH"))
-    commandLine(
-        "cargo", "ndk", "-t", "arm64-v8a", "-t", "armeabi-v7a",
-        "-o", jniLibs.absolutePath, "build", "--release"
-    )
-}
-
-tasks.named("preBuild") {
-    dependsOn(copyCoreSchemas, buildCore)
-}
+// The agent core (libagento_core.so, one per ABI) is a prebuilt native
+// library checked in under src/main/jniLibs — see docs/ARCHITECTURE.md and
+// src/main/jniLibs/CORE.md. Its schemas ship as assets (src/main/assets/schemas).
+// Nothing here needs Rust, the NDK or a network connection to build.
 
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
@@ -149,6 +79,4 @@ dependencies {
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    // yaya mesh: userspace WireGuard through VpnService (business edition).
-    "businessImplementation"("com.wireguard.android:tunnel:1.0.20260102")
 }

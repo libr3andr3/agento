@@ -92,20 +92,6 @@ class MainActivity : AppCompatActivity() {
         }
         shareSwitch.setOnCheckedChangeListener { _, on -> ServerClient.IO_EXECUTOR.execute { ServerClient.accountShare(this, on) } }
 
-        // yaya mesh: the post-quantum p2p VPN between agents. One consent
-        // dialog (VpnService), then the core's config drives the tunnel.
-        val meshSwitch = findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.mesh_switch)
-        meshSwitch.isChecked = MeshTunnel.wanted(this)
-        meshSwitch.setOnCheckedChangeListener { _, on ->
-            if (on) {
-                val consent = MeshTunnel.prepare(this)
-                if (consent != null) { meshVpnConsent.launch(consent) } else { MeshTunnel.enable(this, true); refreshMeshStatus() }
-            } else {
-                MeshTunnel.enable(this, false); refreshMeshStatus()
-            }
-        }
-        refreshMeshStatus()
-
         // Bring-your-own-model is a developer setting: every business API
         // goes through yaya.tech with the agent identity. Debug builds only.
         findViewById<MaterialButton>(R.id.server_config_button).apply {
@@ -114,9 +100,6 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<MaterialButton>(R.id.payout_button).setOnClickListener {
             startActivity(Intent(this, PayoutActivity::class.java))
-        }
-        findViewById<MaterialButton>(R.id.coins_button).setOnClickListener {
-            startActivity(Intent(this, CoinsActivity::class.java))
         }
         findViewById<MaterialButton>(R.id.onboarding_button).setOnClickListener {
             startActivity(Intent(this, OnboardingActivity::class.java))
@@ -148,7 +131,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refresh() {
-        ServerClient.IO_EXECUTOR.execute { MeshTunnel.sync(this) }
         val granted = hasNotificationAccess()
         permissionBanner.visibility = if (granted) View.GONE else View.VISIBLE
         // Access without battery exemption is the classic silent-death setup on
@@ -221,27 +203,6 @@ class MainActivity : AppCompatActivity() {
     /** AI engine: blank = yaya.tech (free). Owners who want total control
      *  enter any OpenAI-compatible endpoint and their own key. Takes effect
      *  after the app restarts (the core reads its config at boot). */
-    private val meshVpnConsent = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { r ->
-        if (r.resultCode == RESULT_OK) { MeshTunnel.enable(this, true) } else {
-            findViewById<com.google.android.material.materialswitch.MaterialSwitch>(R.id.mesh_switch).isChecked = false
-            findViewById<TextView>(R.id.mesh_status).text = getString(R.string.settings_mesh_denied)
-        }
-        refreshMeshStatus()
-    }
-
-    private fun refreshMeshStatus() {
-        ServerClient.IO_EXECUTOR.execute {
-            val s = if (MeshTunnel.wanted(this)) ServerClient.meshStatus(this) else null
-            runOnUiThread {
-                findViewById<TextView>(R.id.mesh_status).text = when {
-                    s == null -> getString(R.string.settings_mesh_hint)
-                    else -> getString(R.string.settings_mesh_on, s.optString("ip", "…"),
-                        (0 until s.optJSONArray("peers")?.length().let { it ?: 0 }).count { s.optJSONArray("peers")?.optJSONObject(it)?.optString("status") == "linked" })
-                }
-            }
-        }
-    }
-
     private fun editServerUrl() {
         val pad = (16 * resources.displayMetrics.density).toInt()
         val url = EditText(this).apply {

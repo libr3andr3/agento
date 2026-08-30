@@ -285,7 +285,7 @@ class AccountActivity : AppCompatActivity() {
     /** A business phone with nothing on it yet may come from a backup. */
     private fun afterSignIn() {
         timer?.cancel()
-        if (Edition.CLIENT || Prefs.serverConfigured(this)) { goHome(); return }
+        if (Prefs.serverConfigured(this)) { goHome(); return }
         form.visibility = View.GONE
         codeForm.visibility = View.GONE
         restoreCard.visibility = View.VISIBLE
@@ -327,7 +327,7 @@ class AccountActivity : AppCompatActivity() {
 
     /** Where the app goes once a person is signed in: the edition's flow. */
     private fun goHome() {
-        val next = if (Edition.CLIENT || Prefs.serverConfigured(this)) Edition.HOME else Edition.FIRST_RUN
+        val next = if (Prefs.serverConfigured(this)) Screens.HOME else Screens.FIRST_RUN
         startActivity(Intent(this, next).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK))
         finish()
     }

@@ -102,7 +102,6 @@ object UpdateCheck {
 
     /** Cached-or-fresh manifest, only when it is newer than what's installed. */
     fun available(ctx: Context, allowNetwork: Boolean): Update? {
-        if (!BuildConfig.SELF_UPDATE) return null // Play build: the store updates us
         val u = (if (allowNetwork && stale(ctx)) fetch(ctx) else null) ?: cached(ctx) ?: return null
         return if (u.versionCode > installedVersionCode(ctx)) u else null
     }
@@ -116,7 +115,6 @@ object UpdateCheck {
 
     /** From the listener: fetch if stale, post one notification per version. */
     fun checkInBackground(ctx: Context) {
-        if (!BuildConfig.SELF_UPDATE) return
         val u = available(ctx, allowNetwork = true) ?: return
         if (Prefs.sp(ctx).getLong("update_notified_code", 0L) >= u.versionCode) return
         // Marked only once actually posted: without POST_NOTIFICATIONS yet
@@ -132,7 +130,7 @@ object UpdateCheck {
         nm.createNotificationChannel(
             NotificationChannel(CHANNEL, ctx.getString(R.string.update_channel), NotificationManager.IMPORTANCE_DEFAULT)
         )
-        val intent = Intent(ctx, Edition.HOME)
+        val intent = Intent(ctx, Screens.HOME)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pi = PendingIntent.getActivity(ctx, NOTIF_ID, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val mandatory = u.mandatoryFor(installedVersionCode(ctx))
