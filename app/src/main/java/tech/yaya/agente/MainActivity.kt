@@ -390,7 +390,9 @@ class MainActivity : AppCompatActivity() {
         packageManager.getPackageInfo(pkg, 0)
         true
     } catch (e: android.content.pm.PackageManager.NameNotFoundException) {
-        false
+        // Not visible to us (Android 11+ package visibility): an app this
+        // phone learned proved it exists by posting notifications.
+        ProfileStore.get(this, pkg) != null
     }
 
     private val iconCache = HashMap<String, Drawable?>()

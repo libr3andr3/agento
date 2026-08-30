@@ -102,6 +102,7 @@ object UpdateCheck {
 
     /** Cached-or-fresh manifest, only when it is newer than what's installed. */
     fun available(ctx: Context, allowNetwork: Boolean): Update? {
+        if (BuildConfig.PLAY) return null // Play delivers updates
         val u = (if (allowNetwork && stale(ctx)) fetch(ctx) else null) ?: cached(ctx) ?: return null
         return if (u.versionCode > installedVersionCode(ctx)) u else null
     }
@@ -115,6 +116,7 @@ object UpdateCheck {
 
     /** From the listener: fetch if stale, post one notification per version. */
     fun checkInBackground(ctx: Context) {
+        if (BuildConfig.PLAY) return
         val u = available(ctx, allowNetwork = true) ?: return
         if (Prefs.sp(ctx).getLong("update_notified_code", 0L) >= u.versionCode) return
         // Marked only once actually posted: without POST_NOTIFICATIONS yet

@@ -12,11 +12,10 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "yaya.tech.agento.business"
         minSdk = 26
         targetSdk = 36
-        versionCode = 51
-        versionName = "1.14.0"
+        versionCode = 52
+        versionName = "1.14.1"
 
         resValue("string", "app_name", "agento")
         // Where accounts and plans are managed (the gateway's web app).
@@ -26,6 +25,25 @@ android {
 
     buildFeatures {
         buildConfig = true
+    }
+
+    // One app, two ways to get it. `direct` is the APK from agento.ceo/dl
+    // with the self-hosted update channel; `play` is the Google Play build:
+    // no install permission (Play updates it), no QUERY_ALL_PACKAGES (the
+    // wallet-installed hint is skipped), its own package id — the one
+    // registered in Play Console. Everything else is identical.
+    flavorDimensions += "channel"
+    productFlavors {
+        create("direct") {
+            dimension = "channel"
+            applicationId = "yaya.tech.agento.business"
+            buildConfigField("boolean", "PLAY", "false")
+        }
+        create("play") {
+            dimension = "channel"
+            applicationId = "yaya.tech.agento"
+            buildConfigField("boolean", "PLAY", "true")
+        }
     }
 
     // Release signing. The upload key lives OUTSIDE the repo; export

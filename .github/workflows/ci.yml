@@ -16,11 +16,11 @@ jobs:
           distribution: temurin
           java-version: "21"
       - uses: gradle/actions/setup-gradle@v4
-      - name: assembleDebug
-        run: ./gradlew --no-daemon assembleDebug
+      - name: assemble (both channels)
+        run: ./gradlew --no-daemon assembleDirectDebug assemblePlayDebug
       - name: lint
-        run: ./gradlew --no-daemon lintDebug
+        run: ./gradlew --no-daemon lintDirectDebug
       - uses: actions/upload-artifact@v4
         with:
           name: agento-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/direct/debug/app-direct-debug.apk

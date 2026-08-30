@@ -16,7 +16,7 @@ cd "$(dirname "$0")/.."
 # to register. Build: docs/RELEASE.md → ./gradlew assembleRelease
 # File names on the node stay agento-<ver>.apk / agento-beta.apk: installed
 # business apps resolve updates through latest.json, which points at them.
-APK=${1:-app/build/outputs/apk/release/app-release.apk}
+APK=${1:-app/build/outputs/apk/direct/release/app-direct-release.apk}
 NODE=${NODE:-node.yaya.tech}
 WEBROOT=${WEBROOT:-docker/www/agento/dl}
 [ -f "$APK" ] || { echo "no APK at $APK — build first"; exit 1; }

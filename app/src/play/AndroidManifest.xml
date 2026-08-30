@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Google Play build: Play delivers updates, so the self-hosted update
+     channel and its install permission go; QUERY_ALL_PACKAGES needs a Play
+     declaration we would not win for a hint, so the Cobros wallet-installed
+     check is skipped (BuildConfig.PLAY). Everything else is src/main. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:node="remove" />
+    <application>
+        <receiver android:name=".DownloadReceiver" tools:node="remove" />
+    </application>
+</manifest>

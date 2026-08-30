@@ -59,11 +59,14 @@ class PlanActivity : AppCompatActivity() {
             startActivity(Intent(this, AccountActivity::class.java).putExtra(AccountActivity.EXTRA_MANAGE, true))
         }
         findViewById<MaterialButton>(R.id.plan_sales).apply {
-            visibility = View.VISIBLE
+            // Play policy: the Play build shows the plan and neither sells nor
+            // links to a purchase; plans are managed from the Yaya account.
+            visibility = if (BuildConfig.PLAY) View.GONE else View.VISIBLE
             setText(R.string.account_manage_web)
             setOnClickListener { openWeb() }
         }
-        note.text = getString(R.string.plan_pay_hint) + "\n" + getString(R.string.plan_credits_hint)
+        note.text = if (BuildConfig.PLAY) getString(R.string.plan_web_only)
+                    else getString(R.string.plan_pay_hint) + "\n" + getString(R.string.plan_credits_hint)
         findViewById<View>(R.id.plan_option_month).setOnClickListener { annual = false; renderOptions() }
         findViewById<View>(R.id.plan_option_year).setOnClickListener { annual = true; renderOptions() }
         findViewById<View>(R.id.plan_options_cancel).setOnClickListener { choosing = null; renderOptions() }
@@ -157,7 +160,7 @@ class PlanActivity : AppCompatActivity() {
             val btn = v.findViewById<MaterialButton>(R.id.tier_button)
             when {
                 t == plan -> { btn.text = getString(R.string.plan_active); btn.isEnabled = false }
-                t == "free" -> btn.visibility = View.GONE
+                t == "free" || BuildConfig.PLAY -> btn.visibility = View.GONE
                 else -> { btn.text = getString(R.string.plan_choose, tierName(t)); btn.setOnClickListener { choose(t) } }
             }
             tiers.addView(v)
@@ -215,6 +218,7 @@ class PlanActivity : AppCompatActivity() {
     }
 
     private fun showPay(j: JSONObject) {
+        if (BuildConfig.PLAY) return // no payment instructions on the Play build
         pendingRef = j.optString("ref"); pendingPlan = j.optString("plan")
         Prefs.sp(this).edit().putString(PREF_PENDING_REF, pendingRef).putString(PREF_PENDING_PLAN, pendingPlan).apply()
         val pay = j.optJSONObject("pay")

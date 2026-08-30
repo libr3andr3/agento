@@ -42,8 +42,8 @@ else: no Rust, no NDK, no API keys.
 ```bash
 git clone https://github.com/libr3andr3/agento.git
 cd agento
-./gradlew assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
+./gradlew assembleDirectDebug
+adb install -r app/build/outputs/apk/direct/debug/app-direct-debug.apk
 ```
 
 Then on the phone:
@@ -137,11 +137,15 @@ turn it is asked to answer. See `docs/SECURITY.md`.
 ```bash
 export AGENTO_KEYSTORE=~/.agento/upload-keystore.jks \
        AGENTO_KEYSTORE_PASS=… AGENTO_KEY_ALIAS=agento-upload AGENTO_KEY_PASS=…
-./gradlew assembleRelease           # → app/build/outputs/apk/release/app-release.apk
+./gradlew assembleDirectRelease     # → app/build/outputs/apk/direct/release/app-direct-release.apk
+./gradlew bundlePlayRelease         # → app/build/outputs/bundle/playRelease/app-play-release.aab (docs/PLAY.md)
 scripts/verify-apk.sh               # checks a published download end to end
 ```
 
-Full procedure, version numbers and the update channel: `docs/RELEASE.md`.
+Two channels build from the same code: `direct` (the APK on agento.ceo, self-updating)
+and `play` (Google Play, package `yaya.tech.agento`, no install or
+package-visibility permissions). Full procedure, version numbers and the
+update channel: `docs/RELEASE.md`; the Play submission: `docs/PLAY.md`.
 
 ## License
 

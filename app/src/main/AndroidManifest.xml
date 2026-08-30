@@ -38,6 +38,13 @@
         <package android:name="org.thoughtcrime.securesms" />
         <package android:name="com.zhiliaoapp.musically" />
         <package android:name="com.google.android.apps.messaging" />
+        <!-- Wallets and banks people in Peru name under Cobros, so the
+             "is it on this phone" hint works on the Play build too. -->
+        <package android:name="com.bcp.innovacxion.yapeapp" />
+        <package android:name="com.bcp.bank.bcp" />
+        <package android:name="pe.com.interbank.mobilebanking" />
+        <package android:name="com.bbva.nxt_peru" />
+        <package android:name="pe.com.scotiabank.blpm.android.client" />
     </queries>
 
     <!-- Cleartext is off in release and permitted only for debug builds (local

@@ -2,11 +2,11 @@
 
 ## Build
 
-`./gradlew assembleDebug` — that is all. JDK 17+, Android SDK 36 (Android
+`./gradlew assembleDirectDebug` — that is all (`assemblePlayDebug` for the Play channel). JDK 17+, Android SDK 36 (Android
 Studio installs it). The agent core is prebuilt for arm64, armv7 and x86_64,
 so the emulator works.
 
-CI runs `assembleDebug` and `lintDebug` on every push and pull request.
+CI assembles both channels and runs `lintDirectDebug` on every push and pull request.
 
 ## License
 

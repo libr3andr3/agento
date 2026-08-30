@@ -16,18 +16,22 @@ export AGENTO_KEYSTORE=~/.agento/upload-keystore.jks
 export AGENTO_KEYSTORE_PASS=…
 export AGENTO_KEY_ALIAS=agento-upload
 export AGENTO_KEY_PASS=…
-./gradlew assembleRelease
-# → app/build/outputs/apk/release/app-release.apk  (R8-minified, shrunk, signed)
+./gradlew assembleDirectRelease
+# → app/build/outputs/apk/direct/release/app-direct-release.apk  (R8-minified, shrunk, signed)
+./gradlew bundlePlayRelease
+# → app/build/outputs/bundle/playRelease/app-play-release.aab      (Google Play, docs/PLAY.md)
 ```
 
-Without these variables `assembleRelease` still compiles but produces an
-unsigned APK — fine for CI, not installable next to a signed one.
+`direct` and `play` are the two channels (flavors) of the one app; see
+`app/build.gradle.kts`. Without these variables the release tasks still
+compile but produce unsigned artifacts — fine for CI, not installable next
+to a signed one.
 
 Check the signature before publishing (the gateway pins this digest as
 `EXPECTED_SIGNERS`, and `scripts/verify-apk.sh` checks it on download):
 
 ```bash
-$ANDROID_HOME/build-tools/<ver>/apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
+$ANDROID_HOME/build-tools/<ver>/apksigner verify --print-certs app/build/outputs/apk/direct/release/app-direct-release.apk
 # Signer #1 certificate SHA-256 digest: 0204f2e455438244720aa79c9421e70927d957259cc77ce95b69148a44a35df2
 ```
 

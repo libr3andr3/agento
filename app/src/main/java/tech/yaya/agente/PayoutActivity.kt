@@ -153,7 +153,8 @@ class PayoutActivity : AppCompatActivity() {
             val known = suggestions.firstOrNull { it.optString("name").equals(name, ignoreCase = true) }?.optJSONArray("packages")
             val pkgs = (0 until (known?.length() ?: 0)).map { known!!.getString(it) }
             if (pkgs.isEmpty()) continue
-            val installed = pkgs.any { runCatching { pm.getPackageInfo(it, 0) }.isSuccess }
+            // The Play build cannot see arbitrary packages; never warn on a guess.
+            val installed = BuildConfig.PLAY || pkgs.any { runCatching { pm.getPackageInfo(it, 0) }.isSuccess }
             if (!installed) {
                 findViewById<TextView>(R.id.payout_warning_text).text = getString(R.string.payout_warning_missing, name)
                 warning.visibility = View.VISIBLE
