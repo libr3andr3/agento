@@ -2,7 +2,9 @@
 <!-- agento theme v2 "warm paper" — light-committed, custom-typed, pill-shaped.
      Owned by the integrator (DESIGN.md). Layouts should lean on ?attr/ text
      appearances and the Widget.Agento.* styles below, never stock M3 widgets. -->
-<resources xmlns:tools="http://schemas.android.com/tools">
+<!-- tools:targetApi: windowLightNavigationBar (27) and textFontWeight (28) are
+     silently ignored below their API level; minSdk stays 26. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:targetApi="28">
 
     <style name="Theme.Agente" parent="Theme.Material3.Light.NoActionBar">
         <!-- Color roles -->

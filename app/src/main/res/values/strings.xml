@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_title">agento</string>
+    <string name="app_title" translatable="false">agento</string>
     <string name="app_subtitle">Tu recepcionista con IA para tus apps de chat</string>
 
     <!-- Welcome (first run) -->
@@ -62,7 +62,7 @@
 
     <!-- Done sheet -->
     <string name="done_title">¡Todo listo! 🎉</string>
-    <string name="done_arrow">⬇️</string>
+    <string name="done_arrow" translatable="false">⬇️</string>
     <string name="done_cta">Vamos a tu calendario</string>
 
     <!-- Voice -->
@@ -70,7 +70,7 @@
     <string name="voice_stop">⏹  %1$s · Grabando — toca para enviar</string>
     <string name="voice_sending">Enviando…</string>
     <string name="voice_too_short">Muy corto — mantén presionado mientras hablas</string>
-    <string name="voice_replay">🔊</string>
+    <string name="voice_replay" translatable="false">🔊</string>
     <string name="mic_perm_title">Permiso de micrófono</string>
     <string name="mic_perm_msg">Para hablar con tu asistente necesitas permitir el micrófono. También puedes escribir si prefieres.</string>
     <string name="mic_error">No se pudo usar el micrófono. Puedes escribir tu respuesta.</string>

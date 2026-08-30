@@ -3,7 +3,8 @@
      notifications, answers as the business, detects payments. Distributed
      from agento.ceo (not Play: the notification-listener and self-update
      permissions are what Play policy objects to). -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -20,7 +21,8 @@
     <!-- The notification listener already sees every app; this lets the
          Cobros screen check whether the wallet the owner named is installed
          on THIS phone (no fixed list of wallets exists anywhere). -->
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
 
     <!-- Android 11+ package visibility: Settings shows which supported chat
          apps are actually installed, which needs an explicit allowlist to
