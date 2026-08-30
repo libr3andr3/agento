@@ -105,7 +105,7 @@ PRIVACIDAD PRIMERO
 • Solo lee notificaciones de las apps que tú elijas, y solo después de que le des el permiso.
 • Código abierto (AGPL): github.com/libr3andr3/agento
 
-14 días gratis con todo. Después, Gratis (30 conversaciones al mes), Pro S/150 o Max S/300 — sin permanencia.
+14 días gratis con todo. Después, Gratis (30 conversaciones al mes), Pro S/150 (1 000) o Max S/300 (3 000 y hasta 3 teléfonos) — sin permanencia, con boleta electrónica opcional.
 agento es de Yaya Tech PBC.
 
 **Full (en)**
@@ -129,7 +129,7 @@ PRIVACY FIRST
 • It only reads notifications from the apps you choose, and only after you grant access.
 • Open source (AGPL): github.com/libr3andr3/agento
 
-14 days free with everything. Then Free (30 conversations a month), Pro or Max — no commitment.
+14 days free with everything. Then Free (30 conversations a month), Pro (1,000) or Max (3,000, up to 3 phones) — no commitment, optional e-invoicing.
 agento is made by Yaya Tech PBC.
 
 **Screenshots**: phone, 9:16, at least four — sign-in, the interview,

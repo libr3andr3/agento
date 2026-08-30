@@ -205,8 +205,8 @@
     <string name="plan_conv_usage">%1$d of %2$d conversations this month</string>
     <string name="plan_conv_unlimited">%1$d conversations this month · no limit</string>
     <string name="plan_desc_free">14 days of Pro, free. Then 30 conversations a month.</string>
-    <string name="plan_desc_pro">1,000 conversations a month. One phone.</string>
-    <string name="plan_desc_max">Unlimited conversations. Several phones and numbers on one account.</string>
+    <string name="plan_desc_pro">1,000 conversations a month. One phone. Optional e-invoicing (boleta).</string>
+    <string name="plan_desc_max">3,000 conversations a month. Up to 3 phones or numbers on one account. Optional e-invoicing (boleta).</string>
     <string name="plan_upgrade_to">Upgrade to %1$s</string>
     <string name="plan_sales_cta">Talk to sales on WhatsApp</string>
     <string name="plan_sales_text">I\'m ready to sell on autopilot — I\'m ready to move up to %1$s!</string>
