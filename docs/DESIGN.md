@@ -58,8 +58,9 @@ loading state is visible (progress indicator, disabled CTA with spinner).
 ## Hard rules
 - NO new gradle dependencies. Available: material 1.12 (full M3), appcompat,
   recyclerview, constraintlayout if listed, exifinterface.
-- NO edits to themes.xml/colors.xml/design.xml/font/ (owned by the integrator).
-- New strings go in YOUR OWN files: res/values/strings_<area>.xml (Spanish)
+- themes.xml / colors.xml / design.xml / font/ ARE the design system: change
+  them deliberately, in their own PR, never as a side effect of a screen.
+- New strings go in per-area files: res/values/strings_<area>.xml (Spanish)
   + res/values-en/strings_<area>.xml (English).
 - Single-Activity-per-surface stays (no Compose, no nav-graph rewrite).
 - Accessibility: contentDescription on every icon-only control; touch targets
