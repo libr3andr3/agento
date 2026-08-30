@@ -108,6 +108,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".AuditActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".CrmListActivity"
             android:exported="false" />
 

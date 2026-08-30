@@ -102,6 +102,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, PayoutActivity::class.java))
         }
         findViewById<MaterialButton>(R.id.support_button).setOnClickListener { Support.open(this) }
+        findViewById<MaterialButton>(R.id.audit_button).setOnClickListener { startActivity(Intent(this, AuditActivity::class.java)) }
         // Keep the support line fresh: the server can switch it at any time.
         ServerClient.IO_EXECUTOR.execute { Prefs.rememberSupport(this, ServerClient.plan(this)) }
         findViewById<MaterialButton>(R.id.onboarding_button).setOnClickListener {

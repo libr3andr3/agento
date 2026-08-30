@@ -86,6 +86,16 @@ Block types are the app's catalog (`Blocks.kt` ↔ `ui.rs::BLOCKS`): `earnings`,
 `attention`, `orders_board`, `agenda_day`, `agenda_week`, `catalog`,
 `conversations`, `contacts`. Icons: `home orders agenda catalog chats people money star`.
 
+### Audit chain — bearer
+
+| method + path | notes |
+|---|---|
+| `GET /api/audit?before=&limit=` | entries newest first: `{seq, ts, kind, actor, subject, payload, hash, anchored}` |
+| `GET /api/audit/verify` | walks the whole chain: recomputed hashes, links, Ed25519 signatures against this installation's identity, monotonic time, the last gateway anchor → `{ok, entries, head, problems[], anchor, unanchoredEntries}` |
+| `POST /api/audit/anchor` | asks the gateway to countersign the head now (`POST /v1/audit/anchor`); also happens on its own every 25 entries / 15 min |
+
+Kinds: `customer_turn`, `owner_turn`, `tool_call`, `owner_cmd` (web console over the relay), `payment`, `status` (swipes), `share`, `restore`, `boot`. The table is append-only by SQLite trigger, never exported in backups, and every row is `hash = sha256("agento-audit-v1\n{seq}\n{ts}\n{kind}\n{actor}\n{subject}\n{payload}\n{prev_hash}")`, `sig = agent.sign(hash)`.
+
 ### Identity (used by `DeviceAttestation`) — no bearer
 
 | method + path | notes |

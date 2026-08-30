@@ -491,6 +491,21 @@ object ServerClient {
             .put("products", org.json.JSONArray(products))
             .apply { note?.let { put("note", it) } }, bearer = true)
 
+    // Audit chain. [IO_EXECUTOR].
+
+    fun audit(ctx: Context, before: Long?): JSONObject? {
+        val r = exchange(ctx, "/api/audit?limit=100" + (before?.let { "&before=$it" } ?: ""), body = null, contentType = null, bearer = true, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    fun auditVerify(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/audit/verify", body = null, contentType = null, bearer = true, readTimeoutMs = 60_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    /** Ask the gateway to countersign the chain head now. One shot. */
+    fun auditAnchor(ctx: Context): Response = postRaw(ctx, "/api/audit/anchor", JSONObject(), bearer = true)
+
     /**
      * Photo bytes. The one GET here that is not JSON — same socket rules as
      * [exchangeOnce] (app key, bearer, timeouts), separate because the body

@@ -153,6 +153,20 @@ customer prompt.
 Photos live on the phone (`media` table); customers see them through a
 private link the gateway serves for five minutes (`private.yaya.tech/p/…`).
 
+## The audit chain
+
+`audit_log` is the phone's own tamper-evident record of what the agent did:
+every customer and owner turn (customer words as digests, the agent's reply
+verbatim), every tool call, every command that came in over the owner relay
+from the web console, every payment read, every swipe, every private link,
+every restore and boot. Each row is hash-chained to the previous one and
+signed with the installation's Ed25519 identity; UPDATE and DELETE are
+refused by trigger; timestamps never go backwards; and every 25 entries or
+15 minutes the head is **anchored** — the gateway countersigns
+`(agent, seq, head, its own clock)` and both sides keep the anchor — so a
+row provably sits between two trusted instants no matter what the phone's
+clock says. Ajustes → Auditoría verifies the whole chain on the phone.
+
 ## Threads
 
 `ServerClient` documents the contract; keep it:

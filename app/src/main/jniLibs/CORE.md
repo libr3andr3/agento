@@ -8,13 +8,13 @@ The agent core, prebuilt. Loaded by `AgentoCore.kt`
 |---|---|
 | core version | 0.2.0 (`AgentoCore.version()`) |
 | built | 2026-08-30, `cargo ndk --release`, NDK 27.2.12479018 |
-| source | agento core crate @ `8ed5e89+` (D15: ui.rs, media, queue routes, share_photos), corazón kernel @ `a69fbe7` (private) |
+| source | agento core crate @ `21e7346+` (D15 ui/media/queue, D16 audit chain), corazón kernel @ `a69fbe7` (private) |
 
 | ABI | sha256 |
 |---|---|
-| `arm64-v8a` | `5eadef7957e246cfc1f574d3cacd941a8353a35ca1a57914e3d7bd701582eb4f` |
-| `armeabi-v7a` | `e73921f5ccc349e735454c5cebcd72b23fe67d82d421b63bd9927da21d7ee91e` |
-| `x86_64` | `d7bfdc6ebb0cefc54809d61e31bbd89ffd2eb3227acde94d4802c688ddd6c5fe` |
+| `arm64-v8a` | `61618c5bc68b306bd3c7678573f057d4742a38f0c1e3cb890348dbe49a19e433` |
+| `armeabi-v7a` | `015ccf563e69b80f474b71a631e277edbbffafad4a200ab647bec967aaa7099a` |
+| `x86_64` | `c6f9dafc34e08d1cf983464227f20f246df8cb64f4a052d6368066a5e19f1c35` |
 
 `sha256sum app/src/main/jniLibs/*/libagento_core.so` must match this table.
 Refresh procedure: `docs/RELEASE.md` → "Refreshing the agent core".
