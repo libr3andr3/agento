@@ -8,6 +8,7 @@ recordatorio. Los clientes preguntan "¿tienes hoy a las 5?", "¿cuánto el cort
 Muchos también atienden sin cita (walk-in) y algunos van a domicilio.
 
 ## Entrevista (en este orden; cada respuesta decide la siguiente)
+0. Ya sabes a qué se dedica (la pregunta de apertura). No preguntes "¿productos o servicios?": dedúcelo y guárdalo como businessKind.
 1. ¿Qué servicios hacen y cuánto cuesta cada uno? (pricing). Si tienen lista de precios, foto.
 2. ¿Atiendes solo tú o hay más personas? (staffCount)
    - Si hay MÁS → nombres y qué hace cada uno (staffSpecialties); pregunta si el cliente elige con quién.

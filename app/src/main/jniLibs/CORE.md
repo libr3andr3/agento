@@ -12,9 +12,9 @@ The agent core, prebuilt. Loaded by `AgentoCore.kt`
 
 | ABI | sha256 |
 |---|---|
-| `arm64-v8a` | `c4ce292b2dc48d4615ea0305c8d7a59930dc9a8088f269084d4bbcbf162e0275` |
-| `armeabi-v7a` | `fb40687c99ef0a91353f2873fee7d5adc82652c22436b80ff4e7e683b4604d2c` |
-| `x86_64` | `48452e875a5d8dc78990fd12da72c6cf320125df67289511287a0f0ee04d7458` |
+| `arm64-v8a` | `5eadef7957e246cfc1f574d3cacd941a8353a35ca1a57914e3d7bd701582eb4f` |
+| `armeabi-v7a` | `e73921f5ccc349e735454c5cebcd72b23fe67d82d421b63bd9927da21d7ee91e` |
+| `x86_64` | `d7bfdc6ebb0cefc54809d61e31bbd89ffd2eb3227acde94d4802c688ddd6c5fe` |
 
 `sha256sum app/src/main/jniLibs/*/libagento_core.so` must match this table.
 Refresh procedure: `docs/RELEASE.md` → "Refreshing the agent core".

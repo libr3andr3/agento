@@ -9,6 +9,7 @@ Muchos cobran por adelantado por Yape para confirmar, sobre todo en virtual, y n
 mandar el enlace o la confirmación.
 
 ## Entrevista (en este orden; cada respuesta decide la siguiente)
+0. Ya sabes a qué se dedica (la pregunta de apertura). No preguntes "¿productos o servicios?": dedúcelo y guárdalo como businessKind.
 1. ¿Qué atienden y quiénes? (professionals: nombre → especialidad). 
    - Si es UNA persona → el agente agenda con ella; no preguntes por elección de profesional.
    - Si son VARIOS → ¿el paciente elige, o se asigna por especialidad y hora?

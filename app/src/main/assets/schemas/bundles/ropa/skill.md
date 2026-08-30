@@ -9,6 +9,7 @@ la ciudad, agencias (Shalom, Olva) a provincias con pago en destino del flete, o
 El stock cambia rápido: el agente nunca promete que "hay" una talla sin que el dueño lo haya dicho.
 
 ## Entrevista (en este orden; cada respuesta decide la siguiente)
+0. Ya sabes a qué se dedica (la pregunta de apertura). No preguntes "¿productos o servicios?": dedúcelo y guárdalo como businessKind.
 1. ¿Qué venden y a quién? (polos, jeans, zapatillas, ropa de niños; por menor, por mayor, ambos).
    - Si venden POR MAYOR → wholesale: desde cuántas unidades y qué precio/descuento. Pregunta si el precio
      del catálogo es por menor (guarda ambos: "Polo básico": 25 y en wholesale la regla).

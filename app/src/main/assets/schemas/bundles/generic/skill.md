@@ -8,6 +8,7 @@ precio o "necesito verlo"). Las MYPE de una persona atienden con las manos ocupa
 no responder a tiempo.
 
 ## Entrevista (en este orden; cada respuesta decide la siguiente)
+0. Ya sabes a qué se dedica (la pregunta de apertura). No preguntes "¿productos o servicios?": dedúcelo y guárdalo como businessKind.
 1. ¿Qué vendes exactamente y cómo te llega un cliente típico? Clasifica: products | services | both.
    - PRODUCTOS → sigue como una tienda: catálogo (foto), entrega (recojo/delivery/envío), cobro antes o al recibir.
    - SERVICIOS con hora → sigue como un salón: servicios y precios, quién atiende, duración, horario, adelanto, cancelación.

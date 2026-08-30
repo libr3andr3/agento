@@ -9,6 +9,7 @@ Su hora pico es el almuerzo (12–3) y la noche; ahí NO puede escribir. Muchos 
 cambia cada mañana: la foto del menú de hoy ES el catálogo de hoy.
 
 ## Entrevista (en este orden; cada respuesta decide la siguiente)
+0. Ya sabes a qué se dedica (la pregunta de apertura). No preguntes "¿productos o servicios?": dedúcelo y guárdalo como businessKind.
 1. ¿Qué venden y cómo les llega el pedido hoy? (platos a la carta, menú del día, postres, por WhatsApp/Instagram/Rappi).
    - Si tienen MENÚ DEL DÍA → dailyMenu true. Explica que cada mañana puede mandar la foto del menú desde la app
      y el agente vende eso. Pregunta la hora en que sale el menú (guárdalo en notes de businessHours si aplica).

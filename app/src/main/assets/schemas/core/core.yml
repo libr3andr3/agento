@@ -13,9 +13,11 @@ defaults:
   bookingDeposit: null            # fixed amount (business currency) to reserve; null = no deposit
 fields:
   businessKind:
+    # Inferred by the onboarding agent from "¿a qué te dedicas?" — never asked
+    # as a multiple choice (D15 amendment, 2026-08-30).
     type: "enum[services|products|both]"
-    ask_in_onboarding: true
-    question_es: "¿Vendes productos, servicios (con citas), o ambos?"
+    ask_in_onboarding: false
+    question_es: "¿A qué te dedicas? ¿Qué vendes o qué haces por tus clientes?"
   location:
     type: "string"
     ask_in_onboarding: false
