@@ -217,8 +217,22 @@ class RegistrationActivity : AppCompatActivity() {
     // ------------------------------------------------------------ step machine
 
     /** One step back everywhere; from step 1 this exits the app. */
+    /**
+     * One step back; from step 1, out. A guest ("Continuar sin cuenta") goes
+     * back to the sign-in screen so they can still pick a Yaya account —
+     * finishing here would drop them on the launcher, and the next launch
+     * would route straight back to this step with no way out (looked like a
+     * crash). A signed-in owner exits as before.
+     */
     private fun stepBack() {
-        if (step > 1) showStep(step - 1) else finish()
+        when {
+            step > 1 -> showStep(step - 1)
+            Prefs.isGuest(this) -> {
+                startActivity(Intent(this, AccountActivity::class.java))
+                finish()
+            }
+            else -> finish()
+        }
     }
 
     private fun showStep(n: Int) {

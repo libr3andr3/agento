@@ -9,7 +9,7 @@ books appointments, takes orders and confirms payments (Yape, Plin, any
 wallet or bank that posts a notification). No platform APIs, no scraping, no
 server that holds the conversations. The phone *is* the server.
 
-[![ci](https://github.com/libr3andr3/agento.ceo/actions/workflows/ci.yml/badge.svg)](https://github.com/libr3andr3/agento.ceo/actions/workflows/ci.yml)
+[![ci](https://github.com/libr3andr3/agento/actions/workflows/ci.yml/badge.svg)](https://github.com/libr3andr3/agento/actions/workflows/ci.yml)
 
 ```
   customer writes on WhatsApp
@@ -40,7 +40,7 @@ You need a JDK 17+ and Android Studio (or just the Android SDK). Nothing
 else: no Rust, no NDK, no API keys.
 
 ```bash
-git clone https://github.com/libr3andr3/agento.ceo.git
+git clone https://github.com/libr3andr3/agento.git
 cd agento
 ./gradlew assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
