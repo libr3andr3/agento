@@ -209,6 +209,7 @@ object Prefs {
             .remove("business_id")
             .remove("dash_cache")
             .remove("chat_transcript")
+            .remove("walkthrough_seen")
             .remove("loc_country").remove("loc_currency").remove("loc_symbol").remove("loc_language")
             .remove("learned_pay_sources").remove("learned_pay_sources_at")
             .apply()
@@ -230,6 +231,10 @@ object Prefs {
     fun rememberSupport(ctx: Context, plan: org.json.JSONObject?) {
         plan?.optJSONObject("support")?.optString("phone")?.takeIf { it.isNotBlank() && it != "null" }?.let { setSupportPhone(ctx, it) }
     }
+
+    /** D15: the first-open guide of the designed app, shown once per business. */
+    fun walkthroughSeen(ctx: Context): Boolean = sp(ctx).getBoolean("walkthrough_seen", false)
+    fun setWalkthroughSeen(ctx: Context, seen: Boolean) = sp(ctx).edit().putBoolean("walkthrough_seen", seen).apply()
 
     /** Persisted onboarding chat transcript (blocks joined by \n\n). */
     fun chatTranscript(ctx: Context): String? = sp(ctx).getString("chat_transcript", null)

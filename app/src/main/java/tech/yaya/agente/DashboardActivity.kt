@@ -1,44 +1,70 @@
 package tech.yaya.agente
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
 import android.provider.Settings
 import android.text.format.DateUtils
+import android.util.LruCache
+import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
+import androidx.exifinterface.media.ExifInterface
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.android.material.button.MaterialButton
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.snackbar.Snackbar
 import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.File
 import java.util.Locale
 
-/** Business home screen: live agent status, earnings, agenda, conversations. */
+/**
+ * The owner's home (DECISIONS D15): the header and the truth chip are
+ * fixed; everything under them is drawn from the UI spec the core composed
+ * for THIS business — tabs in the bottom bar, blocks from [Blocks] in each.
+ * A restaurant opens on its pedidos board, a salon on today's citas, a
+ * Gamarra stall on its catalog; the agent named the tabs during onboarding
+ * and can redraw them whenever the owner asks.
+ */
 class DashboardActivity : AppCompatActivity() {
 
     private lateinit var businessName: TextView
     private lateinit var statusChip: Chip
     private lateinit var agentSwitch: MaterialSwitch
     private lateinit var offBanner: View
-    private lateinit var earnToday: TextView
-    private lateinit var earnWeek: TextView
-    private lateinit var earnMonth: TextView
-    private lateinit var agenda: LinearLayout
-    private lateinit var convos: LinearLayout
-    private lateinit var gapsHeader: TextView
-    private lateinit var gaps: LinearLayout
+    private lateinit var content: LinearLayout
+    private lateinit var banners: View
+    private lateinit var nav: BottomNavigationView
+    private lateinit var scroll: ScrollView
     private lateinit var swipe: SwipeRefreshLayout
+
+    /** Last dashboard payload rendered (network or cache). */
+    private var data: JSONObject? = null
+    private var spec: UiSpec? = null
+    private var navSignature = ""
+    private var currentTab = 0
+    private var walkthrough: Walkthrough? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,13 +73,10 @@ class DashboardActivity : AppCompatActivity() {
         statusChip = findViewById(R.id.dash_status)
         agentSwitch = findViewById(R.id.dash_agent_switch)
         offBanner = findViewById(R.id.off_banner)
-        earnToday = findViewById(R.id.earn_today)
-        earnWeek = findViewById(R.id.earn_week)
-        earnMonth = findViewById(R.id.earn_month)
-        agenda = findViewById(R.id.agenda_container)
-        convos = findViewById(R.id.convos_container)
-        gapsHeader = findViewById(R.id.gaps_header)
-        gaps = findViewById(R.id.gaps_container)
+        content = findViewById(R.id.tab_content)
+        banners = findViewById(R.id.dash_banners)
+        nav = findViewById(R.id.dash_nav)
+        scroll = findViewById(R.id.dash_scroll)
         swipe = findViewById(R.id.dash_swipe)
 
         findViewById<ImageButton>(R.id.dash_settings).setOnClickListener {
@@ -63,18 +86,12 @@ class DashboardActivity : AppCompatActivity() {
         // "Habla con tu negocio": the onboarding chat lives on after setup as
         // the owner's management console — same voice, camera and text, now
         // wired to the server's manager agent.
-        findViewById<TextView>(R.id.dash_contacts).setOnClickListener {
-            startActivity(Intent(this, CrmListActivity::class.java).putExtra(CrmListActivity.EXTRA_MODE, CrmListActivity.MODE_CONTACTS))
-        }
-        findViewById<TextView>(R.id.dash_convos_all).setOnClickListener {
-            startActivity(Intent(this, CrmListActivity::class.java).putExtra(CrmListActivity.EXTRA_MODE, CrmListActivity.MODE_CONVERSATIONS))
-        }
-        findViewById<View>(R.id.backup_banner_button).setOnClickListener {
-            startActivity(Intent(this, if (Prefs.isGuest(this)) AccountActivity::class.java else BackupUpsellActivity::class.java))
-        }
         findViewById<TextView>(R.id.dash_chat).setOnClickListener {
             startActivity(Intent(this, OnboardingActivity::class.java))
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+        }
+        findViewById<View>(R.id.backup_banner_button).setOnClickListener {
+            startActivity(Intent(this, if (Prefs.isGuest(this)) AccountActivity::class.java else BackupUpsellActivity::class.java))
         }
         findViewById<View>(R.id.off_banner_button).setOnClickListener { activateAgent() }
         agentSwitch.setOnCheckedChangeListener { btn, on ->
@@ -88,6 +105,10 @@ class DashboardActivity : AppCompatActivity() {
             }
         }
         swipe.setOnRefreshListener { load() }
+        nav.setOnItemSelectedListener { item ->
+            if (item.itemId != currentTab) { currentTab = item.itemId; renderTab(); scroll.scrollTo(0, 0) }
+            true
+        }
 
         // Render cache instantly so the screen never opens blank.
         Prefs.dashboardCache(this)?.let { runCatching { render(JSONObject(it)) } }
@@ -127,12 +148,7 @@ class DashboardActivity : AppCompatActivity() {
         if (!hasNotificationAccess() || !Prefs.isEnabled(this)) return
         batteryAskedThisSession = true
         try {
-            startActivity(
-                Intent(
-                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                    Uri.parse("package:$packageName")
-                )
-            )
+            startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")))
         } catch (_: Exception) {
         }
     }
@@ -140,6 +156,9 @@ class DashboardActivity : AppCompatActivity() {
     companion object {
         private var batteryAskedThisSession = false
         private var notifAskedThisSession = false
+        private const val RC_PHOTO_CAMERA = 41
+        private const val RC_PHOTO_GALLERY = 42
+        private const val MAX_PHOTO_EDGE = 1280
     }
 
     private fun hasNotificationAccess(): Boolean {
@@ -161,9 +180,14 @@ class DashboardActivity : AppCompatActivity() {
     private var plan: JSONObject? = null
 
     /** Tint an informational chip from color tokens. */
-    private fun styleChip(chip: Chip, bgRes: Int, fgRes: Int) {
+    fun styleChip(chip: Chip, bgRes: Int, fgRes: Int) {
         chip.chipBackgroundColor = ColorStateList.valueOf(getColor(bgRes))
         chip.setTextColor(getColor(fgRes))
+    }
+
+    fun selectableBorderless(): android.graphics.drawable.Drawable? {
+        val ta = obtainStyledAttributes(intArrayOf(android.R.attr.selectableItemBackgroundBorderless))
+        return try { ta.getDrawable(0) } finally { ta.recycle() }
     }
 
     /**
@@ -189,8 +213,7 @@ class DashboardActivity : AppCompatActivity() {
         }
         val mandatory = u.mandatoryFor(UpdateCheck.installedVersionCode(this))
         banner.visibility = View.VISIBLE
-        banner.setCardBackgroundColor(getColor(
-            if (mandatory) R.color.agento_error_container else R.color.agento_secondary_container))
+        banner.setCardBackgroundColor(getColor(if (mandatory) R.color.agento_error_container else R.color.agento_secondary_container))
         val tint = getColor(if (mandatory) R.color.agento_error else R.color.agento_on_secondary_container)
         val title = findViewById<TextView>(R.id.update_banner_title)
         val notes = findViewById<TextView>(R.id.update_banner_notes)
@@ -203,24 +226,19 @@ class DashboardActivity : AppCompatActivity() {
         later.setOnClickListener { UpdateCheck.dismiss(this, u); banner.visibility = View.GONE }
         findViewById<View>(R.id.update_button).setOnClickListener {
             if (!UpdateCheck.canInstall(this)) {
-                android.widget.Toast.makeText(this, R.string.update_perm_needed, android.widget.Toast.LENGTH_LONG).show()
+                Toast.makeText(this, R.string.update_perm_needed, Toast.LENGTH_LONG).show()
                 UpdateCheck.openInstallPermission(this)
                 return@setOnClickListener
             }
-            if (UpdateCheck.download(this, u)) {
-                android.widget.Toast.makeText(this, R.string.update_started, android.widget.Toast.LENGTH_LONG).show()
-            }
+            if (UpdateCheck.download(this, u)) Toast.makeText(this, R.string.update_started, Toast.LENGTH_LONG).show()
         }
     }
 
     /**
-     * Plan banner: always visible. Free tier shows today's usage against the
-     * caps with the upgrade button; a hit cap turns it red. The single
-     * button everywhere is "raise limits + web dashboard" → WhatsApp to sales.
+     * Plan banner: always visible. Free tier shows this month's conversations
+     * against the cap with the upgrade button; a hit cap turns it red.
      */
     private fun refreshPlanBanner() {
-        // Free plan = the agent lives on this phone only: keep the backup pitch
-        // visible. A guest sees the account pitch instead.
         val guest = Prefs.isGuest(this)
         findViewById<View>(R.id.backup_banner).visibility =
             if (guest || (plan?.optString("plan") ?: "free") == "free") View.VISIBLE else View.GONE
@@ -228,14 +246,10 @@ class DashboardActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.backup_banner_button).setText(if (guest) R.string.dash_guest_button else R.string.dash_backup_button)
         val p = plan
         val banner = findViewById<MaterialCardView>(R.id.trial_banner)
-        if (p == null) {
-            banner.visibility = View.GONE
-            return
-        }
+        if (p == null) { banner.visibility = View.GONE; return }
         banner.visibility = View.VISIBLE
         val text = findViewById<TextView>(R.id.trial_banner_text)
         val name = p.optString("name", "free")
-        // D14: the one number that matters — customers answered this month.
         val cu = p.optInt("conversationsUsed"); val cc = p.optInt("conversationsCap")
         val limit = p.optBoolean("limitReached", false)
         when {
@@ -261,8 +275,6 @@ class DashboardActivity : AppCompatActivity() {
                 banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
             }
         }
-        // Upgrading is a plan screen now (Pro / Max, paid by Yape/Plin);
-        // the WhatsApp-to-sales link lives inside it.
         val button = findViewById<View>(R.id.sales_button)
         button.visibility = View.VISIBLE
         button.setOnClickListener { startActivity(Intent(this, PlanActivity::class.java)) }
@@ -282,11 +294,8 @@ class DashboardActivity : AppCompatActivity() {
             }
             !fetchOk -> {
                 statusChip.text = getString(R.string.dash_offline_chip)
-                styleChip(statusChip, R.color.agento_secondary_container,
-                    R.color.agento_on_secondary_container)
+                styleChip(statusChip, R.color.agento_secondary_container, R.color.agento_on_secondary_container)
             }
-            // The server has stopped answering customers; being "active" here
-            // would be a lie the owner discovers from an angry customer.
             p != null && p.optBoolean("limitReached", false) -> {
                 statusChip.text = getString(R.string.status_limit_reached)
                 styleChip(statusChip, R.color.agento_error_container, R.color.agento_error)
@@ -294,31 +303,30 @@ class DashboardActivity : AppCompatActivity() {
             else -> {
                 val lastReply = ReplyLog.load(this).firstOrNull { it.replySent }
                 val base = if (lastReply != null) getString(
-                    R.string.status_active_last,
-                    DateUtils.getRelativeTimeSpanString(lastReply.timestamp).toString()
+                    R.string.status_active_last, DateUtils.getRelativeTimeSpanString(lastReply.timestamp).toString()
                 ) else getString(R.string.status_active)
                 val cap = p?.optInt("messagesCap") ?: 0
-                statusChip.text = if (cap > 0)
-                    getString(R.string.status_plan_usage, base, p!!.optInt("messagesUsed"), cap) else base
-                styleChip(statusChip, R.color.agento_primary_container,
-                    R.color.agento_on_primary_container)
+                statusChip.text = if (cap > 0) getString(R.string.status_plan_usage, base, p!!.optInt("messagesUsed"), cap) else base
+                styleChip(statusChip, R.color.agento_primary_container, R.color.agento_on_primary_container)
             }
         }
     }
 
+    // ---------------------------------------------------------------- data
+
     private fun load() {
         swipe.isRefreshing = true
         ServerClient.IO_EXECUTOR.execute {
-            val data = ServerClient.dashboard(this)
+            val d = ServerClient.dashboard(this)
             runOnUiThread {
+                if (isFinishing) return@runOnUiThread
                 swipe.isRefreshing = false
-                lastFetchOk = data != null
-                if (data != null) {
-                    Prefs.setDashboardCache(this, data.toString())
+                lastFetchOk = d != null
+                if (d != null) {
+                    Prefs.setDashboardCache(this, d.toString())
                     ServerClient.IO_EXECUTOR.execute { runCatching { Prefs.refreshLearnedSources(applicationContext) } }
-                    render(data)
+                    render(d)
                 } else {
-                    // Keep identity + cached content; the chip explains.
                     Prefs.dashboardCache(this)?.let { runCatching { render(JSONObject(it)) } }
                 }
                 refreshStatus(lastFetchOk)
@@ -327,130 +335,85 @@ class DashboardActivity : AppCompatActivity() {
         }
     }
 
-    private fun soles(v: Double): String = Prefs.money(this, v)
+    /** Re-fetch after an action (a swipe, a photo) without the spinner dance. */
+    fun reload() = load()
 
-    private fun inflateIn(layoutRes: Int, parent: ViewGroup): View =
-        layoutInflater.inflate(layoutRes, parent, false)
+    fun soles(v: Double): String = Prefs.money(this, v)
+
+    fun inflateIn(layoutRes: Int, parent: ViewGroup): View = layoutInflater.inflate(layoutRes, parent, false)
 
     /** Teaching empty state ("what will appear here, and how to make it happen"). */
-    private fun emptyState(parent: ViewGroup, msg: String): View =
-        inflateIn(R.layout.item_dash_empty, parent).apply {
-            findViewById<TextView>(R.id.dash_empty_text).text = msg
-        }
+    fun emptyState(parent: ViewGroup, msg: String): View =
+        inflateIn(R.layout.item_dash_empty, parent).apply { findViewById<TextView>(R.id.dash_empty_text).text = msg }
 
     private fun render(d: JSONObject) {
         d.optJSONObject("locale")?.let { Prefs.setLocale(this, it) }
         businessName.text = d.optString("businessName", getString(R.string.app_name))
         plan = d.optJSONObject("plan")
-        val e = d.optJSONObject("earnings") ?: JSONObject()
-        earnToday.text = soles(e.optDouble("today", 0.0))
-        earnWeek.text = soles(e.optDouble("week", 0.0))
-        earnMonth.text = soles(e.optDouble("month", 0.0))
-        renderGaps(d.optJSONArray("openGaps"))
-        // Orders render before the appointments early-return below: a
-        // products-only business has an empty agenda every single day.
-        renderOrders(d.optJSONArray("orders"))
-
-        agenda.removeAllViews()
-        val appts = d.optJSONArray("appointments")
-        if (appts == null || appts.length() == 0) {
-            agenda.addView(emptyState(agenda, getString(R.string.dash_empty)))
-            return
-        }
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().time)
-        var lastDate = ""
-        for (i in 0 until appts.length()) {
-            val a = appts.getJSONObject(i)
-            val date = a.optString("date")
-            if (date != lastDate) {
-                lastDate = date
-                agenda.addView(dayChip(date, date == today))
+        data = d
+        val s = UiSpec.parse(d.optJSONObject("ui")) ?: UiSpec.fallback(this, d.optString("businessKind"))
+        val redesigned = spec != null && s.signature() != navSignature
+        spec = s
+        if (s.signature() != navSignature) {
+            navSignature = s.signature()
+            nav.menu.clear()
+            s.tabs.forEachIndexed { i, t -> nav.menu.add(Menu.NONE, i, i, t.label).setIcon(UiSpec.iconRes(t.icon)) }
+            nav.visibility = if (s.tabs.size > 1) View.VISIBLE else View.GONE
+            currentTab = s.homeIndex().coerceIn(0, s.tabs.size - 1)
+            nav.selectedItemId = currentTab
+            if (redesigned && walkthrough?.isShowing() != true) {
+                Snackbar.make(swipe, R.string.ui_redesigned, Snackbar.LENGTH_LONG).show()
             }
-            agenda.addView(appointmentCard(a))
+        }
+        renderTab()
+        maybeWalkthrough(d)
+    }
+
+    private fun renderTab() {
+        val s = spec ?: return
+        val d = data ?: return
+        val tab = s.tabs.getOrNull(currentTab) ?: return
+        banners.visibility = if (currentTab == s.homeIndex()) View.VISIBLE else View.GONE
+        content.removeAllViews()
+        for (b in tab.blocks) Blocks.render(this, b, content, d)
+    }
+
+    private fun selectTab(i: Int) {
+        if (i !in (spec?.tabs?.indices ?: IntRange.EMPTY)) return
+        currentTab = i
+        nav.selectedItemId = i
+        renderTab()
+        scroll.scrollTo(0, 0)
+    }
+
+    /** Once, the first time the designed app opens: a step per tab. */
+    private fun maybeWalkthrough(d: JSONObject) {
+        val s = spec ?: return
+        if (walkthrough?.isShowing() == true) return
+        if (!d.optBoolean("onboarded", false) || Prefs.walkthroughSeen(this)) return
+        walkthrough = Walkthrough(this, s, ::selectTab) { Prefs.setWalkthroughSeen(this, true) }.also { it.show() }
+    }
+
+    var conversations: org.json.JSONArray? = null
+        private set
+
+    private fun loadConversations() {
+        ServerClient.IO_EXECUTOR.execute {
+            val v = ServerClient.conversations(this)?.optJSONArray("conversations")
+            runOnUiThread {
+                if (isFinishing) return@runOnUiThread
+                conversations = v
+                if (spec?.tabs?.getOrNull(currentTab)?.blocks?.any { it.type == "conversations" } == true) renderTab()
+            }
         }
     }
 
-    /** Day header pill; "Hoy" gets the primary container so it pops. */
-    private fun dayChip(date: String, isToday: Boolean): View {
-        val chip = inflateIn(R.layout.item_dash_day, agenda) as Chip
-        chip.text = if (isToday) getString(R.string.dash_today_header, prettyDate(date))
-                    else prettyDate(date)
-        if (isToday) styleChip(chip, R.color.agento_primary_container,
-            R.color.agento_on_primary_container)
-        else styleChip(chip, R.color.agento_surface_variant, R.color.agento_on_surface)
-        return chip
-    }
+    // ------------------------------------------------------------ attention
 
-    /** Product orders (last 14 days). */
-    private fun renderOrders(arr: org.json.JSONArray?) {
-        val container = findViewById<LinearLayout>(R.id.orders_container)
-        container.removeAllViews()
-        if (arr == null || arr.length() == 0) {
-            container.addView(emptyState(container, getString(R.string.dash_orders_empty)))
-            return
-        }
-        for (i in 0 until arr.length()) {
-            val o = arr.getJSONObject(i)
-            val items = o.optJSONArray("items")
-            val summary = (0 until (items?.length() ?: 0)).joinToString(", ") { j ->
-                val it = items!!.getJSONObject(j)
-                "${it.optInt("qty", 1)}× ${it.optString("product")}"
-            }
-            val paid = o.optBoolean("paid")
-            val card = inflateIn(R.layout.item_dash_order, container)
-            card.findViewById<TextView>(R.id.dash_order_customer).text = o.optString("customer")
-            card.findViewById<TextView>(R.id.dash_order_items).text = summary
-            card.findViewById<TextView>(R.id.dash_order_total).text =
-                soles(o.optDouble("total", 0.0))
-            val state = card.findViewById<Chip>(R.id.dash_order_state)
-            if (paid) {
-                state.text = getString(R.string.order_paid)
-                styleChip(state, R.color.agento_primary_container,
-                    R.color.agento_on_primary_container)
-            } else {
-                state.text = getString(R.string.order_pending)
-                styleChip(state, R.color.agento_secondary_container,
-                    R.color.agento_on_secondary_container)
-            }
-            container.addView(card)
-        }
-    }
-
-    /**
-     * Questions customers asked that the agent couldn't answer. One tap +
-     * one sentence from the owner and the agent knows it forever.
-     */
-    private fun renderGaps(arr: org.json.JSONArray?) {
-        gaps.removeAllViews()
-        val n = arr?.length() ?: 0
-        gapsHeader.visibility = View.VISIBLE
-        if (n == 0) {
-            gaps.addView(emptyState(gaps, getString(R.string.dash_gaps_empty)))
-            return
-        }
-        for (i in 0 until n) {
-            val g = arr!!.getJSONObject(i)
-            val card = inflateIn(R.layout.item_dash_gap, gaps)
-            card.findViewById<TextView>(R.id.dash_gap_from).text =
-                getString(R.string.gap_from, g.optString("customer"))
-            card.findViewById<TextView>(R.id.dash_gap_question).text = g.optString("question")
-            card.findViewById<MaterialButton>(R.id.dash_gap_answer).setOnClickListener {
-                askGapAnswer(g.optString("id"), g.optString("question"))
-            }
-            gaps.addView(card)
-        }
-    }
-
-    private fun askGapAnswer(gapId: String, question: String) {
-        val input = android.widget.EditText(this).apply {
-            hint = getString(R.string.gap_answer_hint)
-            minLines = 2
-        }
+    fun askGapAnswer(gapId: String, question: String) {
+        val input = android.widget.EditText(this).apply { hint = getString(R.string.gap_answer_hint); minLines = 2 }
         val pad = resources.getDimensionPixelSize(R.dimen.space_l)
-        val wrap = android.widget.FrameLayout(this).apply {
-            setPadding(pad, pad / 2, pad, 0)
-            addView(input)
-        }
+        val wrap = android.widget.FrameLayout(this).apply { setPadding(pad, pad / 2, pad, 0); addView(input) }
         MaterialAlertDialogBuilder(this)
             .setTitle(question)
             .setView(wrap)
@@ -461,12 +424,7 @@ class DashboardActivity : AppCompatActivity() {
                 ServerClient.IO_EXECUTOR.execute {
                     val res = ServerClient.answerGap(this, gapId, answer)
                     runOnUiThread {
-                        android.widget.Toast.makeText(
-                            this,
-                            if (res != null) getString(R.string.gap_answered)
-                            else getString(R.string.gap_answer_failed),
-                            android.widget.Toast.LENGTH_LONG
-                        ).show()
+                        Toast.makeText(this, if (res != null) getString(R.string.gap_answered) else getString(R.string.gap_answer_failed), Toast.LENGTH_LONG).show()
                         if (res != null) load()
                     }
                 }
@@ -474,70 +432,265 @@ class DashboardActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun renderConversations() {
-        convos.removeAllViews()
-        val rows = conversations
-        if (rows == null || rows.length() == 0) {
-            convos.addView(emptyState(convos, getString(R.string.dash_convos_empty)))
-            return
-        }
-        for (i in 0 until minOf(rows.length(), 6)) {
-            val r = rows.getJSONObject(i)
-            val contact = r.optJSONObject("contact")
-            val name = Crm.displayName(this, contact, r.optString("peer"))
-            val card = inflateIn(R.layout.item_dash_convo, convos) as MaterialCardView
-            card.findViewById<TextView>(R.id.dash_convo_meta).text = "$name · ${Crm.shortTime(r.optString("lastAt"))}"
-            card.findViewById<TextView>(R.id.dash_convo_incoming).text = r.optString("lastText")
-            card.findViewById<TextView>(R.id.dash_convo_detail).apply {
-                text = if (r.optString("lastRole") == "assistant") "🤖 " + getString(R.string.crm_messages_count, r.optInt("messages")) else getString(R.string.crm_messages_count, r.optInt("messages"))
-                setTextColor(getColor(R.color.agento_on_surface_muted))
-            }
-            card.setOnClickListener { startActivity(Intent(this, ConversationActivity::class.java).putExtra(ConversationActivity.EXTRA_PEER, r.optString("peer"))) }
-            convos.addView(card)
-        }
-    }
+    // ------------------------------------------------------------ the queue
 
-    private var conversations: org.json.JSONArray? = null
-
-    private fun loadConversations() {
+    /** The swipe: done now, undo for a few seconds, then the truth from the core. */
+    fun markDone(isOrder: Boolean, item: JSONObject, undo: () -> Unit) {
+        val id = item.optString("id")
+        var undone = false
         ServerClient.IO_EXECUTOR.execute {
-            val v = ServerClient.conversations(this)?.optJSONArray("conversations")
-            runOnUiThread { conversations = v; renderConversations() }
+            val r = if (isOrder) ServerClient.orderStatus(this, id, "done") else ServerClient.appointmentStatus(this, id, "done")
+            if (r == null) runOnUiThread { undo(); Toast.makeText(this, R.string.queue_failed, Toast.LENGTH_LONG).show() }
+        }
+        Snackbar.make(swipe, getString(R.string.queue_marked_done, item.optString("customer")), Snackbar.LENGTH_LONG)
+            .setAction(R.string.queue_undo) {
+                undone = true
+                undo()
+                ServerClient.IO_EXECUTOR.execute {
+                    if (isOrder) ServerClient.orderStatus(this, id, "undo") else ServerClient.appointmentStatus(this, id, "undo")
+                    runOnUiThread { load() }
+                }
+            }
+            .addCallback(object : Snackbar.Callback() {
+                override fun onDismissed(sb: Snackbar?, event: Int) { if (!undone) load() }
+            })
+            .show()
+    }
+
+    private fun setStatus(isOrder: Boolean, id: String, status: String) {
+        ServerClient.IO_EXECUTOR.execute {
+            val r = if (isOrder) ServerClient.orderStatus(this, id, status) else ServerClient.appointmentStatus(this, id, status)
+            runOnUiThread {
+                if (r == null) Toast.makeText(this, R.string.queue_failed, Toast.LENGTH_LONG).show()
+                load()
+            }
         }
     }
 
-    private fun prettyDate(iso: String): String = try {
-        val d = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(iso)!!
-        SimpleDateFormat("EEE d MMM", Locale.getDefault()).format(d)
-    } catch (_: Exception) { iso }
+    fun orderActions(o: JSONObject) {
+        val done = o.optString("status") == "done"
+        val paid = o.optBoolean("paid")
+        val items = ArrayList<Pair<String, String>>()
+        if (done) items.add(getString(R.string.queue_undo_done) to "undo") else items.add(getString(R.string.queue_done_action) to "done")
+        if (!paid) items.add(getString(R.string.queue_mark_paid) to "paid")
+        items.add(getString(R.string.queue_cancel_order) to "cancelled")
+        MaterialAlertDialogBuilder(this)
+            .setTitle(o.optString("customer") + " · " + soles(o.optDouble("total", 0.0)))
+            .setItems(items.map { it.first }.toTypedArray()) { _, i -> setStatus(true, o.optString("id"), items[i].second) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
 
-    private fun appointmentCard(a: JSONObject): View {
-        val card = inflateIn(R.layout.item_dash_appointment, agenda)
-        card.findViewById<TextView>(R.id.dash_appt_time).text = a.optString("time")
-        card.findViewById<TextView>(R.id.dash_appt_customer).text = a.optString("customer")
-        val spec = a.optString("specialist").takeIf { it.isNotEmpty() && it != "null" }
-        card.findViewById<TextView>(R.id.dash_appt_sub).text =
-            spec ?: a.optString("phone").substringAfter(':')
-        val remEmail = a.optString("reminderEmail").takeIf { it.isNotEmpty() && it != "null" }
-        card.findViewById<TextView>(R.id.dash_appt_reminder).apply {
-            if (remEmail != null) {
-                visibility = View.VISIBLE
-                text = getString(R.string.dash_reminder_set, a.optInt("remindMinutes", 60))
-            } else visibility = View.GONE
+    fun appointmentActions(a: JSONObject) {
+        val status = a.optString("status")
+        val items = ArrayList<Pair<String, String>>()
+        if (status == "done" || status == "no_show") items.add(getString(R.string.queue_undo_done) to "undo") else {
+            items.add(getString(R.string.queue_done_action) to "done")
+            items.add(getString(R.string.queue_no_show_action) to "no_show")
         }
-        val price = a.optDouble("price", Double.NaN)
-        card.findViewById<TextView>(R.id.dash_appt_price).text =
-            if (price.isNaN()) "—" else soles(price)
-        val paidChip = card.findViewById<Chip>(R.id.dash_appt_paid)
-        if (a.optBoolean("paid")) {
-            paidChip.text = getString(R.string.dash_paid)
-            styleChip(paidChip, R.color.agento_primary_container,
-                R.color.agento_on_primary_container)
-        } else {
-            paidChip.text = getString(R.string.dash_pending)
-            styleChip(paidChip, R.color.agento_secondary_container,
-                R.color.agento_on_secondary_container)
+        if (!a.optBoolean("paid")) items.add(getString(R.string.queue_mark_paid) to "paid")
+        items.add(getString(R.string.queue_cancel_appt) to "cancelled")
+        MaterialAlertDialogBuilder(this)
+            .setTitle(a.optString("time") + " · " + a.optString("customer"))
+            .setMessage(listOfNotNull(
+                a.optString("service").takeIf { it.isNotBlank() && it != "null" },
+                a.optString("specialist").takeIf { it.isNotBlank() && it != "null" },
+                Blocks.prettyDate(a.optString("date")),
+            ).joinToString(" · "))
+            .setItems(items.map { it.first }.toTypedArray()) { _, i -> setStatus(false, a.optString("id"), items[i].second) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    // -------------------------------------------------------------- photos
+
+    private val photoCache = LruCache<String, Bitmap>(24)
+    private val photoFile: File by lazy { File(cacheDir, "catalog.jpg") }
+    private var pendingProduct: String? = null
+
+    fun loadPhoto(id: String, iv: ImageView) {
+        iv.tag = id
+        photoCache.get(id)?.let { iv.setImageBitmap(it); return }
+        iv.setImageDrawable(null)
+        ServerClient.IO_EXECUTOR.execute {
+            val bytes = ServerClient.mediaBytes(this, id) ?: return@execute
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+            var sample = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 480) sample *= 2
+            val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample }) ?: return@execute
+            photoCache.put(id, bmp)
+            runOnUiThread { if (iv.tag == id) iv.setImageBitmap(bmp) }
         }
-        return card
+    }
+
+    /** Camera or gallery; [product] preselects which product the photo belongs to. */
+    fun pickPhotoFor(product: String?) {
+        pendingProduct = product
+        MaterialAlertDialogBuilder(this)
+            .setTitle(product?.let { getString(R.string.catalog_photo_for, it) } ?: getString(R.string.catalog_add_photo))
+            .setItems(arrayOf(getString(R.string.catalog_photo_take), getString(R.string.catalog_photo_gallery))) { _, which ->
+                if (which == 0) launchCamera() else launchGallery()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun launchCamera() {
+        photoFile.delete()
+        val uri = FileProvider.getUriForFile(this, "$packageName.fileprovider", photoFile)
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            .putExtra(MediaStore.EXTRA_OUTPUT, uri)
+            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        intent.clipData = ClipData.newRawUri("output", uri)
+        try { @Suppress("DEPRECATION") startActivityForResult(intent, RC_PHOTO_CAMERA) } catch (_: Exception) {
+            Toast.makeText(this, getString(R.string.catalog_photo_no_app), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun launchGallery() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE)
+        try { @Suppress("DEPRECATION") startActivityForResult(intent, RC_PHOTO_GALLERY) } catch (_: Exception) {
+            Toast.makeText(this, getString(R.string.catalog_photo_no_app), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION") super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode != RESULT_OK) return
+        val raw: ByteArray? = when (requestCode) {
+            RC_PHOTO_CAMERA -> photoFile.takeIf { it.exists() && it.length() > 0 }?.readBytes()
+            RC_PHOTO_GALLERY -> data?.data?.let { uri -> runCatching { contentResolver.openInputStream(uri)?.use { it.readBytes() } }.getOrNull() }
+            else -> return
+        }
+        if (raw == null || raw.isEmpty()) { Toast.makeText(this, R.string.catalog_photo_unreadable, Toast.LENGTH_LONG).show(); return }
+        val product = pendingProduct
+        if (product != null) uploadPhoto(raw, product) else askProductThen(raw)
+    }
+
+    /** Which product is this? The catalog's names first, or a new one. */
+    private fun askProductThen(raw: ByteArray) {
+        val names = this.data?.optJSONObject("products")?.keys()?.asSequence()?.toList()?.sorted() ?: emptyList()
+        val other = getString(R.string.catalog_photo_other_product)
+        val options = (names + other).toTypedArray()
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.catalog_photo_product_hint)
+            .setItems(options) { _, i ->
+                if (i < names.size) uploadPhoto(raw, names[i]) else {
+                    val input = android.widget.EditText(this).apply { hint = getString(R.string.catalog_photo_product_name) }
+                    val pad = resources.getDimensionPixelSize(R.dimen.space_l)
+                    val wrap = android.widget.FrameLayout(this).apply { setPadding(pad, pad / 2, pad, 0); addView(input) }
+                    MaterialAlertDialogBuilder(this).setTitle(R.string.catalog_photo_product_hint).setView(wrap)
+                        .setPositiveButton(android.R.string.ok) { _, _ -> uploadPhoto(raw, input.text.toString().trim().ifEmpty { null }) }
+                        .setNegativeButton(R.string.catalog_photo_skip_product) { _, _ -> uploadPhoto(raw, null) }
+                        .show()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun uploadPhoto(raw: ByteArray, product: String?) {
+        Toast.makeText(this, R.string.catalog_uploading, Toast.LENGTH_SHORT).show()
+        ServerClient.IO_EXECUTOR.execute {
+            val jpeg = prepareJpeg(raw)
+            val r = jpeg?.let { ServerClient.mediaUpload(this, it, product, null) }
+            runOnUiThread {
+                if (r == null || r.code !in 200..299) Toast.makeText(this, R.string.catalog_upload_failed, Toast.LENGTH_LONG).show()
+                else { Toast.makeText(this, R.string.catalog_uploaded, Toast.LENGTH_SHORT).show(); load() }
+            }
+        }
+    }
+
+    /** Same treatment as the onboarding catalog photo: ≤1280px long edge, EXIF-upright, JPEG 85. */
+    private fun prepareJpeg(raw: ByteArray): ByteArray? = try {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(raw, 0, raw.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) null else {
+            var sample = 1
+            while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= MAX_PHOTO_EDGE) sample *= 2
+            var bmp = BitmapFactory.decodeByteArray(raw, 0, raw.size, BitmapFactory.Options().apply { inSampleSize = sample })!!
+            val longest = maxOf(bmp.width, bmp.height)
+            if (longest > MAX_PHOTO_EDGE) {
+                val scale = MAX_PHOTO_EDGE.toFloat() / longest
+                bmp = Bitmap.createScaledBitmap(bmp, (bmp.width * scale).toInt().coerceAtLeast(1), (bmp.height * scale).toInt().coerceAtLeast(1), true)
+            }
+            val rotation = try {
+                when (ExifInterface(ByteArrayInputStream(raw)).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+                    ExifInterface.ORIENTATION_ROTATE_90 -> 90f; ExifInterface.ORIENTATION_ROTATE_180 -> 180f; ExifInterface.ORIENTATION_ROTATE_270 -> 270f; else -> 0f
+                }
+            } catch (_: Exception) { 0f }
+            if (rotation != 0f) bmp = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { postRotate(rotation) }, true)
+            ByteArrayOutputStream().also { bmp.compress(Bitmap.CompressFormat.JPEG, 85, it) }.toByteArray()
+        }
+    } catch (e: Exception) { android.util.Log.w("Dashboard", "photo decode failed", e); null }
+
+    /** A photo, big, with what you can do to it. */
+    fun openPhoto(m: JSONObject) {
+        val id = m.optString("id")
+        val iv = ImageView(this).apply { adjustViewBounds = true; scaleType = ImageView.ScaleType.FIT_CENTER }
+        loadPhoto(id, iv)
+        val label = m.optString("product").takeIf { it.isNotBlank() && it != "null" } ?: getString(R.string.catalog_photo_no_product)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(label)
+            .setView(iv)
+            .setPositiveButton(R.string.catalog_share) { _, _ -> shareLink(listOf(id), emptyList()) }
+            .setNeutralButton(R.string.catalog_change_product) { _, _ -> renamePhoto(m) }
+            .setNegativeButton(R.string.catalog_delete) { _, _ ->
+                ServerClient.IO_EXECUTOR.execute {
+                    val ok = ServerClient.mediaDelete(this, id)
+                    runOnUiThread { if (ok) { photoCache.remove(id); load() } else Toast.makeText(this, R.string.queue_failed, Toast.LENGTH_LONG).show() }
+                }
+            }
+            .show()
+    }
+
+    private fun renamePhoto(m: JSONObject) {
+        val names = this.data?.optJSONObject("products")?.keys()?.asSequence()?.toList()?.sorted() ?: emptyList()
+        val input = android.widget.EditText(this).apply { setText(m.optString("product").takeIf { it != "null" }); hint = getString(R.string.catalog_photo_product_name) }
+        val pad = resources.getDimensionPixelSize(R.dimen.space_l)
+        val wrap = android.widget.FrameLayout(this).apply { setPadding(pad, pad / 2, pad, 0); addView(input) }
+        val b = MaterialAlertDialogBuilder(this).setTitle(R.string.catalog_photo_product_hint).setView(wrap)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val p = input.text.toString().trim()
+                ServerClient.IO_EXECUTOR.execute { ServerClient.mediaUpdate(this, m.optString("id"), p, null); runOnUiThread { load() } }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+        if (names.isNotEmpty()) b.setNeutralButton(R.string.catalog_photo_pick_product) { _, _ ->
+            MaterialAlertDialogBuilder(this).setItems(names.toTypedArray()) { _, i ->
+                ServerClient.IO_EXECUTOR.execute { ServerClient.mediaUpdate(this, m.optString("id"), names[i], null); runOnUiThread { load() } }
+            }.show()
+        }
+        b.show()
+    }
+
+    /** Mint the private link and offer to copy it or send it. */
+    fun shareLink(ids: List<String>, products: List<String>) {
+        Toast.makeText(this, R.string.catalog_link_creating, Toast.LENGTH_SHORT).show()
+        ServerClient.IO_EXECUTOR.execute {
+            val r = ServerClient.mediaShare(this, ids, products, null)
+            runOnUiThread {
+                val url = r.json?.optString("url").takeIf { r.code in 200..299 && !it.isNullOrBlank() }
+                if (url == null) {
+                    Toast.makeText(this, if (r.code == 404) R.string.catalog_link_nothing else R.string.catalog_link_failed, Toast.LENGTH_LONG).show()
+                    return@runOnUiThread
+                }
+                val n = r.json?.optInt("photos") ?: 0
+                MaterialAlertDialogBuilder(this)
+                    .setTitle(R.string.catalog_link_title)
+                    .setMessage(getString(R.string.catalog_link_body, n, url))
+                    .setPositiveButton(R.string.catalog_link_send) { _, _ ->
+                        val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, getString(R.string.catalog_link_message, url))
+                        startActivity(Intent.createChooser(send, getString(R.string.catalog_link_send)))
+                    }
+                    .setNeutralButton(R.string.catalog_link_copy) { _, _ ->
+                        (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("agento", url))
+                        Toast.makeText(this, R.string.catalog_link_copied, Toast.LENGTH_SHORT).show()
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            }
+        }
     }
 }

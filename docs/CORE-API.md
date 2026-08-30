@@ -68,6 +68,24 @@ other codes with `ServerClient.classify()`:
 | `GET /api/rails?country=` | | wallet names people use in this country (no bearer) |
 | `POST /api/location` | `{…}` | coarse location → the business's public location |
 
+### The owner's app (D15) — bearer
+
+| method + path | body | notes |
+|---|---|---|
+| `GET /api/ui` | | `{ui, uiDesigned, businessKind}` — the UI spec the core composed: the vertical's template ⊕ what the agent designed with `design_ui`. Also inside `/api/dashboard` as `ui`, with `businessHours`, `slotDuration`, `products`, `media` for the blocks |
+| `POST /api/orders/{id}` | `{status}` | `done` (swipe), `undo`, `cancelled`, `paid` (the owner took cash) |
+| `POST /api/appointments/{id}` | `{status}` | `done`, `undo`, `cancelled`, `no_show`, `paid` |
+| `GET /api/media` | | the catalog's photos without bytes: `{media: [{id, product, caption, mime, size, createdAt}]}` |
+| `POST /api/media?product=&caption=` | raw JPEG bytes (`image/jpeg`, ≤ 6 MB) | → `{id}` |
+| `GET /api/media/{id}` | | the bytes |
+| `POST /api/media/{id}` · `POST /api/media/{id}/delete` | `{product?, caption?}` | rename / remove |
+| `POST /api/media/share` | `{ids?[], products?[], note?}` | mints a **private link** through the gateway (`POST /v1/drop`, 5 minutes): `{url, expiresAt, photos}`; 404 nothing to share, 503 gateway unreachable |
+
+The UI spec: `{version, home, tabs: [{id, label, icon, intro?, blocks: [{type, opts?}]}]}`.
+Block types are the app's catalog (`Blocks.kt` ↔ `ui.rs::BLOCKS`): `earnings`,
+`attention`, `orders_board`, `agenda_day`, `agenda_week`, `catalog`,
+`conversations`, `contacts`. Icons: `home orders agenda catalog chats people money star`.
+
 ### Identity (used by `DeviceAttestation`) — no bearer
 
 | method + path | notes |

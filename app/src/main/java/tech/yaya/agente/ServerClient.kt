@@ -19,8 +19,8 @@ import java.util.concurrent.Executors
  *  - [executeAction], [onboardingMessage], [voiceMessage], [catalogPhoto],
  *    [verifyStart], [verifyCheck], [onboardBusiness] → [EXECUTOR] (the
  *    conversation lane; ordering matters).
- *  - [dashboard], [answerGap], [paymentEvent] → [IO_EXECUTOR] (must not queue
- *    behind a 3-minute LLM turn).
+ *  - [dashboard], [answerGap], [paymentEvent], the queue/media calls → [IO_EXECUTOR]
+ *    (must not queue behind a 3-minute LLM turn).
  *  Nothing here may run on the main thread — every method blocks on network.
  */
 object ServerClient {
@@ -445,6 +445,74 @@ object ServerClient {
             JSONObject().put("phone", phone).put("code", code),
             bearer = false, retry = Retry.NETWORK_FAILURE_ONLY
         )
+
+    // D15: the owner's work queue, the catalog's photos, the UI spec. [IO_EXECUTOR].
+
+    /** The composed UI spec (also inside /api/dashboard). */
+    fun ui(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/ui", body = null, contentType = null, bearer = true, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    /** done | undo | cancelled | paid. Side-effectful: never retried. */
+    fun orderStatus(ctx: Context, id: String, status: String): JSONObject? =
+        post(ctx, "/api/orders/" + Uri.encode(id), JSONObject().put("status", status), bearer = true)
+
+    /** done | undo | cancelled | no_show | paid. Side-effectful: never retried. */
+    fun appointmentStatus(ctx: Context, id: String, status: String): JSONObject? =
+        post(ctx, "/api/appointments/" + Uri.encode(id), JSONObject().put("status", status), bearer = true)
+
+    fun mediaList(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/media", body = null, contentType = null, bearer = true, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    /** A resized JPEG up; `{id}` down. One shot (a retry would store it twice). */
+    fun mediaUpload(ctx: Context, jpeg: ByteArray, product: String?, caption: String?): Response {
+        val q = StringBuilder()
+        product?.takeIf { it.isNotBlank() }?.let { q.append("product=").append(Uri.encode(it)) }
+        caption?.takeIf { it.isNotBlank() }?.let { if (q.isNotEmpty()) q.append('&'); q.append("caption=").append(Uri.encode(it)) }
+        val path = "/api/media" + (if (q.isEmpty()) "" else "?$q")
+        return exchange(ctx, path, body = jpeg, contentType = "image/jpeg", bearer = true, readTimeoutMs = 60_000, retry = Retry.NEVER)
+    }
+
+    fun mediaUpdate(ctx: Context, id: String, product: String?, caption: String?): JSONObject? =
+        post(ctx, "/api/media/" + Uri.encode(id), JSONObject().apply {
+            product?.let { put("product", it) }; caption?.let { put("caption", it) }
+        }, bearer = true)
+
+    fun mediaDelete(ctx: Context, id: String): Boolean =
+        postRaw(ctx, "/api/media/" + Uri.encode(id) + "/delete", JSONObject(), bearer = true).code in 200..299
+
+    /** Mints the private link: `{url, expiresAt, photos}`; 404 = nothing to share, 503 = gateway unreachable. */
+    fun mediaShare(ctx: Context, ids: List<String>, products: List<String>, note: String?): Response =
+        postRaw(ctx, "/api/media/share", JSONObject()
+            .put("ids", org.json.JSONArray(ids))
+            .put("products", org.json.JSONArray(products))
+            .apply { note?.let { put("note", it) } }, bearer = true)
+
+    /**
+     * Photo bytes. The one GET here that is not JSON — same socket rules as
+     * [exchangeOnce] (app key, bearer, timeouts), separate because the body
+     * is binary. Null on any failure. [IO_EXECUTOR].
+     */
+    fun mediaBytes(ctx: Context, id: String): ByteArray? {
+        return try {
+            val conn = URL(AgentoCore.baseUrl(ctx) + "/api/media/" + Uri.encode(id)).openConnection() as HttpURLConnection
+            try {
+                conn.connectTimeout = 10_000
+                conn.readTimeout = 30_000
+                conn.setRequestProperty("X-App-Key", AgentoCore.appKey(ctx))
+                conn.setRequestProperty("Authorization", "Bearer " + Prefs.deviceToken(ctx))
+                if (conn.responseCode !in 200..299) null else conn.inputStream.use { it.readBytes() }
+            } finally {
+                conn.disconnect()
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "media $id failed", e)
+            null
+        }
+    }
 
     /**
      * Registers the business and returns its device token. No admin key: the

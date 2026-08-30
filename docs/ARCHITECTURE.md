@@ -128,6 +128,31 @@ WelcomeActivity (router, no UI)
 `Prefs.serverConfigured()` (a device token exists) is what "a business is
 registered" means everywhere in the app.
 
+## The owner's app is data (D15)
+
+`DashboardActivity` draws nothing of its own below the header. The core
+composes a **UI spec** for the business — the vertical bundle's `ui:`
+template (`assets/schemas/bundles/<vertical>/bundle.yml`) ⊕ the design the
+onboarding agent saved with its `design_ui` tool — and the app renders it:
+one bottom-bar tab per entry, each tab a column of blocks from the fixed
+**block catalog** in `Blocks.kt` (`earnings`, `attention`, `orders_board`,
+`agenda_day`, `agenda_week`, `catalog`, `conversations`, `contacts`). A
+restaurant opens on its pedidos board, a salon on today's citas, a Gamarra
+stall on its catalog; the owner can tell the agent "quiero ver la agenda
+primero" and the next refresh redraws. `Walkthrough.kt` shows the tabs once,
+in the agent's own words (`intro`). The spec is validated in the core
+(`ui.rs`): unknown blocks are dropped, blocks the business cannot use are
+dropped, at most four tabs, the template is the fallback — the app never
+sees a spec it cannot draw.
+
+The vertical also ships a `skill.md`: how that kind of business runs and how
+to interview its owner (question order, how one answer steers the next). The
+core mounts it into the onboarding prompt and its customer section into the
+customer prompt.
+
+Photos live on the phone (`media` table); customers see them through a
+private link the gateway serves for five minutes (`private.yaya.tech/p/…`).
+
 ## Threads
 
 `ServerClient` documents the contract; keep it:
