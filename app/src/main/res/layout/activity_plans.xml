@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Plan screen, shared by both editions: header · current plan · tier cards
-     (filled from code) · payment/activation panel. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -17,272 +15,78 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="@string/plan_title"
             android:textAppearance="?attr/textAppearanceHeadlineSmall"
-            android:textColor="@color/agento_on_surface"
-            android:text="@string/plan_title" />
+            android:textColor="@color/agento_on_surface" />
 
-        <TextView
-            android:id="@+id/plan_current"
-            android:layout_width="wrap_content"
+        <!-- Where the account stands: plan and this month's conversations. -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xs"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textColor="@color/agento_primary" />
+            android:layout_marginTop="@dimen/space_m"
+            app:cardBackgroundColor="@color/agento_primary_container"
+            app:cardCornerRadius="@dimen/corner_card"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp">
 
-        <TextView
-            android:id="@+id/plan_usage"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceLabelMedium"
-            android:textColor="@color/agento_on_surface_muted" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/space_m">
 
+                <TextView
+                    android:id="@+id/plan_current"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleLarge"
+                    android:textColor="@color/agento_on_primary_container" />
+
+                <TextView
+                    android:id="@+id/plan_usage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/agento_on_primary_container" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- The three plans (item_plan_tier.xml each). -->
         <LinearLayout
             android:id="@+id/plan_tiers"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_m"
+            android:layout_marginTop="@dimen/space_s"
             android:orientation="vertical" />
-
-        <!-- Business: "Opciones de pago" — monthly or a year for ten months. -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/plan_options_card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_m"
-            android:visibility="gone"
-            app:cardCornerRadius="@dimen/corner_card"
-            app:cardElevation="@dimen/card_elevation">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal"
-                android:padding="@dimen/space_m">
-
-                <TextView
-                    android:id="@+id/plan_options_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textAllCaps="true"
-                    android:textColor="@color/agento_on_surface"
-                    android:text="@string/plan_options_title" />
-
-                <TextView
-                    android:id="@+id/plan_options_sub"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_xs"
-                    android:gravity="center"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="@color/agento_on_surface_muted" />
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/plan_option_month"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_m"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:cardBackgroundColor="@color/agento_surface_variant"
-                    app:cardCornerRadius="@dimen/corner_card"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="2dp"
-                    app:strokeColor="@color/agento_primary">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center_horizontal"
-                        android:padding="@dimen/space_m">
-
-                        <TextView
-                            android:id="@+id/plan_option_month_title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceTitleLarge"
-                            android:textColor="@color/agento_on_surface" />
-
-                        <TextView
-                            android:id="@+id/plan_option_month_note"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:textAppearance="?attr/textAppearanceLabelMedium"
-                            android:textColor="@color/agento_on_surface_muted"
-                            android:text="@string/plan_option_monthly_note" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_xs"
-                    android:layout_marginBottom="@dimen/space_xs"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                    android:textColor="@color/agento_on_surface_muted"
-                    android:text="@string/plan_option_or" />
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/plan_option_year"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:cardBackgroundColor="@color/agento_surface_variant"
-                    app:cardCornerRadius="@dimen/corner_card"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="2dp"
-                    app:strokeColor="@color/agento_outline">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:gravity="center_horizontal"
-                        android:padding="@dimen/space_m">
-
-                        <TextView
-                            android:id="@+id/plan_option_year_title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="?attr/textAppearanceTitleLarge"
-                            android:textColor="@color/agento_on_surface" />
-
-                        <TextView
-                            android:id="@+id/plan_option_year_note"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:textAppearance="?attr/textAppearanceLabelMedium"
-                            android:textColor="@color/agento_primary" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/plan_options_pay"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_m"
-                    android:minHeight="@dimen/touch_min" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/plan_options_cancel"
-                    style="@style/Widget.Agento.Button.Text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:minHeight="@dimen/touch_min"
-                    android:text="@string/plan_options_cancel" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/plan_pay_card"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_m"
-            android:visibility="gone"
-            app:cardCornerRadius="@dimen/corner_card"
-            app:cardElevation="@dimen/card_elevation">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="@dimen/space_m">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                    android:textColor="@color/agento_on_surface"
-                    android:text="@string/plan_pay_title" />
-
-                <TextView
-                    android:id="@+id/plan_pay_body"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_s"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                    android:textColor="@color/agento_on_surface" />
-
-                <TextView
-                    android:id="@+id/plan_pay_ref"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_s"
-                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
-                    android:textColor="@color/agento_primary"
-                    android:textIsSelectable="true" />
-
-                <TextView
-                    android:id="@+id/plan_pay_channels"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_s"
-                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                    android:textColor="@color/agento_on_surface" />
-
-                <TextView
-                    android:id="@+id/plan_pay_status"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_s"
-                    android:textAppearance="?attr/textAppearanceLabelMedium"
-                    android:textColor="@color/agento_on_surface_muted" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_s"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/plan_pay_copy"
-                        style="@style/Widget.Agento.Button.Tonal"
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="wrap_content"
-                        android:minHeight="@dimen/touch_min"
-                        android:text="@string/plan_pay_copy" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/plan_pay_check"
-                        android:layout_width="0dp"
-                        android:layout_weight="1"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/space_s"
-                        android:minHeight="@dimen/touch_min"
-                        android:text="@string/plan_pay_check" />
-                </LinearLayout>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/plan_sales"
-            style="@style/Widget.Agento.Button.Text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_m"
-            android:minHeight="@dimen/touch_min"
-            android:visibility="gone"
-            android:text="@string/plan_sales_whatsapp" />
 
         <TextView
             android:id="@+id/plan_note"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_m"
-            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="@color/agento_on_surface_muted" />
-            <TextView
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/plan_sales"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_s"
+            android:minHeight="@dimen/cta_height"
+            android:text="@string/plan_sales_cta" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="@dimen/space_l"
+            android:background="@color/agento_outline" />
+
+        <TextView
             android:id="@+id/plan_account"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xl"
-            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="@color/agento_on_surface_muted" />
 
         <com.google.android.material.button.MaterialButton
@@ -290,7 +94,8 @@
             style="@style/Widget.Agento.Button.Text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/account_logout" />
-
-</LinearLayout>
+            android:minHeight="@dimen/touch_min"
+            android:text="@string/account_manage_web"
+            android:textColor="@color/agento_primary" />
+    </LinearLayout>
 </ScrollView>

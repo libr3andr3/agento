@@ -235,28 +235,28 @@ class DashboardActivity : AppCompatActivity() {
         banner.visibility = View.VISIBLE
         val text = findViewById<TextView>(R.id.trial_banner_text)
         val name = p.optString("name", "free")
-        val mu = p.optInt("messagesUsed"); val mc = p.optInt("messagesCap")
-        val cu = p.optInt("customersUsed"); val cc = p.optInt("customersCap")
+        // D14: the one number that matters — customers answered this month.
+        val cu = p.optInt("conversationsUsed"); val cc = p.optInt("conversationsCap")
         val limit = p.optBoolean("limitReached", false)
-        val full = p.optBoolean("customersFull", false)
         when {
             limit -> {
-                text.text = getString(R.string.plan_banner_limit)
+                text.text = getString(R.string.plan_banner_limit2)
                 text.setTextColor(getColor(R.color.agento_error))
                 banner.setCardBackgroundColor(getColor(R.color.agento_error_container))
             }
-            full -> {
-                text.text = getString(R.string.plan_banner_customers_full, cc)
-                text.setTextColor(getColor(R.color.agento_error))
-                banner.setCardBackgroundColor(getColor(R.color.agento_error_container))
+            name == "trial" -> {
+                text.text = getString(R.string.plan_banner_trial2, cu)
+                text.setTextColor(getColor(R.color.agento_on_secondary_container))
+                banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
             }
             name == "free" -> {
-                text.text = getString(R.string.plan_banner_usage, mu, mc, cu, cc)
+                text.text = getString(R.string.plan_banner_free2, cu, cc)
                 text.setTextColor(getColor(R.color.agento_on_secondary_container))
                 banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
             }
             else -> {
-                text.text = getString(R.string.plan_banner_paid, name.replaceFirstChar { it.uppercase() }, mu, cu)
+                val shown = if (name == "custom" || name == "enterprise") "Max" else name.replaceFirstChar { it.uppercase() }
+                text.text = getString(R.string.plan_banner_paid2, shown, cu)
                 text.setTextColor(getColor(R.color.agento_on_secondary_container))
                 banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
             }

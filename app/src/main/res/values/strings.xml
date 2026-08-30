@@ -212,4 +212,28 @@
     <string name="plan_sales_whatsapp">¿Dudas? Escríbenos por WhatsApp</string>
     <string name="plan_error">No se pudo cargar el plan. Revisa tu internet.</string>
     <string name="assistant_status_plan">Plan %1$s</string>
+
+    <!-- D14: three plans, conversations as the metric, sales over WhatsApp -->
+    <string name="plan_trial_name">Prueba gratis</string>
+    <string name="plan_trial_left">Prueba gratis de Pro · quedan %1$d días</string>
+    <string name="plan_conv_usage">%1$d de %2$d conversaciones este mes</string>
+    <string name="plan_conv_unlimited">%1$d conversaciones este mes · sin límite</string>
+    <string name="plan_desc_free">14 días de Pro gratis. Después, 30 conversaciones al mes.</string>
+    <string name="plan_desc_pro">1 000 conversaciones al mes. Un teléfono.</string>
+    <string name="plan_desc_max">Conversaciones sin límite. Varios teléfonos y números en una sola cuenta.</string>
+    <string name="plan_upgrade_to">Subir a %1$s</string>
+    <string name="plan_sales_cta">Hablar con ventas por WhatsApp</string>
+    <string name="plan_sales_text">Estoy listo para vender en automático, estoy listo para subir a %1$s!</string>
+    <string name="plan_pay_note2">Una conversación es un cliente que tu agente atendió en el mes. Pagas por Yape o Plin hablando con nuestro agente de ventas; tu plan se activa al instante en tu cuenta Yaya.</string>
+    <string name="plan_no_account">sin cuenta Yaya</string>
+    <string name="plan_banner_trial2">Prueba gratis de Pro · %1$d conversaciones este mes</string>
+    <string name="plan_banner_free2">Plan gratis · %1$d/%2$d conversaciones este mes</string>
+    <string name="plan_banner_paid2">Plan %1$s · %2$d conversaciones este mes</string>
+    <string name="plan_banner_limit2">Llegaste al límite de conversaciones del mes: tus clientes de siempre siguen atendidos; los nuevos, al subir de plan.</string>
+    <string name="upsell_tier_line2">%1$s · %2$s al mes</string>
+    <string name="crm_plan_pro">⭐ Pro</string>
+    <string name="crm_plan_max">⭐ Max</string>
+    <string name="crm_plan_trial">Prueba gratis</string>
+    <string name="crm_plan_free">Plan gratis</string>
+    <string name="crm_plan_lead">Lead nuevo</string>
 </resources>

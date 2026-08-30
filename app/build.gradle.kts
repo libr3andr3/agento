@@ -14,13 +14,16 @@ android {
     defaultConfig {
         minSdk = 26
         targetSdk = 36
-        versionCode = 52
-        versionName = "1.14.1"
+        versionCode = 53
+        versionName = "1.15.0"
 
         resValue("string", "app_name", "agento")
         // Where accounts and plans are managed (the gateway's web app).
         val webApp = System.getenv("AGENTO_WEB_APP") ?: "https://agento.ceo/app"
         buildConfigField("String", "WEB_APP_URL", "\"$webApp\"")
+        // D14: plans are sold in a WhatsApp chat with agento's own sales agent.
+        val sales = System.getenv("AGENTO_SALES_PHONE") ?: "51913879819"
+        buildConfigField("String", "SALES_WHATSAPP", "\"$sales\"")
     }
 
     buildFeatures {

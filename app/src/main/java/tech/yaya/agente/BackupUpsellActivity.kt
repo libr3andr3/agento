@@ -70,7 +70,7 @@ class BackupUpsellActivity : AppCompatActivity() {
                 setTextAppearance(R.style.TextAppearance_Agento_Title)
                 setTextColor(getColor(R.color.agento_on_surface))
                 val tier = t.optString("name").replaceFirstChar { it.uppercase() }
-                text = getString(R.string.upsell_tier_line, tier, "$sym ${t.optDouble("price").toLong()}", "$sym ${t.optDouble("credits").toLong()}")
+                text = getString(R.string.upsell_tier_line2, tier, "$sym ${t.optDouble("price").toLong()}")
             }
             card.addView(tv)
             box.addView(card)

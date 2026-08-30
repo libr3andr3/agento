@@ -84,7 +84,8 @@ class CrmListActivity : AppCompatActivity() {
             val name = Crm.displayName(this, contact, r.optString("peer"))
             v.findViewById<TextView>(R.id.row_avatar).text = Crm.initials(name)
             v.findViewById<TextView>(R.id.row_name).text = name
-            v.findViewById<TextView>(R.id.row_meta).text = Crm.metaLine(this, contact)
+            v.findViewById<TextView>(R.id.row_meta).text = listOf(Crm.metaLine(this, contact), Crm.planLabel(this, contact))
+                .filter { it.isNotBlank() }.joinToString(" · ")
             val time = v.findViewById<TextView>(R.id.row_time)
             val preview = v.findViewById<TextView>(R.id.row_preview)
             if (mode == MODE_CONTACTS) {
@@ -106,6 +107,16 @@ class CrmListActivity : AppCompatActivity() {
 
 /** Presentation helpers shared by the CRM screens and the dashboard. */
 object Crm {
+    /** D14: on a seller's phone the core marks contacts with their agento plan. */
+    fun planLabel(ctx: android.content.Context, contact: JSONObject?): String = when (contact?.optString("plan").orEmpty()) {
+        "pro" -> ctx.getString(R.string.crm_plan_pro)
+        "max", "custom", "enterprise" -> ctx.getString(R.string.crm_plan_max)
+        "trial" -> ctx.getString(R.string.crm_plan_trial)
+        "free" -> ctx.getString(R.string.crm_plan_free)
+        "lead" -> ctx.getString(R.string.crm_plan_lead)
+        else -> ""
+    }
+
     fun displayName(ctx: android.content.Context, contact: JSONObject?, peer: String): String {
         val n = contact?.optString("name").orEmpty()
         if (n.isNotBlank() && n != "null") return n

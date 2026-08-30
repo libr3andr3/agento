@@ -18,7 +18,7 @@ fields:
     question_es: "¿Vendes productos, servicios (con citas), o ambos?"
   location:
     type: "string"
-    ask_in_onboarding: true
+    ask_in_onboarding: false
     question_es: "¿En qué distrito o ciudad está tu negocio? (así los clientes cercanos te encuentran)"
   askPrice:
     type: "int"                     # céntimos another agent pays per question over the network; 0/absent = free
@@ -36,9 +36,15 @@ fields:
     type: "map[product -> money]"
     ask_in_onboarding: true
     question_es: "¿Qué productos vendes y a qué precio cada uno?"
+  digital:
+    # D14: digital products — what the agent hands over right after payment
+    # (a link, a file, access instructions), keyed by product name.
+    type: "map[product -> string]"
+    ask_in_onboarding: false
+    question_es: "¿Vendes algo digital (un PDF, un curso, acceso a una plataforma)? ¿Cómo lo entregas: un enlace, un archivo, un acceso?"
   delivery:
     type: "{zones: map[district -> money], default: money, coverage: string, freeAt: [keyword]}"
-    ask_in_onboarding: true
+    ask_in_onboarding: false
     question_es: "¿Hacen delivery? ¿Cuánto cobran según la zona, hasta dónde llegan, y hay puntos de entrega gratis?"
   requireEmail:
     type: "bool"
@@ -55,7 +61,7 @@ fields:
     question_es: "¿Cobran por adelantado, en la visita, o por transferencia (Yape/Plin o el equivalente local)?"
   bookingDeposit:
     type: "money | null"
-    ask_in_onboarding: true
+    ask_in_onboarding: false
     question_es: "¿Piden un adelanto fijo para reservar? ¿De cuánto?"
   cancellationNoticeMins:
     type: "minutes"

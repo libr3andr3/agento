@@ -198,4 +198,28 @@
     <string name="plan_sales_whatsapp">Questions? Message us on WhatsApp</string>
     <string name="plan_error">Could not load the plan. Check your connection.</string>
     <string name="assistant_status_plan">%1$s plan</string>
+
+    <!-- D14: three plans, conversations as the metric, sales over WhatsApp -->
+    <string name="plan_trial_name">Free trial</string>
+    <string name="plan_trial_left">Free Pro trial · %1$d days left</string>
+    <string name="plan_conv_usage">%1$d of %2$d conversations this month</string>
+    <string name="plan_conv_unlimited">%1$d conversations this month · no limit</string>
+    <string name="plan_desc_free">14 days of Pro, free. Then 30 conversations a month.</string>
+    <string name="plan_desc_pro">1,000 conversations a month. One phone.</string>
+    <string name="plan_desc_max">Unlimited conversations. Several phones and numbers on one account.</string>
+    <string name="plan_upgrade_to">Upgrade to %1$s</string>
+    <string name="plan_sales_cta">Talk to sales on WhatsApp</string>
+    <string name="plan_sales_text">I\'m ready to sell on autopilot — I\'m ready to move up to %1$s!</string>
+    <string name="plan_pay_note2">A conversation is one customer your agent answered this month. You pay by Yape or Plin in a chat with our sales agent; the plan turns on instantly on your Yaya account.</string>
+    <string name="plan_no_account">no Yaya account</string>
+    <string name="plan_banner_trial2">Free Pro trial · %1$d conversations this month</string>
+    <string name="plan_banner_free2">Free plan · %1$d/%2$d conversations this month</string>
+    <string name="plan_banner_paid2">%1$s plan · %2$d conversations this month</string>
+    <string name="plan_banner_limit2">You reached this month\'s conversations: existing customers are still answered; new ones once you upgrade.</string>
+    <string name="upsell_tier_line2">%1$s · %2$s a month</string>
+    <string name="crm_plan_pro">⭐ Pro</string>
+    <string name="crm_plan_max">⭐ Max</string>
+    <string name="crm_plan_trial">Free trial</string>
+    <string name="crm_plan_free">Free plan</string>
+    <string name="crm_plan_lead">New lead</string>
 </resources>
