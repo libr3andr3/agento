@@ -9,7 +9,7 @@ the direct APK, minus what Play does not allow or does itself:
 | package id | `yaya.tech.agento.business` | `yaya.tech.agento` |
 | updates | self-hosted (`latest.json`, `REQUEST_INSTALL_PACKAGES`) | Play |
 | `QUERY_ALL_PACKAGES` | yes (Cobros: "is that wallet on this phone?") | no — common wallets are in `<queries>`, the rest is not checked |
-| plans | bought in the app (Yape/Plin reference) | shown only; no purchase, no link to one (Play payments policy) |
+| plans | a WhatsApp chat with agento's sales agent (D14) | the same WhatsApp chat — no purchase flow in either build |
 
 Build and check:
 
@@ -105,7 +105,7 @@ PRIVACIDAD PRIMERO
 • Solo lee notificaciones de las apps que tú elijas, y solo después de que le des el permiso.
 • Código abierto (AGPL): github.com/libr3andr3/agento
 
-Gratis para empezar, con un límite diario de mensajes.
+14 días gratis con todo. Después, Gratis (30 conversaciones al mes), Pro S/150 o Max S/300 — sin permanencia.
 agento es de Yaya Tech PBC.
 
 **Full (en)**
@@ -129,7 +129,7 @@ PRIVACY FIRST
 • It only reads notifications from the apps you choose, and only after you grant access.
 • Open source (AGPL): github.com/libr3andr3/agento
 
-Free to start, with a daily message limit.
+14 days free with everything. Then Free (30 conversations a month), Pro or Max — no commitment.
 agento is made by Yaya Tech PBC.
 
 **Screenshots**: phone, 9:16, at least four — sign-in, the interview,
