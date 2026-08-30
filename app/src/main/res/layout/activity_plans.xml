@@ -76,6 +76,15 @@
             android:minHeight="@dimen/cta_height"
             android:text="@string/plan_sales_cta" />
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/plan_support"
+            style="@style/Widget.Agento.Button.Text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_min"
+            android:text="@string/plan_support"
+            android:textColor="@color/agento_primary" />
+
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"

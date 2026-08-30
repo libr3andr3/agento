@@ -236,4 +236,9 @@
     <string name="crm_plan_trial">Prueba gratis</string>
     <string name="crm_plan_free">Plan gratis</string>
     <string name="crm_plan_lead">Lead nuevo</string>
+
+    <!-- Support line (number comes from the server; see Support.kt) -->
+    <string name="settings_support">🆘 Soporte</string>
+    <string name="plan_support">Hablar con soporte por WhatsApp</string>
+    <string name="support_text">Hola, necesito ayuda con agento</string>
 </resources>

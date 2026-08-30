@@ -219,6 +219,18 @@ object Prefs {
     fun setDashboardCache(ctx: Context, json: String) =
         sp(ctx).edit().putString("dash_cache", json).apply()
 
+    /** The support WhatsApp, as last told by the server (BuildConfig default until then). */
+    fun supportPhone(ctx: Context): String =
+        sp(ctx).getString("support_phone", null)?.takeIf { it.length >= 8 } ?: BuildConfig.SUPPORT_WHATSAPP
+    fun setSupportPhone(ctx: Context, phone: String) {
+        val d = phone.filter { it.isDigit() }
+        if (d.length >= 8) sp(ctx).edit().putString("support_phone", d).apply()
+    }
+    /** Remembers the support line from a `/api/plan` payload, if it carries one. */
+    fun rememberSupport(ctx: Context, plan: org.json.JSONObject?) {
+        plan?.optJSONObject("support")?.optString("phone")?.takeIf { it.isNotBlank() && it != "null" }?.let { setSupportPhone(ctx, it) }
+    }
+
     /** Persisted onboarding chat transcript (blocks joined by \n\n). */
     fun chatTranscript(ctx: Context): String? = sp(ctx).getString("chat_transcript", null)
     fun setChatTranscript(ctx: Context, t: String) =

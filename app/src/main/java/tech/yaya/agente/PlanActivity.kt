@@ -40,6 +40,7 @@ class PlanActivity : AppCompatActivity() {
             startActivity(Intent(this, AccountActivity::class.java).putExtra(AccountActivity.EXTRA_MANAGE, true))
         }
         findViewById<MaterialButton>(R.id.plan_sales).setOnClickListener { openSales("pro") }
+        findViewById<MaterialButton>(R.id.plan_support).setOnClickListener { Support.open(this) }
         note.text = getString(R.string.plan_pay_note2)
         load()
     }
@@ -64,7 +65,7 @@ class PlanActivity : AppCompatActivity() {
             val p = ServerClient.plan(this)
             runOnUiThread {
                 if (p == null && info == null) Toast.makeText(this, R.string.plan_error, Toast.LENGTH_SHORT).show()
-                if (p != null) info = p
+                if (p != null) { info = p; Prefs.rememberSupport(this, p) }
                 render()
             }
         }
