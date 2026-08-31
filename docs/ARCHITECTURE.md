@@ -151,7 +151,7 @@ core mounts it into the onboarding prompt and its customer section into the
 customer prompt.
 
 Photos live on the phone (`media` table); customers see them through a
-private link the gateway serves for five minutes (`private.yaya.tech/p/…`).
+private link the gateway serves for five minutes (`privado.yaya.tech/…`).
 
 ## The audit chain
 
