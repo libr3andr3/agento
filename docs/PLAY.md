@@ -1,37 +1,38 @@
-# Google Play submission
+# Envío a Google Play
 
-The Play channel is the `play` flavor: package **`yaya.tech.agento`** (the
-app already registered in Play Console), the same code and upload key as
-the direct APK, minus what Play does not allow or does itself:
+El canal Play es el flavor `play`: paquete **`yaya.tech.agento`** (la app ya
+registrada en Play Console), el mismo código y la misma clave de subida que
+el APK directo, menos lo que Play no permite o hace por su cuenta:
 
 | | direct (`agento.ceo/dl`) | play |
 |---|---|---|
-| package id | `yaya.tech.agento.business` | `yaya.tech.agento` |
-| updates | self-hosted (`latest.json`, `REQUEST_INSTALL_PACKAGES`) | Play |
-| `QUERY_ALL_PACKAGES` | yes (Cobros: "is that wallet on this phone?") | no — common wallets are in `<queries>`, the rest is not checked |
-| plans | a WhatsApp chat with agento's sales agent (D14) | the same WhatsApp chat — no purchase flow in either build |
+| id de paquete | `yaya.tech.agento.business` | `yaya.tech.agento` |
+| actualizaciones | propias (`latest.json`, `REQUEST_INSTALL_PACKAGES`) | Play |
+| `QUERY_ALL_PACKAGES` | sí (Cobros: «¿esa billetera está en este teléfono?») | no — las billeteras comunes van en `<queries>`, el resto no se verifica |
+| planes | un chat de WhatsApp con el agente de ventas de agento (D14) | el mismo chat de WhatsApp — no hay flujo de compra en ningún build |
 
-Build and check:
+Compilar y verificar:
 
 ```bash
 source ~/.agento/keystore.env            # AGENTO_KEYSTORE / _PASS / _ALIAS / KEY_PASS
 ./gradlew bundlePlayRelease assemblePlayRelease
-# app/build/outputs/bundle/playRelease/app-play-release.aab   ← upload this
-# app/build/outputs/apk/play/release/app-play-release.apk     ← adb install for a sanity pass
+# app/build/outputs/bundle/playRelease/app-play-release.aab   ← esto se sube
+# app/build/outputs/apk/play/release/app-play-release.apk     ← adb install para una pasada de cordura
 jarsigner -verify app/build/outputs/bundle/playRelease/app-play-release.aab
 $ANDROID_HOME/build-tools/<ver>/aapt2 dump badging app/build/outputs/apk/play/release/app-play-release.apk | grep -E "^package|uses-permission"
 ```
 
-Expected permissions on the Play build: `POST_NOTIFICATIONS`, `INTERNET`,
+Permisos esperados en el build de Play: `POST_NOTIFICATIONS`, `INTERNET`,
 `ACCESS_NETWORK_STATE`, `RECORD_AUDIO`, `ACCESS_COARSE_LOCATION`,
-`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, plus the notification-listener
-service (`BIND_NOTIFICATION_LISTENER_SERVICE` on the service, not a
+`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, más el servicio del listener de
+notificaciones (`BIND_NOTIFICATION_LISTENER_SERVICE` en el servicio, no un
 `uses-permission`).
 
-## Play Console checklist
+## Checklist de Play Console
 
-**App content → Permissions declaration.** The listener is the product;
-Play asks for a justification and a video.
+**App content → Permissions declaration.** El listener es el producto; Play
+pide una justificación y un video. El texto siguiente se pega tal cual en la
+consola (en inglés):
 
 > *Notification listener (core functionality):* agento is a receptionist
 > for a business phone. It reads the notifications of the chat apps the
@@ -45,46 +46,47 @@ Play asks for a justification and a video.
 > access" from the in-app prompt → a WhatsApp message arrives on the
 > phone → the reply is sent from the notification.
 
-- `RECORD_AUDIO`: voice answers in the setup interview (audio is
-  transcribed, never stored). `ACCESS_COARSE_LOCATION`: district for
-  "near me" (asked once, explained in-app). `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`:
-  the listener dies on OEM battery managers; the app asks the owner to
-  exempt it.
+- `RECORD_AUDIO`: respuestas por voz en la entrevista de configuración (el
+  audio se transcribe, no se guarda). `ACCESS_COARSE_LOCATION`: distrito para
+  «cerca de mí» (se pide una vez, explicado en la app).
+  `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`: el listener muere con los gestores
+  de batería de los fabricantes; la app le pide al dueño la exención.
 
-**App content → Data safety** (what to declare):
+**App content → Data safety** (qué declarar):
 
-| data | collected | shared | purpose | notes |
+| dato | se recolecta | se comparte | propósito | notas |
 |---|---|---|---|---|
-| Name, email, phone | yes | no | account management | Yaya ID sign-in (one-time code) |
-| Messages (customer chats) | yes, processed | with our AI provider as processor | app functionality | the customer's message is sent to the model to produce the reply; stored on the phone, not on our servers |
-| Audio | yes, processed | no | app functionality | interview voice notes, transcribed, not retained |
-| Approximate location | yes | no | app functionality | optional |
-| Device or other IDs | yes | no | app functionality | per-install agent key + hardware attestation |
-| Photos | yes, processed | no | app functionality | optional catalog photo → extracted items |
+| Nombre, correo, teléfono | sí | no | gestión de cuenta | inicio de sesión Yaya ID (código de un uso) |
+| Mensajes (chats de clientes) | sí, procesados | con nuestro proveedor de IA como encargado | funcionalidad | el mensaje del cliente se envía al modelo para producir la respuesta; se guarda en el teléfono, no en nuestros servidores |
+| Audio | sí, procesado | no | funcionalidad | notas de voz de la entrevista, transcritas, no retenidas |
+| Ubicación aproximada | sí | no | funcionalidad | opcional |
+| IDs de dispositivo u otros | sí | no | funcionalidad | clave de agente por instalación + atestación por hardware |
+| Fotos | sí, procesadas | no | funcionalidad | foto opcional del catálogo → ítems extraídos |
 
-Encrypted in transit: yes. Deletion: in-app ("Cerrar sesión" / uninstall
-removes the phone's data; account deletion by email to the privacy
-contact). Privacy policy: https://agento.ceo/privacidad.html — Terms:
-https://agento.ceo/terminos.html.
+Cifrado en tránsito: sí. Eliminación: en la app («Cerrar sesión» /
+desinstalar borra los datos del teléfono; eliminación de cuenta por correo al
+contacto de privacidad). Política de privacidad:
+https://agento.ceo/privacidad.html — Términos: https://agento.ceo/terminos.html.
 
-- **Ads**: none. **Target audience**: 18+ (business owners). **Category**:
-  Business. **Content rating**: utility, no user-generated public content.
-- **App access**: reviewers can tap **"Continuar sin cuenta"** to enter
-  without an account, then register any business name; the phone-number
-  verification step is skipped when the server answers 503 — otherwise
-  provide a test phone that receives WhatsApp. Put this in *App access →
+- **Anuncios**: ninguno. **Público objetivo**: 18+ (dueños de negocio).
+  **Categoría**: Empresa. **Clasificación de contenido**: utilidad, sin
+  contenido público generado por usuarios.
+- **App access**: los revisores pueden tocar **«Continuar sin cuenta»** para
+  entrar sin cuenta y registrar cualquier nombre de negocio; el paso de
+  verificación del número se salta cuando el servidor responde 503 — si no,
+  provee un teléfono de prueba que reciba WhatsApp. Esto va en *App access →
   instructions*.
-- **Financial features**: none (the app detects the owner's incoming
-  payment notifications; it does not move money).
+- **Funciones financieras**: ninguna (la app detecta las notificaciones de
+  pago entrantes del dueño; no mueve dinero).
 
-## Store listing (es-PE default, en-US second)
+## Ficha de la tienda (es-PE por defecto, en-US segundo)
 
-**Name**: `agento`
+**Nombre**: `agento`
 
-**Short (es)**: `Tu recepcionista con IA: responde tus chats, agenda citas y confirma pagos.`
-**Short (en)**: `Your AI receptionist: answers your chats, books appointments, confirms payments.`
+**Corto (es)**: `Tu recepcionista con IA: responde tus chats, agenda citas y confirma pagos.`
+**Corto (en)**: `Your AI receptionist: answers your chats, books appointments, confirms payments.`
 
-**Full (es)**
+**Completo (es)**
 
 agento es la recepcionista con IA de tu negocio. Vive en tu teléfono y responde por ti en WhatsApp Business, Instagram, Messenger y Telegram: cotiza, agenda citas, toma pedidos y confirma pagos, las 24 horas, mientras tú trabajas.
 
@@ -108,7 +110,7 @@ PRIVACIDAD PRIMERO
 14 días gratis con todo. Después, Gratis (30 conversaciones al mes), Pro S/150 (1 000) o Max S/300 (3 000 y hasta 3 teléfonos) — sin permanencia, con boleta electrónica opcional.
 agento es de Yaya Tech PBC.
 
-**Full (en)**
+**Completo (en)**
 
 agento is your business's AI receptionist. It lives on your phone and answers for you on WhatsApp Business, Instagram, Messenger and Telegram: it quotes, books appointments, takes orders and confirms payments, 24 hours a day, while you work.
 
@@ -132,18 +134,19 @@ PRIVACY FIRST
 14 days free with everything. Then Free (30 conversations a month), Pro (1,000) or Max (3,000, up to 3 phones) — no commitment, optional e-invoicing.
 agento is made by Yaya Tech PBC.
 
-**Screenshots**: phone, 9:16, at least four — sign-in, the interview,
-Hoy, Conversaciones, Cobros, Ajustes. Feature graphic 1024×500, icon
-512×512 (`app/src/main/res/mipmap-anydpi-v26` is the adaptive source).
+**Capturas**: teléfono, 9:16, mínimo cuatro — inicio de sesión, la
+entrevista, Hoy, Conversaciones, Cobros, Ajustes. Feature graphic 1024×500,
+icono 512×512 (`app/src/main/res/mipmap-anydpi-v26` es la fuente adaptativa).
 
-**Release notes (es)**: `Primera versión en Google Play de agento para negocios.`
+**Notas de versión (es)**: `Primera versión en Google Play de agento para negocios.`
 
-## D17 additions (1.18.0)
+## Adiciones D17 (1.18.0)
 
-Permissions: `READ_CONTACTS`, `WRITE_CONTACTS`, `READ_CALENDAR`, `WRITE_CALENDAR` —
-requested at runtime only when the owner turns on "Guardar clientes en Contactos" /
-"Guardar citas en el Calendario". Data safety: contacts and calendar events are
-written on the device (the owner's own customers and appointments) and are never
-collected or transmitted; the app reads Contacts only to avoid duplicating what it
-wrote. Feature copy: "Tus clientes se quedan contigo: en tus Contactos y tu
-Calendario, y exportables (.vcf, .csv, .ics)."
+Permisos: `READ_CONTACTS`, `WRITE_CONTACTS`, `READ_CALENDAR`,
+`WRITE_CALENDAR` — pedidos en tiempo de ejecución solo cuando el dueño activa
+«Guardar clientes en Contactos» / «Guardar citas en el Calendario». Data
+safety: los contactos y eventos de calendario se escriben en el dispositivo
+(los propios clientes y citas del dueño) y nunca se recolectan ni
+transmiten; la app lee Contactos solo para no duplicar lo que escribió.
+Texto de la función: «Tus clientes se quedan contigo: en tus Contactos y tu
+Calendario, y exportables (.vcf, .csv, .ics).»

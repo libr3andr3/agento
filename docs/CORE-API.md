@@ -1,130 +1,139 @@
-# The core's loopback API
+# La API loopback del núcleo
 
-The Kotlin shell talks to the agent core over plain HTTP on
-`http://127.0.0.1:<port>`; `AgentoCore.baseUrl()` gives the base URL and
-boots the core if needed. All calls go through `ServerClient.kt` — add new
-endpoints there, never open a socket elsewhere.
+El caparazón Kotlin le habla al núcleo del agente por HTTP plano en
+`http://127.0.0.1:<puerto>`; `AgentoCore.baseUrl()` da la URL base y arranca
+el núcleo si hace falta. Todas las llamadas pasan por `ServerClient.kt` —
+agrega endpoints nuevos ahí, nunca abras un socket en otra parte.
 
-## Headers
+## Cabeceras
 
-| header | when | what |
+| cabecera | cuándo | qué |
 |---|---|---|
-| `X-App-Key: <secret>` | every request | per-install random secret (`AgentoCore.appKey`), so no other app on the phone can drive the core |
-| `Authorization: Bearer <device token>` | business routes | issued by `/api/onboard_business`, stored encrypted (`Prefs.deviceToken`) |
+| `X-App-Key: <secreto>` | cada petición | secreto aleatorio por instalación (`AgentoCore.appKey`); otra app del teléfono no puede manejar el núcleo |
+| `Authorization: Bearer <device token>` | rutas de negocio | lo emite `/api/onboard_business`, se guarda cifrado (`Prefs.deviceToken`) |
 
-Bodies are JSON unless noted. A 2xx carries the response; the app maps
-other codes with `ServerClient.classify()`:
+Los cuerpos son JSON salvo que se indique. Un 2xx trae la respuesta; la app
+mapea los demás códigos con `ServerClient.classify()`:
 
-| code | meaning for the user |
+| código | qué significa para el usuario |
 |---|---|
-| 0 | never reached the core (it is down or booting) |
-| 401 / 403 | token rejected — re-pair, don't retry |
-| 429 | throttled (daily caps, code attempts) |
-| 503 | feature intentionally off (e.g. phone verification not deployed) |
-| other 5xx | the core's problem, not the user's |
-| other 4xx | bad input (unreadable photo, wrong code) |
+| 0 | nunca llegó al núcleo (está caído o arrancando) |
+| 401 / 403 | token rechazado — re-emparejar, no reintentar |
+| 429 | limitado (topes diarios, intentos de código) |
+| 503 | función apagada a propósito (p. ej. verificación de teléfono no desplegada) |
+| otros 5xx | problema del núcleo, no del usuario |
+| otros 4xx | entrada inválida (foto ilegible, código incorrecto) |
 
-## Endpoints the app uses
+## Endpoints que usa la app
 
-### Account (Yaya ID) — no bearer
+### Cuenta (Yaya ID) — sin bearer
 
-| method + path | body | notes |
+| método + ruta | cuerpo | notas |
 |---|---|---|
-| `GET /api/account` | | who is signed in, plan, `shareTraining` |
-| `POST /api/account/otp/start` | `{email, phone, name?}` | sends a 6-digit code by WhatsApp and email |
-| `POST /api/account/otp/check` | `{email, phone, code, name?}` | creates the account on first sign-in; links this phone |
-| `POST /api/account/guest` | `{share}` | "Continuar sin cuenta" |
-| `POST /api/account/share` | `{share}` | opt in/out of sharing redacted turns |
+| `GET /api/account` | | quién tiene sesión, plan, `shareTraining` |
+| `POST /api/account/otp/start` | `{email, phone, name?}` | envía un código de 6 dígitos por WhatsApp y correo |
+| `POST /api/account/otp/check` | `{email, phone, code, name?}` | crea la cuenta en el primer inicio; vincula este teléfono |
+| `POST /api/account/guest` | `{share}` | «Continuar sin cuenta» |
+| `POST /api/account/share` | `{share}` | opt-in/out de compartir turnos redactados |
 | `POST /api/account/logout` | `{}` | |
-| `POST /api/account/plan/request` | `{plan, months}` | opens a purchase; returns amount + reference |
+| `POST /api/account/plan/request` | `{plan, months}` | abre una compra; devuelve monto + referencia |
 | `GET /api/account/plan/request/{ref}` | | `pending` / `paid` |
-| `GET /api/plan` | | current plan and usage (bearer when a business exists) |
-| `POST /api/backup` | `{}` | encrypted snapshot to the account (paid plans) |
-| `POST /api/restore` | `{force}` | bring the account's latest snapshot onto this phone (slow) |
+| `GET /api/plan` | | plan actual y uso (bearer cuando existe un negocio) |
+| `POST /api/backup` | `{}` | snapshot cifrado a la cuenta (planes pagados) |
+| `POST /api/restore` | `{force}` | trae el último snapshot de la cuenta a este teléfono (lento) |
 
-### Registration — no bearer
+### Registro — sin bearer
 
-| method + path | body | notes |
+| método + ruta | cuerpo | notas |
 |---|---|---|
-| `POST /api/verify/start` | `{phone}` | 200 code sent · 503 verification off (skip the step) · 429 · 400 |
+| `POST /api/verify/start` | `{phone}` | 200 código enviado · 503 verificación apagada (saltar el paso) · 429 · 400 |
 | `POST /api/verify/check` | `{phone, code}` | → `{verificationToken}` |
-| `POST /api/onboard_business` | `{businessName, industry, ownerPhone, country, verificationToken?}` | creates the business, returns the **device token** and locale |
+| `POST /api/onboard_business` | `{businessName, industry, ownerPhone, country, verificationToken?}` | crea el negocio, devuelve el **device token** y el locale |
 
-### The business — bearer
+### El negocio — bearer
 
-| method + path | body | notes |
+| método + ruta | cuerpo | notas |
 |---|---|---|
-| `POST /api/execute_action` | `{phoneNumber, message}` | **a customer message in, the agent's reply out**: `{agentResponse, action?, actionData?, attention?[]}`. `action == "limit_reached"` = daily cap; `attention[]` = `{question, urgent, gapId}` for the owner |
-| `POST /api/onboarding_message` | `{message}` | one turn of the setup interview / manager chat |
-| `POST /api/voice_message` | raw `audio/m4a` bytes (`application/octet-stream`) | → transcript + reply + `wav` |
-| `POST /api/catalog_photo` | raw JPEG bytes | → items and prices; 422 unreadable, 503 off |
-| `GET /api/dashboard` | | today/week/month, agenda, conversations, open questions |
-| `POST /api/answer_gap` | `{gapId, answer}` | the owner answers a question the agent could not; mounts immediately |
-| `POST /api/payment_event` | the raw notification envelope (`PaymentDetector`) | → `{handled, matchedAppointment?, matchedOrder?, mute?, untilMs?}` |
-| `GET /api/payment_sources` | | packages the network knows as money apps for this country |
-| `GET /api/conversations` · `GET /api/conversations/{peer}` | | CRM views |
+| `POST /api/execute_action` | `{phoneNumber, message}` | **entra un mensaje de cliente, sale la respuesta del agente**: `{agentResponse, action?, actionData?, attention?[]}`. `action == "limit_reached"` = tope diario; `attention[]` = `{question, urgent, gapId}` para el dueño |
+| `POST /api/onboarding_message` | `{message}` | un turno de la entrevista de configuración / chat del gerente |
+| `POST /api/voice_message` | bytes crudos `audio/m4a` (`application/octet-stream`) | → transcripción + respuesta + `wav` |
+| `POST /api/catalog_photo` | bytes crudos JPEG | → ítems y precios; 422 ilegible, 503 apagado |
+| `GET /api/dashboard` | | hoy/semana/mes, agenda, conversaciones, preguntas abiertas |
+| `POST /api/answer_gap` | `{gapId, answer}` | el dueño responde una pregunta que el agente no pudo; se monta al instante |
+| `POST /api/payment_event` | el sobre crudo de la notificación (`PaymentDetector`) | → `{handled, matchedAppointment?, matchedOrder?, mute?, untilMs?}` |
+| `GET /api/payment_sources` | | paquetes que la red conoce como apps de dinero en este país |
+| `GET /api/conversations` · `GET /api/conversations/{peer}` | | vistas del CRM |
 | `GET /api/contacts?q=` · `POST /api/contacts/{id}` | patch | |
-| `GET /api/payout` · `POST /api/payout` | `{holder, cashOnly, destinations[]}` | Cobros — where customers send money |
-| `GET /api/rails?country=` | | wallet names people use in this country (no bearer) |
-| `POST /api/location` | `{…}` | coarse location → the business's public location |
+| `GET /api/payout` · `POST /api/payout` | `{holder, cashOnly, destinations[]}` | Cobros — a dónde envían el dinero los clientes |
+| `GET /api/rails?country=` | | nombres de billeteras que la gente usa en este país (sin bearer) |
+| `POST /api/location` | `{…}` | ubicación aproximada → la ubicación pública del negocio |
 
-### The owner's app (D15) — bearer
+### La app del dueño (D15) — bearer
 
-| method + path | body | notes |
+| método + ruta | cuerpo | notas |
 |---|---|---|
-| `GET /api/ui` | | `{ui, uiDesigned, businessKind}` — the UI spec the core composed: the vertical's template ⊕ what the agent designed with `design_ui`. Also inside `/api/dashboard` as `ui`, with `businessHours`, `slotDuration`, `products`, `media` for the blocks |
-| `POST /api/orders/{id}` | `{status}` | `done` (swipe), `undo`, `cancelled`, `paid` (the owner took cash) |
+| `GET /api/ui` | | `{ui, uiDesigned, businessKind}` — el spec de UI que el núcleo compuso: la plantilla de la vertical ⊕ lo que el agente diseñó con `design_ui`. También dentro de `/api/dashboard` como `ui`, con `businessHours`, `slotDuration`, `products`, `media` para los bloques |
+| `POST /api/orders/{id}` | `{status}` | `done` (swipe), `undo`, `cancelled`, `paid` (el dueño cobró en efectivo) |
 | `POST /api/appointments/{id}` | `{status}` | `done`, `undo`, `cancelled`, `no_show`, `paid` |
-| `GET /api/media` | | the catalog's photos without bytes: `{media: [{id, product, caption, mime, size, createdAt}]}` |
-| `POST /api/media?product=&caption=` | raw JPEG bytes (`image/jpeg`, ≤ 6 MB) | → `{id}` |
-| `GET /api/media/{id}` | | the bytes |
-| `POST /api/media/{id}` · `POST /api/media/{id}/delete` | `{product?, caption?}` | rename / remove |
-| `POST /api/media/share` | `{ids?[], products?[], note?}` | mints a **private link** through the gateway (`POST /v1/drop`, 5 minutes): `{url, expiresAt, photos}`; 404 nothing to share, 503 gateway unreachable |
+| `GET /api/media` | | las fotos del catálogo sin bytes: `{media: [{id, product, caption, mime, size, createdAt}]}` |
+| `POST /api/media?product=&caption=` | bytes crudos JPEG (`image/jpeg`, ≤ 6 MB) | → `{id}` |
+| `GET /api/media/{id}` | | los bytes |
+| `POST /api/media/{id}` · `POST /api/media/{id}/delete` | `{product?, caption?}` | renombrar / eliminar |
+| `POST /api/media/share` | `{ids?[], products?[], note?}` | acuña un **enlace privado** vía la pasarela (`POST /v1/drop`, 5 minutos): `{url, expiresAt, photos}`; 404 nada que compartir, 503 pasarela inalcanzable |
 
-The UI spec: `{version, home, tabs: [{id, label, icon, intro?, blocks: [{type, opts?}]}]}`.
-Block types are the app's catalog (`Blocks.kt` ↔ `ui.rs::BLOCKS`): `earnings`,
-`attention`, `orders_board`, `agenda_day`, `agenda_week`, `catalog`,
-`conversations`, `contacts`. Icons: `home orders agenda catalog chats people money star`.
+El spec de UI: `{version, home, tabs: [{id, label, icon, intro?, blocks: [{type, opts?}]}]}`.
+Los tipos de bloque son el catálogo de la app (`Blocks.kt` ↔ `ui.rs::BLOCKS`):
+`earnings`, `attention`, `orders_board`, `agenda_day`, `agenda_week`,
+`catalog`, `conversations`, `contacts`. Iconos: `home orders agenda catalog
+chats people money star`.
 
-### Audit chain — bearer
+### Cadena de auditoría — bearer
 
-| method + path | notes |
+| método + ruta | notas |
 |---|---|
-| `GET /api/audit?before=&limit=` | entries newest first: `{seq, ts, kind, actor, subject, payload, hash, anchored}` |
-| `GET /api/audit/verify` | walks the whole chain: recomputed hashes, links, Ed25519 signatures against this installation's identity, monotonic time, the last gateway anchor → `{ok, entries, head, problems[], anchor, unanchoredEntries}` |
-| `POST /api/audit/anchor` | asks the gateway to countersign the head now (`POST /v1/audit/anchor`); also happens on its own every 25 entries / 15 min |
+| `GET /api/audit?before=&limit=` | entradas de la más nueva a la más vieja: `{seq, ts, kind, actor, subject, payload, hash, anchored}` |
+| `GET /api/audit/verify` | recorre la cadena completa: hashes recalculados, enlaces, firmas Ed25519 contra la identidad de esta instalación, tiempo monotónico, la última ancla de la pasarela → `{ok, entries, head, problems[], anchor, unanchoredEntries}` |
+| `POST /api/audit/anchor` | pide a la pasarela contrafirmar la cabeza ahora (`POST /v1/audit/anchor`); también ocurre solo cada 25 entradas / 15 min |
 
-Kinds: `customer_turn`, `owner_turn`, `tool_call`, `owner_cmd` (web console over the relay), `payment`, `status` (swipes), `share`, `restore`, `boot`. The table is append-only by SQLite trigger, never exported in backups, and every row is `hash = sha256("agento-audit-v1\n{seq}\n{ts}\n{kind}\n{actor}\n{subject}\n{payload}\n{prev_hash}")`, `sig = agent.sign(hash)`.
+Tipos: `customer_turn`, `owner_turn`, `tool_call`, `owner_cmd` (consola web
+por el relay), `payment`, `status` (swipes), `share`, `restore`, `boot`. La
+tabla es append-only por trigger de SQLite, nunca se exporta en respaldos, y
+cada fila es
+`hash = sha256("agento-audit-v1\n{seq}\n{ts}\n{kind}\n{actor}\n{subject}\n{payload}\n{prev_hash}")`,
+`sig = agent.sign(hash)`.
 
-### Identity (used by `DeviceAttestation`) — no bearer
+### Identidad (la usa `DeviceAttestation`) — sin bearer
 
-| method + path | notes |
+| método + ruta | notas |
 |---|---|
-| `GET /api/agent` | the agent's public card, incl. `agent:<hex>` id |
-| `POST /api/agent/device` | `{chain[], level}` — Android key-attestation chain for the card |
+| `GET /api/agent` | la tarjeta pública del agente, incl. el id `agent:<hex>` |
+| `POST /api/agent/device` | `{chain[], level}` — cadena de atestación de clave de Android para la tarjeta |
 
-Peers are keyed as `"<package>:<sender name>"` (`AgenteNotificationListener.agentReply`),
-which is why the CRM shows a WhatsApp contact and an Instagram contact with
-the same name as two customers.
+Los peers se identifican como `"<paquete>:<nombre del remitente>"`
+(`AgenteNotificationListener.agentReply`), por eso el CRM muestra a un
+contacto de WhatsApp y a uno de Instagram con el mismo nombre como dos
+clientes.
 
-## Timeouts and retries
+## Timeouts y reintentos
 
-Conversation endpoints have a 180 s read timeout (an LLM tool loop can be
-slow); dashboard-type GETs 15–30 s. Only idempotent GETs auto-retry
-(`Retry.IDEMPOTENT`: once, after 500 ms, on code 0 or 5xx).
-`verify/*` retry only on code 0 (`NETWORK_FAILURE_ONLY`) — a wrong code must
-not be re-tested. Everything with a side effect is one shot.
+Los endpoints de conversación tienen un timeout de lectura de 180 s (un bucle
+de herramientas del LLM puede ser lento); los GET tipo panel, 15–30 s. Solo
+los GET idempotentes se auto-reintentan (`Retry.IDEMPOTENT`: una vez, tras
+500 ms, en código 0 o 5xx). `verify/*` reintenta solo en código 0
+(`NETWORK_FAILURE_ONLY`) — un código incorrecto no debe re-probarse. Todo lo
+que tiene efecto secundario es un solo disparo.
 
-## JNI surface (`AgentoCore.kt`)
+## Superficie JNI (`AgentoCore.kt`)
 
 ```kotlin
-external fun start(configJson: String): Int   // boots the core, returns the loopback port (≤0 = failed)
+external fun start(configJson: String): Int   // arranca el núcleo, devuelve el puerto loopback (≤0 = falló)
 external fun stop()
-external fun port(): Int                       // 0 when not running
-external fun version(): String                 // e.g. "0.2.0"
+external fun port(): Int                       // 0 cuando no está corriendo
+external fun version(): String                 // p. ej. "0.2.0"
 ```
 
-`configJson` keys: `DATABASE_URL` (sqlite path), `SCHEMAS_DIR`, `BIND_ADDR`
-(`127.0.0.1:0`), `APP_KEY`, `ADMIN_KEY`, `IDENTITY_KEK_HEX` (32 bytes hex,
-Keystore-wrapped at rest), `DEVICE_LABEL`, and optionally `LLM_BASE_URL`,
-`LLM_API_KEY`, `LLM_MODEL` for a custom model endpoint.
+Claves de `configJson`: `DATABASE_URL` (ruta sqlite), `SCHEMAS_DIR`,
+`BIND_ADDR` (`127.0.0.1:0`), `APP_KEY`, `ADMIN_KEY`, `IDENTITY_KEK_HEX`
+(32 bytes hex, envuelto por el Keystore en reposo), `DEVICE_LABEL`, y
+opcionalmente `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_MODEL` para un endpoint de
+modelo propio.

@@ -1,15 +1,15 @@
-# Releasing
+# Publicar una versión
 
-## Versions
+## Versiones
 
-`app/build.gradle.kts` → `versionCode` (integer, always goes up) and
-`versionName` (`major.minor.patch`). Installed phones decide whether to
-update by `versionCode` alone, so every published build needs a new one.
+`app/build.gradle.kts` → `versionCode` (entero, siempre sube) y `versionName`
+(`major.minor.patch`). Los teléfonos instalados deciden si actualizar solo
+por `versionCode`, así que cada build publicado necesita uno nuevo.
 
-## Signed build
+## Build firmado
 
-The upload keystore never enters the repo. Export its location and
-passwords (a `keystore.env` you `source` is the usual way):
+El keystore de subida nunca entra al repo. Exporta su ubicación y contraseñas
+(un `keystore.env` que haces `source` es la vía usual):
 
 ```bash
 export AGENTO_KEYSTORE=~/.agento/upload-keystore.jks
@@ -17,52 +17,52 @@ export AGENTO_KEYSTORE_PASS=…
 export AGENTO_KEY_ALIAS=agento-upload
 export AGENTO_KEY_PASS=…
 ./gradlew assembleDirectRelease
-# → app/build/outputs/apk/direct/release/app-direct-release.apk  (R8-minified, shrunk, signed)
+# → app/build/outputs/apk/direct/release/app-direct-release.apk  (minificado con R8, firmado)
 ./gradlew bundlePlayRelease
 # → app/build/outputs/bundle/playRelease/app-play-release.aab      (Google Play, docs/PLAY.md)
 ```
 
-`direct` and `play` are the two channels (flavors) of the one app; see
-`app/build.gradle.kts`. Without these variables the release tasks still
-compile but produce unsigned artifacts — fine for CI, not installable next
-to a signed one.
+`direct` y `play` son los dos canales (flavors) de la misma app; ver
+`app/build.gradle.kts`. Sin esas variables las tareas de release igual
+compilan pero producen artefactos sin firmar — bien para CI, no instalables
+junto a uno firmado.
 
-Check the signature before publishing (the gateway pins this digest as
-`EXPECTED_SIGNERS`, and `scripts/verify-apk.sh` checks it on download):
+Verifica la firma antes de publicar (la pasarela fija este digest como
+`EXPECTED_SIGNERS`, y `scripts/verify-apk.sh` lo comprueba al descargar):
 
 ```bash
 $ANDROID_HOME/build-tools/<ver>/apksigner verify --print-certs app/build/outputs/apk/direct/release/app-direct-release.apk
 # Signer #1 certificate SHA-256 digest: 0204f2e455438244720aa79c9421e70927d957259cc77ce95b69148a44a35df2
 ```
 
-## The update channel
+## El canal de actualización
 
-The app is distributed from `https://agento.ceo/dl/`, not from Play. Three
-files there drive updates (`UpdateCheck.kt`):
+La app se distribuye desde `https://agento.ceo/dl/`, no desde Play. Tres
+archivos ahí mueven las actualizaciones (`UpdateCheck.kt`):
 
-| file | what |
+| archivo | qué |
 |---|---|
-| `agento-<version>.apk` | immutable, one per version |
-| `agento-beta.apk` | always the latest (the landing page links it) |
+| `agento-<versión>.apk` | inmutable, uno por versión |
+| `agento-beta.apk` | siempre el último (la landing lo enlaza) |
 | `latest.json` | `{version, versionCode, minVersionCode, file, url, size_mb, sha256, date, notes}` |
 
-Installed apps fetch `latest.json` when the dashboard opens and when the
-listener reconnects. `versionCode` newer than installed → a banner and a
-notification; installed below `minVersionCode` → the banner blocks until
-the owner updates (use this when the core's API changes). The APK is
-downloaded with `DownloadManager`, its `sha256` verified, then handed to the
-package installer.
+Las apps instaladas consultan `latest.json` al abrir el panel y cuando el
+listener se reconecta. `versionCode` más nuevo que el instalado → banner y
+notificación; instalado por debajo de `minVersionCode` → el banner bloquea
+hasta que el dueño actualice (úsalo cuando cambie la API del núcleo). El APK
+se descarga con `DownloadManager`, se verifica su `sha256`, y se entrega al
+instalador de paquetes.
 
-`scripts/publish-apk.sh` uploads the APK and writes `latest.json`:
+`scripts/publish-apk.sh` sube el APK y escribe `latest.json`:
 
 ```bash
-RELEASE_NOTES="Cobros: nuevas billeteras" scripts/publish-apk.sh            # keeps minVersionCode
-MIN_VERSION_CODE=51 RELEASE_NOTES="…" scripts/publish-apk.sh             # forces old builds to update
-NODE=… WEBROOT=… scripts/publish-apk.sh path/to/app-release.apk           # another host / path
+RELEASE_NOTES="Cobros: nuevas billeteras" scripts/publish-apk.sh            # mantiene minVersionCode
+MIN_VERSION_CODE=51 RELEASE_NOTES="…" scripts/publish-apk.sh             # obliga a actualizar a los builds viejos
+NODE=… WEBROOT=… scripts/publish-apk.sh path/al/app-release.apk           # otro host / ruta
 ```
 
-Then verify the download the way a careful user would (hash, zip, signer,
-badging) and install it on a phone:
+Después verifica la descarga como lo haría una persona cuidadosa (hash, zip,
+firmante, badging) e instálala en un teléfono:
 
 ```bash
 scripts/verify-apk.sh https://agento.ceo/dl/latest.json --install
@@ -70,19 +70,20 @@ scripts/verify-apk.sh https://agento.ceo/dl/latest.json --install
 
 ## Checklist
 
-- [ ] `versionCode` bumped; `versionName` matches what you will announce
-- [ ] `./gradlew assembleDebug lintDebug` green (CI does this on every push)
-- [ ] release APK signed by the upload key (digest above)
-- [ ] installed on a real phone: sign in, register, the interview, one
-      WhatsApp message answered, one Yape notification recorded
-- [ ] `latest.json` published; `scripts/verify-apk.sh` passes
-- [ ] if the core's API changed: `minVersionCode` raised
+- [ ] `versionCode` subido; `versionName` coincide con lo que vas a anunciar
+- [ ] `./gradlew assembleDebug lintDebug` en verde (el CI lo hace en cada push)
+- [ ] APK de release firmado por la clave de subida (digest de arriba)
+- [ ] instalado en un teléfono real: iniciar sesión, registrar, la
+      entrevista, un mensaje de WhatsApp respondido, una notificación de
+      Yape registrada
+- [ ] `latest.json` publicado; `scripts/verify-apk.sh` pasa
+- [ ] si cambió la API del núcleo: `minVersionCode` subido
 
-## Refreshing the agent core
+## Refrescar el núcleo del agente
 
-`app/src/main/jniLibs/<abi>/libagento_core.so` is a prebuilt of the core
-crate (private). To ship a new core: build it for the three ABIs, replace
-the three files, update `app/src/main/jniLibs/CORE.md` (version, source
-commit, sha256 of each file), and if `assets/schemas/` changed in the core,
-copy those too. `AgentoCore.installSchemas` re-copies schemas whenever
-`versionCode` changes, so bump the version.
+`app/src/main/jniLibs/<abi>/libagento_core.so` es un precompilado del crate
+del núcleo (privado). Para publicar un núcleo nuevo: compílalo para las tres
+ABIs, reemplaza los tres archivos, actualiza `app/src/main/jniLibs/CORE.md`
+(versión, commit de origen, sha256 de cada archivo), y si `assets/schemas/`
+cambió en el núcleo, copia eso también. `AgentoCore.installSchemas` re-copia
+los esquemas cada vez que cambia el `versionCode`, así que sube la versión.

@@ -1,56 +1,61 @@
-# Contributing
+# Contribuir
 
-## Build
+## Compilar
 
-`./gradlew assembleDirectDebug` — that is all (`assemblePlayDebug` for the Play channel). JDK 17+, Android SDK 36 (Android
-Studio installs it). The agent core is prebuilt for arm64, armv7 and x86_64,
-so the emulator works.
+`./gradlew assembleDirectDebug` — eso es todo (`assemblePlayDebug` para el
+canal Play). JDK 17+, Android SDK 36 (Android Studio lo instala). El núcleo
+del agente viene precompilado para arm64, armv7 y x86_64, así que el emulador
+funciona.
 
-CI assembles both channels and runs `lintDirectDebug` on every push and pull request.
+El CI compila ambos canales y corre `lintDirectDebug` en cada push y pull
+request.
 
-## License
+## Licencia
 
-By contributing you agree your changes are released under the
-[AGPL-3.0](LICENSE), like the rest of the project.
+Al contribuir aceptas que tus cambios se publican bajo la
+[AGPL-3.0](LICENSE), como el resto del proyecto.
 
-## Ground rules
+## Reglas de la casa
 
-- **Read `docs/DESIGN.md` before touching a layout.** Tokens only: no
-  hard-coded colors, sizes or `Widget.Material3.*` styles in layouts.
-- **Strings**: Spanish in `res/values/strings_<area>.xml`, English in
-  `res/values-en/strings_<area>.xml`. Every user-facing string exists in
-  both. Spanish is informal Peruvian ("tú", "citas", "cobros").
-- **Network**: only through `ServerClient`, on the executor its
-  comment prescribes. Never on the main thread.
-- **No new Gradle dependencies** without a reason in the PR. The app is
-  small on purpose (budget phones, 4 GB of RAM, spotty data).
-- **The listener must never crash.** Everything in
-  `AgenteNotificationListener.process` is per-notification `try/catch`;
-  keep it that way — a crash there costs the business every message after it.
-- Keep the file map in `README.md` true when you add a screen or a class.
+- **Lee `docs/DESIGN.md` antes de tocar un layout.** Solo tokens: nada de
+  colores o tamaños en duro, ni estilos `Widget.Material3.*` en los layouts.
+- **Strings**: español en `res/values/strings_<area>.xml`, inglés en
+  `res/values-en/strings_<area>.xml`. Todo texto de usuario existe en ambos.
+  El español es peruano informal («tú», «citas», «cobros»).
+- **Red**: solo a través de `ServerClient`, en el executor que su comentario
+  prescribe. Nunca en el hilo principal.
+- **Sin dependencias Gradle nuevas** sin una razón en el PR. La app es
+  pequeña a propósito (teléfonos económicos, 4 GB de RAM, datos
+  intermitentes).
+- **El listener no puede crashear jamás.** Todo en
+  `AgenteNotificationListener.process` va en `try/catch` por notificación;
+  mantenlo así — un crash ahí le cuesta al negocio cada mensaje que venga
+  después.
+- Mantén el mapa de archivos del `README.md` al día cuando agregues una
+  pantalla o una clase.
 
-## Debugging
+## Depurar
 
 ```bash
 adb logcat -s AgentoCore:V AgenteListener:V AgenteServer:V AgenteSecureStore:V agente.update:V UnknownAppObserver:V DeviceAttestation:V
 ```
 
-- The core's port changes on every boot; `AgentoCore.baseUrl()` is the
-  truth. To poke it from your machine: `adb shell` → `curl` is not on
-  most phones; use `adb forward tcp:8127 tcp:<port>` and call it from the
-  host with the `X-App-Key` you read from the logs (debug builds only).
-- **Settings → long-press the "Motor de IA" header** (debug builds) to
-  point the core at your own OpenAI-compatible endpoint, e.g. a local model
-  over `adb reverse`.
-- The activity feed (Settings → Registro de actividad) shows every
-  notification the listener handled and why it did or did not reply.
-- Emulator: no WhatsApp, but any app that posts a `MessagingStyle`
-  notification with a reply action will be answered; the manager chat on
-  the dashboard talks to the agent directly.
+- El puerto del núcleo cambia en cada arranque; `AgentoCore.baseUrl()` es la
+  verdad. Para tocarlo desde tu máquina: `curl` no existe en la mayoría de
+  teléfonos; usa `adb forward tcp:8127 tcp:<puerto>` y llama desde el host
+  con el `X-App-Key` que lees de los logs (solo builds de debug).
+- **Ajustes → mantén presionado el encabezado «Motor de IA»** (builds de
+  debug) para apuntar el núcleo a tu propio endpoint compatible con OpenAI,
+  p. ej. un modelo local vía `adb reverse`.
+- El registro de actividad (Ajustes → Registro de actividad) muestra cada
+  notificación que el listener manejó y por qué respondió o no.
+- Emulador: no hay WhatsApp, pero cualquier app que publique una notificación
+  `MessagingStyle` con acción de respuesta será contestada; el chat del
+  gerente en el panel habla con el agente directamente.
 
-## What lives elsewhere
+## Lo que vive en otra parte
 
-The agent core (Rust), the gateway and the web console are separate,
-private codebases. Changes that need a new endpoint or a new tool in the
-core: open an issue describing the behaviour you need from
-`docs/CORE-API.md`'s point of view.
+El núcleo del agente (Rust), la pasarela y la consola web son bases de código
+separadas y privadas. Para cambios que necesiten un endpoint o una
+herramienta nueva en el núcleo: abre un issue describiendo el comportamiento
+que necesitas desde el punto de vista de `docs/CORE-API.md`.

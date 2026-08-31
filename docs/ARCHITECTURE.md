@@ -1,233 +1,249 @@
-# Architecture
+# Arquitectura
 
-## One idea
+## Una sola idea
 
-The business phone is the server. Everything the agent knows — conversations,
-appointments, orders, payments, the learned configuration of the business,
-the agent's own cryptographic identity — lives in one SQLite file in the
-app's private storage. The only things that leave the phone are the
-language-model calls and the account plumbing. There is no "backend that
-holds the business's data"; a breach of our servers is not a breach of the
-business.
+El teléfono del negocio es el servidor. Todo lo que el agente sabe —
+conversaciones, citas, pedidos, pagos, la configuración aprendida del
+negocio, la identidad criptográfica del propio agente — vive en un archivo
+SQLite en el almacenamiento privado de la app. Lo único que sale del teléfono
+son las llamadas al modelo de lenguaje y la fontanería de la cuenta. No hay
+un «backend que guarda los datos del negocio»; una brecha en nuestros
+servidores no es una brecha del negocio.
 
-## Three parts
+## Tres partes
 
 ```
-┌────────────────────────── the phone ───────────────────────────┐
+┌────────────────────────── el teléfono ─────────────────────────┐
 │                                                                │
-│  Kotlin shell (this repo)          agent core (libagento_core) │
+│  caparazón Kotlin (este repo)      núcleo (libagento_core)     │
 │  ───────────────────────           ─────────────────────────── │
-│  NotificationListenerService  ──►  HTTP 127.0.0.1:<port>       │
-│  screens, settings, alerts    ◄──  JSON replies                │
+│  NotificationListenerService  ──►  HTTP 127.0.0.1:<puerto>     │
+│  pantallas, ajustes, alertas  ◄──  respuestas JSON             │
 │  SharedPreferences            │    SQLite  filesDir/agento.db  │
-│  Android Keystore             │    schemas filesDir/schemas/   │
-│                               │    Ed25519 identity (sealed)   │
+│  Android Keystore             │    esquemas filesDir/schemas/  │
+│                               │    identidad Ed25519 (sellada) │
 └───────────────────────────────┼────────────────────────────────┘
-                                │ HTTPS, requests signed by the identity
+                                │ HTTPS, peticiones firmadas por la identidad
                        ┌────────▼────────┐
-                       │  yaya.tech      │  metered LLM / speech / vision proxy
-                       │  gateway        │  Yaya ID accounts, plans, backups
-                       └─────────────────┘  a relay that cannot read the mail
+                       │  yaya.tech      │  proxy medido de LLM / voz / visión
+                       │  pasarela       │  cuentas Yaya ID, planes, respaldos
+                       └─────────────────┘  un relay que no puede leer el correo
 ```
 
-**Kotlin shell** — everything Android: the notification listener, the
-screens, preferences, the update channel. It has no business logic of its
-own; when in doubt it asks the core.
+**Caparazón Kotlin** — todo lo Android: el listener de notificaciones, las
+pantallas, las preferencias, el canal de actualización. No tiene lógica de
+negocio propia; ante la duda, le pregunta al núcleo.
 
-**Agent core** — a Rust library loaded with `System.loadLibrary("agento_core")`
-(`AgentoCore.kt`). `start(configJson)` boots an HTTP server on a random
-loopback port and returns the port; the Kotlin side keeps talking plain
-HTTP to it. The core runs the agent loop (prompt, tools, memory), keeps the
-database, signs outbound requests, and talks to the gateway.
+**Núcleo del agente** — una biblioteca Rust cargada con
+`System.loadLibrary("agento_core")` (`AgentoCore.kt`). `start(configJson)`
+arranca un servidor HTTP en un puerto loopback aleatorio y devuelve el
+puerto; el lado Kotlin le sigue hablando HTTP plano. El núcleo ejecuta el
+bucle del agente (prompt, herramientas, memoria), mantiene la base de datos,
+firma las peticiones salientes y habla con la pasarela.
 
-**Gateway** — `https://agento.ceo` / `llm.yaya.tech`. From the app's point
-of view it is (a) where the core sends LLM calls, (b) where the Yaya account
-lives, (c) where `/dl/latest.json` is published. The app itself only ever
-calls the core; the core calls the gateway.
+**Pasarela** — `https://agento.ceo` / `llm.yaya.tech`. Desde el punto de
+vista de la app es (a) a dónde el núcleo manda las llamadas de LLM, (b) donde
+vive la cuenta Yaya, (c) donde se publica `/dl/latest.json`. La app solo
+llama al núcleo; el núcleo llama a la pasarela.
 
-## Boot
+## Arranque
 
-1. `AgenteApp.onCreate` → `AgentoCore.ensureStarted()` on a background thread.
-2. `ensureStarted` copies `assets/schemas/` into `filesDir/schemas/` once per
-   `versionCode`, builds the config (database path, schemas dir, two
-   per-install random secrets from `SecureStore`, optional custom LLM
-   endpoint) and calls the JNI `start`.
-3. The core returns its port. `AgentoCore.baseUrl()` is
-   `http://127.0.0.1:<port>` from then on; every `ServerClient` call goes
-   there with `X-App-Key: <per-install secret>`.
-4. `DeviceAttestation.ensure()` runs once per agent id: a Keystore-attested
-   P-256 key whose certificate chain the core attaches to the agent's public
-   card (best effort; most phones say "TEE", some say nothing).
+1. `AgenteApp.onCreate` → `AgentoCore.ensureStarted()` en un hilo de fondo.
+2. `ensureStarted` copia `assets/schemas/` a `filesDir/schemas/` una vez por
+   `versionCode`, construye la config (ruta de la base, directorio de
+   esquemas, dos secretos aleatorios por instalación desde `SecureStore`,
+   endpoint LLM propio opcional) y llama al `start` de JNI.
+3. El núcleo devuelve su puerto. `AgentoCore.baseUrl()` es
+   `http://127.0.0.1:<puerto>` desde entonces; cada llamada de `ServerClient`
+   va ahí con `X-App-Key: <secreto por instalación>`.
+4. `DeviceAttestation.ensure()` corre una vez por id de agente: una clave
+   P-256 atestada por el Keystore cuya cadena de certificados el núcleo
+   adjunta a la tarjeta pública del agente (mejor esfuerzo; la mayoría de
+   teléfonos dicen «TEE», algunos no dicen nada).
 
-The listener service (`onListenerConnected`) also calls `ensureStarted`, so
-the core is up even when the app UI was never opened after a reboot.
+El servicio listener (`onListenerConnected`) también llama a
+`ensureStarted`, así que el núcleo está arriba incluso cuando la UI de la
+app nunca se abrió después de un reinicio.
 
-## A customer message, end to end
+## Un mensaje de cliente, de punta a punta
 
 `AgenteNotificationListener.process()`:
 
-1. Master switch off (`Prefs.isEnabled`) → ignore everything.
-2. Is the package a known chat app (`SupportedApps`) or one this phone has
-   learned (`ProfileStore`)? If neither: hand it to `UnknownAppObserver`
-   (might be a chat app we can learn) and then to `PaymentDetector` (might
-   be money). Done.
-3. Skip group summaries and ongoing notifications. Parse the message —
-   `MessagingStyle` first (sender, text, group flag, "from self"), plain
-   title/text as a fallback.
-4. Drop our own echoed messages, group chats unless enabled, and reposts of
-   a notification already handled (10-minute identity window).
-5. Find the inline-reply action (`RemoteInput`). No reply action → log it,
-   done.
-6. **Agent mode** (a business is registered): `POST /api/execute_action`
-   on the single-threaded `ServerClient.EXECUTOR`, so replies to one
-   conversation stay in order. The core answers with `agentResponse` plus
-   an optional `action` and `attention[]` (questions it could not answer,
-   or a customer asking for a human → `OwnerAlerts`). The reply is sent
-   through the notification's own `PendingIntent`.
-   **Canned mode** (no business yet): send the fixed reply text with a
-   per-conversation cooldown.
-7. Every outcome lands in `ReplyLog` — the owner's proof of what was said
-   in their name.
+1. Interruptor maestro apagado (`Prefs.isEnabled`) → ignorar todo.
+2. ¿El paquete es una app de chat conocida (`SupportedApps`) o una que este
+   teléfono aprendió (`ProfileStore`)? Si ninguna: pasársela a
+   `UnknownAppObserver` (podría ser una app de chat aprendible) y luego a
+   `PaymentDetector` (podría ser dinero). Listo.
+3. Saltar resúmenes de grupo y notificaciones en curso. Parsear el mensaje —
+   `MessagingStyle` primero (remitente, texto, bandera de grupo, «de uno
+   mismo»), título/texto plano como fallback.
+4. Descartar nuestros propios mensajes en eco, chats de grupo salvo que estén
+   habilitados, y reenvíos de una notificación ya manejada (ventana de
+   identidad de 10 minutos).
+5. Encontrar la acción de respuesta inline (`RemoteInput`). ¿No hay acción de
+   respuesta? → registrarlo, listo.
+6. **Modo agente** (hay un negocio registrado): `POST /api/execute_action` en
+   el executor de un solo hilo (`ServerClient.EXECUTOR`), para que las
+   respuestas a una conversación mantengan el orden. El núcleo contesta con
+   `agentResponse` más un `action` opcional y `attention[]` (preguntas que no
+   pudo responder, o un cliente pidiendo un humano → `OwnerAlerts`). La
+   respuesta se envía por el `PendingIntent` de la propia notificación.
+   **Modo fijo** (aún no hay negocio): enviar el texto de respuesta fijo con
+   un cooldown por conversación.
+7. Cada desenlace queda en `ReplyLog` — la prueba del dueño de qué se dijo en
+   su nombre.
 
-If the core is unreachable the canned reply goes out, so the customer
-always hears something.
+Si el núcleo no responde, sale la respuesta fija — el cliente siempre escucha
+algo.
 
-## A payment
+## Un pago
 
-Wallets and banks are never listed in the app. `PaymentDetector` forwards
-the *raw* notification (title, text, channel, template, installer…) of any
-non-chat app to `POST /api/payment_event`; the core decides "money / not
-money", matches it to a pending booking or order, and can answer `mute` for
-a package that never carries money. Packages the network already knows as
-money apps in this country (`GET /api/payment_sources`) are never muted.
-Support for a new wallet is one phone seeing it first.
+Las billeteras y bancos nunca están listados en la app. `PaymentDetector`
+reenvía la notificación *cruda* (título, texto, canal, plantilla,
+instalador…) de cualquier app que no sea de chat a `POST /api/payment_event`;
+el núcleo decide «dinero / no dinero», lo cruza con una cita o pedido
+pendiente, y puede contestar `mute` para un paquete que nunca trae dinero.
+Los paquetes que la red ya conoce como apps de dinero en este país
+(`GET /api/payment_sources`) nunca se silencian. El soporte de una billetera
+nueva es un teléfono viéndola primero.
 
-## Learning a new chat app
+## Aprender una app de chat nueva
 
-Any notification with an inline reply is a conversation. For an unknown
-package, `UnknownAppObserver` keeps the *shape* of three distinct
-notifications (MessagingStyle or not, title+text or not, did the shared
-parser read it) — never the content. Three consistent, parseable shapes →
-a `NotificationProfile` is mounted in **shadow** mode: the listener reads
-that app and logs it but does not answer. After ten clean reads the owner
-is offered a switch in Settings; if reads start failing the profile pauses
-itself; two pauses and it is dropped for a week. All of this is data in
-`ProfileStore`; unmounting leaves nothing behind.
+Cualquier notificación con respuesta inline es una conversación. Para un
+paquete desconocido, `UnknownAppObserver` guarda la *forma* de tres
+notificaciones distintas (¿MessagingStyle o no?, ¿título+texto o no?, ¿el
+parser compartido la leyó?) — nunca el contenido. Tres formas consistentes y
+parseables → se monta un `NotificationProfile` en modo **sombra**: el
+listener lee esa app y lo registra pero no contesta. Tras diez lecturas
+limpias se le ofrece al dueño un interruptor en Ajustes; si las lecturas
+empiezan a fallar el perfil se pausa solo; dos pausas y se descarta por una
+semana. Todo esto es datos en `ProfileStore`; desmontarlo no deja nada
+atrás.
 
-## First run
+## Primer arranque
 
 ```
-WelcomeActivity (router, no UI)
-  no Yaya identity  ──► AccountActivity      name/email/phone → one-time code
-  no business       ──► RegistrationActivity business → owner phone → code → /api/onboard_business
-  no interview yet  ──► OnboardingActivity   voice/text interview; catalog photo; "¡Todo listo!"
-                                             gates on Notification access before it lets you leave
-  otherwise         ──► DashboardActivity
+WelcomeActivity (router, sin UI)
+  sin identidad Yaya  ──► AccountActivity      nombre/correo/teléfono → código de un uso
+  sin negocio         ──► RegistrationActivity negocio → teléfono del dueño → código → /api/onboard_business
+  sin entrevista aún  ──► OnboardingActivity   entrevista por voz/texto; foto del catálogo; «¡Todo listo!»
+                                               exige el Acceso a notificaciones antes de dejarte salir
+  si no               ──► DashboardActivity
 ```
 
-`Prefs.serverConfigured()` (a device token exists) is what "a business is
-registered" means everywhere in the app.
+`Prefs.serverConfigured()` (existe un device token) es lo que «hay un negocio
+registrado» significa en toda la app.
 
-## The owner's app is data (D15)
+## La app del dueño es datos (D15)
 
-`DashboardActivity` draws nothing of its own below the header. The core
-composes a **UI spec** for the business — the vertical bundle's `ui:`
-template (`assets/schemas/bundles/<vertical>/bundle.yml`) ⊕ the design the
-onboarding agent saved with its `design_ui` tool — and the app renders it:
-one bottom-bar tab per entry, each tab a column of blocks from the fixed
-**block catalog** in `Blocks.kt` (`earnings`, `attention`, `orders_board`,
-`agenda_day`, `agenda_week`, `catalog`, `conversations`, `contacts`). A
-restaurant opens on its pedidos board, a salon on today's citas, a Gamarra
-stall on its catalog; the owner can tell the agent "quiero ver la agenda
-primero" and the next refresh redraws. `Walkthrough.kt` shows the tabs once,
-in the agent's own words (`intro`). The spec is validated in the core
-(`ui.rs`): unknown blocks are dropped, blocks the business cannot use are
-dropped, at most four tabs, the template is the fallback — the app never
-sees a spec it cannot draw.
+`DashboardActivity` no dibuja nada propio debajo del encabezado. El núcleo
+compone un **spec de UI** para el negocio — la plantilla `ui:` del bundle de
+su vertical (`assets/schemas/bundles/<vertical>/bundle.yml`) ⊕ el diseño que
+el agente de onboarding guardó con su herramienta `design_ui` — y la app lo
+renderiza: una pestaña de la barra inferior por entrada, cada pestaña una
+columna de bloques del **catálogo de bloques** fijo en `Blocks.kt`
+(`earnings`, `attention`, `orders_board`, `agenda_day`, `agenda_week`,
+`catalog`, `conversations`, `contacts`). Un restaurante abre en su tablero de
+pedidos, un salón en las citas de hoy, un puesto de Gamarra en su catálogo;
+el dueño puede decirle al agente «quiero ver la agenda primero» y el próximo
+refresh redibuja. `Walkthrough.kt` muestra las pestañas una vez, con las
+palabras del propio agente (`intro`). El spec se valida en el núcleo
+(`ui.rs`): bloques desconocidos se descartan, bloques que el negocio no puede
+usar se descartan, máximo cuatro pestañas, la plantilla es el fallback — la
+app nunca ve un spec que no pueda dibujar.
 
-The vertical also ships a `skill.md`: how that kind of business runs and how
-to interview its owner (question order, how one answer steers the next). The
-core mounts it into the onboarding prompt and its customer section into the
-customer prompt.
+La vertical también trae un `skill.md`: cómo funciona ese tipo de negocio y
+cómo entrevistar a su dueño (orden de preguntas, cómo una respuesta guía la
+siguiente). El núcleo lo monta en el prompt de onboarding y su sección de
+clientes en el prompt de cliente.
 
-Photos live on the phone (`media` table); customers see them through a
-private link the gateway serves for five minutes (`privado.yaya.tech/…`).
+Las fotos viven en el teléfono (tabla `media`); los clientes las ven por un
+enlace privado que la pasarela sirve por cinco minutos
+(`privado.yaya.tech/…`).
 
-## The audit chain
+## La cadena de auditoría
 
-`audit_log` is the phone's own tamper-evident record of what the agent did:
-every customer and owner turn (customer words as digests, the agent's reply
-verbatim), every tool call, every command that came in over the owner relay
-from the web console, every payment read, every swipe, every private link,
-every restore and boot. Each row is hash-chained to the previous one and
-signed with the installation's Ed25519 identity; UPDATE and DELETE are
-refused by trigger; timestamps never go backwards; and every 25 entries or
-15 minutes the head is **anchored** — the gateway countersigns
-`(agent, seq, head, its own clock)` and both sides keep the anchor — so a
-row provably sits between two trusted instants no matter what the phone's
-clock says. Ajustes → Auditoría verifies the whole chain on the phone.
+`audit_log` es el registro a prueba de manipulación, del propio teléfono, de
+lo que el agente hizo: cada turno de cliente y de dueño (las palabras del
+cliente como digests, la respuesta del agente literal), cada llamada de
+herramienta, cada comando que entró por el relay del dueño desde la consola
+web, cada pago leído, cada swipe, cada enlace privado, cada restauración y
+arranque. Cada fila está encadenada por hash a la anterior y firmada con la
+identidad Ed25519 de la instalación; UPDATE y DELETE se rechazan por trigger;
+los timestamps nunca retroceden; y cada 25 entradas o 15 minutos la cabeza se
+**ancla** — la pasarela contrafirma `(agente, seq, head, su propio reloj)` y
+ambos lados guardan el ancla — de modo que una fila queda probadamente entre
+dos instantes confiables sin importar qué diga el reloj del teléfono.
+Ajustes → Auditoría verifica la cadena completa en el teléfono.
 
-## Your data, on your phone (D17)
+## Tus datos, en tu teléfono (D17)
 
-With the owner's consent (Ajustes → "Tus datos, en tu teléfono"), `OsSync.kt`
-mirrors the CRM into the OS after every dashboard refresh: customers with a
-phone number into Contacts (tagged with a custom MIME row holding the CRM id,
-so it never duplicates), upcoming appointments into a local "agento" calendar
-(keyed by `CUSTOM_APP_URI`, reminder an hour before, deleted on cancel). The
-same data leaves as files: `.vcf` / `.csv` from Clientes, `.ics` from the week
-view. One-way, idempotent, never sent anywhere.
+Con el consentimiento del dueño (Ajustes → «Tus datos, en tu teléfono»),
+`OsSync.kt` refleja el CRM en el SO después de cada refresh del panel: los
+clientes con número a Contactos (etiquetados con una fila MIME propia que
+lleva el id del CRM, así nunca duplica), las citas próximas a un calendario
+local «agento» (con clave `CUSTOM_APP_URI`, recordatorio una hora antes,
+borrado al cancelar). Los mismos datos salen como archivos: `.vcf` / `.csv`
+desde Clientes, `.ics` desde la vista semanal. Unidireccional, idempotente,
+nunca se envía a ningún lado.
 
-## Threads
+## Hilos
 
-`ServerClient` documents the contract; keep it:
+`ServerClient` documenta el contrato; respétalo:
 
-- `EXECUTOR` — one thread. Conversation turns (`execute_action`,
-  `onboarding_message`, `voice_message`, `catalog_photo`, registration).
-  Order matters; a turn can take up to three minutes.
-- `IO_EXECUTOR` — cached pool. Dashboard, payments, gap answers, account,
-  CRM. These must never queue behind a slow LLM turn: a Yape notification
-  waiting behind a chat turn looks like a missing payment.
-- Nothing in `ServerClient` may run on the main thread.
+- `EXECUTOR` — un hilo. Turnos de conversación (`execute_action`,
+  `onboarding_message`, `voice_message`, `catalog_photo`, registro). El orden
+  importa; un turno puede tomar hasta tres minutos.
+- `IO_EXECUTOR` — pool cacheado. Panel, pagos, respuestas a gaps, cuenta,
+  CRM. Esto nunca debe hacer cola detrás de un turno lento de LLM: una
+  notificación de Yape esperando detrás de un turno de chat parece un pago
+  perdido.
+- Nada de `ServerClient` puede correr en el hilo principal.
 
-Retries are opt-in per endpoint (`Retry.NEVER / IDEMPOTENT /
-NETWORK_FAILURE_ONLY`) because most endpoints have side effects.
+Los reintentos son opt-in por endpoint (`Retry.NEVER / IDEMPOTENT /
+NETWORK_FAILURE_ONLY`) porque la mayoría de endpoints tienen efectos
+secundarios.
 
-## Storage
+## Almacenamiento
 
-| where | what |
+| dónde | qué |
 |---|---|
-| `filesDir/agento.db` | the core's SQLite: conversations, bookings, orders, payments, contacts, the business's layered schema, the sealed agent identity, the account session |
-| `filesDir/schemas/` | copy of `assets/schemas` (core fields + vertical bundles), refreshed per app version |
-| SharedPreferences `agente_prefs` (`Prefs`) | master switch, per-app toggles, canned reply, cooldown, locale, cached dashboard, chat transcript, update-channel state; **encrypted** entries: device token, custom LLM key, the core's app key and identity KEK |
-| `agente_log` (`ReplyLog`) | last 100 events of the activity feed |
-| `agente_observer`, `ProfileStore` | shapes being observed, learned profiles |
-| Android Keystore | the AES key `SecureStore` wraps secrets with; the attestation key |
+| `filesDir/agento.db` | el SQLite del núcleo: conversaciones, citas, pedidos, pagos, contactos, el esquema por capas del negocio, la identidad sellada del agente, la sesión de la cuenta |
+| `filesDir/schemas/` | copia de `assets/schemas` (campos base + bundles por vertical), refrescada por versión de la app |
+| SharedPreferences `agente_prefs` (`Prefs`) | interruptor maestro, toggles por app, respuesta fija, cooldown, idioma, panel cacheado, transcripción del chat, estado del canal de actualización; entradas **cifradas**: device token, clave LLM propia, el app key del núcleo y el KEK de identidad |
+| `agente_log` (`ReplyLog`) | últimos 100 eventos del registro de actividad |
+| `agente_observer`, `ProfileStore` | formas en observación, perfiles aprendidos |
+| Android Keystore | la clave AES con la que `SecureStore` envuelve los secretos; la clave de atestación |
 
-Backup is disabled (`allowBackup=false`, `data_extraction_rules`) because
-the token and customer conversations must not ride along with a device
-backup. Paid plans get an *encrypted* backup through the core instead
-(`POST /api/backup`, `POST /api/restore`).
+El respaldo del sistema está deshabilitado (`allowBackup=false`,
+`data_extraction_rules`) porque el token y las conversaciones de clientes no
+deben viajar en un respaldo del dispositivo. Los planes pagados tienen en su
+lugar un respaldo *cifrado* a través del núcleo (`POST /api/backup`,
+`POST /api/restore`).
 
-## Trust boundaries
+## Fronteras de confianza
 
-- **App ↔ core**: `X-App-Key`, a per-install random secret, so another app
-  on the phone cannot talk to the core; `Authorization: Bearer <device
-  token>` names the business for business routes.
-- **Core ↔ gateway**: every request signed with the agent's Ed25519 key
-  (`X-Agent-Auth`); the seed is sealed at rest under a Keystore-wrapped key.
-- **Gateway**: sees who talks to whom and when (metadata), never a customer
-  message. The relay carries sealed boxes only.
+- **App ↔ núcleo**: `X-App-Key`, un secreto aleatorio por instalación, para
+  que otra app del teléfono no pueda hablarle al núcleo;
+  `Authorization: Bearer <device token>` nombra al negocio en las rutas de
+  negocio.
+- **Núcleo ↔ pasarela**: cada petición firmada con la clave Ed25519 del
+  agente (`X-Agent-Auth`); la semilla está sellada en reposo bajo una clave
+  envuelta por el Keystore.
+- **Pasarela**: ve quién habla con quién y cuándo (metadatos), nunca un
+  mensaje de cliente. El relay solo transporta cajas selladas.
 
-## Update channel
+## Canal de actualización
 
-Sideloaded apps get no Play updates. `UpdateCheck` fetches
-`<server>/dl/latest.json` (see `docs/RELEASE.md`) when the dashboard opens
-and when the listener reconnects; newer `versionCode` → banner (blocking
-below `minVersionCode`); download with `DownloadManager`; verify the
-`sha256`; hand the file to the package installer.
+Las apps instaladas por APK no reciben actualizaciones de Play.
+`UpdateCheck` consulta `<server>/dl/latest.json` (ver `docs/RELEASE.md`)
+cuando se abre el panel y cuando el listener se reconecta; `versionCode` más
+nuevo → banner (bloqueante por debajo de `minVersionCode`); descarga con
+`DownloadManager`; verifica el `sha256`; entrega el archivo al instalador de
+paquetes.
 
-## Design system
+## Sistema de diseño
 
-Every screen is built from the tokens in `res/values/{colors,design,themes}.xml`
-and the Plus Jakarta Sans font. Read `docs/DESIGN.md` before touching a
-layout.
+Cada pantalla se construye con los tokens de
+`res/values/{colors,design,themes}.xml` y la fuente Plus Jakarta Sans. Lee
+`docs/DESIGN.md` antes de tocar un layout.

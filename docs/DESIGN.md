@@ -1,67 +1,76 @@
-# agento — design system (v2 "warm paper")
+# agento — sistema de diseño (v2 «warm paper»)
 
-Every screen reads as ONE app — and NOT as stock Android. Build strictly from
-these tokens — a hardcoded hex, ad-hoc dp, or `Widget.Material3.*` style
-reference in a layout is a defect.
+Cada pantalla se lee como UNA app — y NO como Android de fábrica. Construye
+estrictamente con estos tokens — un hex en duro, un dp ad-hoc o una
+referencia a un estilo `Widget.Material3.*` en un layout es un defecto.
 
-## Typeface
-Plus Jakarta Sans, bundled in `res/font/` (`@font/jakarta`, weight-mapped
-400/500/600/700/800). The theme sets it globally and overrides every
-`textAppearance*` attr — layouts use `?attr/textAppearance…` and get Jakarta
-for free. From code, use `R.style.TextAppearance_Agento_*` (never
-`TextAppearance_Material3_*` — that resurrects Roboto).
+## Tipografía
+Plus Jakarta Sans, incluida en `res/font/` (`@font/jakarta`, mapeada por peso
+400/500/600/700/800). El theme la aplica globalmente y sobreescribe cada
+atributo `textAppearance*` — los layouts usan `?attr/textAppearance…` y
+reciben Jakarta gratis. Desde código, usa `R.style.TextAppearance_Agento_*`
+(nunca `TextAppearance_Material3_*` — eso resucita Roboto).
 
-Ramp: Display/HeadlineMedium 800 (−2% tracking) · Headline/TitleLarge 700 ·
+Escala: Display/HeadlineMedium 800 (tracking −2%) · Headline/TitleLarge 700 ·
 Title 600 · Body 400 · Label 600.
 
-## Color (use `@color/…`, defined in res/values/colors.xml)
-Token NAMES are load-bearing (Kotlin binds them); values are the theme.
-- `agento_primary` #0B7B5B (emerald) — actions, active states
+## Color (usa `@color/…`, definidos en res/values/colors.xml)
+Los NOMBRES de los tokens cargan significado (Kotlin los referencia); los
+valores son el theme.
+- `agento_primary` #0B7B5B (esmeralda) — acciones, estados activos
 - `agento_primary_container` #DDF3E7 / `agento_on_primary_container` #0A4632
-- `agento_secondary` #A6650A (amber) + `agento_secondary_container` #FCEED3 — pending/warnings
-- `agento_error` #BA342A + `agento_error_container` #FBEAE7 — expired/off
-- `agento_surface` #F6F5F0 — warm-ivory screen ground
-- `agento_surface_card` #FFFFFF — floating cards
-- `agento_surface_variant` #ECEAE2 — inactive chips, agent bubbles
+- `agento_secondary` #A6650A (ámbar) + `agento_secondary_container` #FCEED3 — pendientes/avisos
+- `agento_error` #BA342A + `agento_error_container` #FBEAE7 — vencido/apagado
+- `agento_surface` #F6F5F0 — fondo de pantalla marfil cálido
+- `agento_surface_card` #FFFFFF — tarjetas flotantes
+- `agento_surface_variant` #ECEAE2 — chips inactivos, burbujas del agente
 - `agento_on_surface` #1B1F1C / `agento_on_surface_muted` #6D726C
-- `agento_outline` #E4E2D9 — input strokes only (cards are strokeless)
-- v2: `agento_hero_grad_start/end` (gradient brand moments), `agento_halo`
-  (10% emerald wash), `agento_shadow`, `agento_input_bg`,
-  `agento_input_stroke` (res/color state list: outline → emerald on focus)
+- `agento_outline` #E4E2D9 — solo trazos de inputs (las tarjetas van sin trazo)
+- v2: `agento_hero_grad_start/end` (momentos de marca en degradado),
+  `agento_halo` (lavado esmeralda al 10%), `agento_shadow`, `agento_input_bg`,
+  `agento_input_stroke` (state list en res/color: outline → esmeralda al foco)
 
-## Shape & space (res/values/design.xml dims)
-- spacing: `space_xs` 4 · `space_s` 8 · `space_m` 16 · `space_l` 24 · `space_xl` 32
-- corners: cards `corner_card` 24dp · controls `corner_control` 26dp (pill on
-  52–56dp) · bubbles `corner_bubble` 20dp · sheets `corner_sheet` 28dp
-- Cards: theme default = `Widget.Agento.Card` (white, strokeless,
-  `card_elevation` 2dp soft shadow). Tinted banners (trial/off/gap) stay FLAT:
-  explicit `cardElevation 0dp`, `strokeWidth 0dp`.
-- Buttons: theme default MaterialButton = emerald pill
-  (`Widget.Agento.Button`); variants `.Text`, `.Tonal`, `.Glyph` (48dp square
-  composer icons). Primary CTAs `cta_height` 56dp.
-- Chips: `Widget.Agento.Chip` — strokeless pill, colors bound from code via
-  container tokens.
-- Inputs: `Widget.Agento.TextInput` (white fill, 18dp radius, hairline stroke →
-  emerald on focus, no floating label) for chat-style fields; registration
-  forms keep OutlinedBox with floating labels + `corner_control` radii.
+## Forma y espacio (dims en res/values/design.xml)
+- espaciado: `space_xs` 4 · `space_s` 8 · `space_m` 16 · `space_l` 24 · `space_xl` 32
+- esquinas: tarjetas `corner_card` 24dp · controles `corner_control` 26dp
+  (píldora en 52–56dp) · burbujas `corner_bubble` 20dp · sheets `corner_sheet` 28dp
+- Tarjetas: el default del theme = `Widget.Agento.Card` (blanca, sin trazo,
+  `card_elevation` 2dp de sombra suave). Los banners tintados
+  (trial/apagado/gap) van PLANOS: `cardElevation 0dp`, `strokeWidth 0dp`
+  explícitos.
+- Botones: el MaterialButton por defecto del theme = píldora esmeralda
+  (`Widget.Agento.Button`); variantes `.Text`, `.Tonal`, `.Glyph` (iconos de
+  composición cuadrados de 48dp). CTAs primarios `cta_height` 56dp.
+- Chips: `Widget.Agento.Chip` — píldora sin trazo, colores enlazados desde
+  código con los tokens de contenedor.
+- Inputs: `Widget.Agento.TextInput` (relleno blanco, radio 18dp, trazo fino →
+  esmeralda al foco, sin label flotante) para campos estilo chat; los
+  formularios de registro conservan OutlinedBox con labels flotantes y radios
+  `corner_control`.
 
-## Gradient brand moments (use sparingly — these ARE the brand)
-`bg_brand_mark` (welcome squircle) · `bg_hero_halo` (radial wash behind it) ·
-`bg_earn_hero` (dashboard earnings card) · `bg_done_sheet` (celebration).
-Emerald 315° gradient, white text (#B3FFFFFF for secondary labels).
+## Momentos de marca en degradado (úsalos con mesura — ESTOS son la marca)
+`bg_brand_mark` (squircle de bienvenida) · `bg_hero_halo` (lavado radial
+detrás) · `bg_earn_hero` (tarjeta de ingresos del panel) · `bg_done_sheet`
+(celebración). Degradado esmeralda a 315°, texto blanco (#B3FFFFFF para
+etiquetas secundarias).
 
-## Voice & tone
-Spanish-first, warm, short. Emoji sparingly (one per surface, purposeful).
-Every empty state teaches, every error state offers the next step, every
-loading state is visible (progress indicator, disabled CTA with spinner).
+## Voz y tono
+Primero en español, cálido, corto. Emojis con mesura (uno por superficie, con
+propósito). Cada estado vacío enseña, cada estado de error ofrece el
+siguiente paso, cada estado de carga es visible (indicador de progreso, CTA
+deshabilitado con spinner).
 
-## Hard rules
-- NO new gradle dependencies. Available: material 1.12 (full M3), appcompat,
-  recyclerview, constraintlayout if listed, exifinterface.
-- themes.xml / colors.xml / design.xml / font/ ARE the design system: change
-  them deliberately, in their own PR, never as a side effect of a screen.
-- New strings go in per-area files: res/values/strings_<area>.xml (Spanish)
-  + res/values-en/strings_<area>.xml (English).
-- Single-Activity-per-surface stays (no Compose, no nav-graph rewrite).
-- Accessibility: contentDescription on every icon-only control; touch targets
-  ≥48dp; text contrast ≥4.5:1 on its surface.
+## Reglas duras
+- NADA de dependencias gradle nuevas. Disponibles: material 1.12 (M3
+  completo), appcompat, recyclerview, constraintlayout si está listado,
+  exifinterface.
+- themes.xml / colors.xml / design.xml / font/ SON el sistema de diseño:
+  cámbialos deliberadamente, en su propio PR, nunca como efecto colateral de
+  una pantalla.
+- Los strings nuevos van en archivos por área:
+  res/values/strings_<area>.xml (español) +
+  res/values-en/strings_<area>.xml (inglés).
+- Se mantiene una Activity por superficie (sin Compose, sin reescritura a
+  nav-graph).
+- Accesibilidad: contentDescription en cada control de solo icono; áreas
+  táctiles ≥48dp; contraste de texto ≥4.5:1 sobre su superficie.
