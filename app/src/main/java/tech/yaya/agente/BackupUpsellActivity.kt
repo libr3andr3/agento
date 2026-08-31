@@ -30,7 +30,7 @@ class BackupUpsellActivity : AppCompatActivity() {
         val name = Prefs.sp(this).getString("business_name", "").orEmpty()
         findViewById<TextView>(R.id.upsell_body).text =
             if (name.isBlank()) getString(R.string.upsell_body_generic) else getString(R.string.upsell_body, name)
-        findViewById<TextView>(R.id.upsell_web_note).text = getString(R.string.upsell_web_note, Prefs.accountEmail(this))
+        findViewById<TextView>(R.id.upsell_web_note).text = getString(R.string.upsell_web_note, Prefs.accountLabel(this))
         val guest = Prefs.isGuest(this)
         if (guest) findViewById<com.google.android.material.button.MaterialButton>(R.id.upsell_cta).setText(R.string.upsell_cta_guest)
         findViewById<View>(R.id.upsell_cta).setOnClickListener {

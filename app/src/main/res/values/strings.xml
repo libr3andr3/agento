@@ -241,4 +241,9 @@
     <string name="settings_support">🆘 Soporte</string>
     <string name="plan_support">Hablar con soporte por WhatsApp</string>
     <string name="support_text">Hola, necesito ayuda con agento</string>
+
+    <!-- Legal footer (Ajustes). Play's User Data policy requires the
+         privacy policy linked inside the app, not only on the listing. -->
+    <string name="settings_privacy">Política de privacidad</string>
+    <string name="settings_terms">Términos y condiciones</string>
 </resources>

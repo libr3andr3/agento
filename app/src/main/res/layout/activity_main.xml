@@ -488,5 +488,33 @@
                     android:nestedScrollingEnabled="false" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+
+        <!-- Legal footer -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_m"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/privacy_button"
+                style="@style/Widget.Agento.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/touch_min"
+                android:text="@string/settings_privacy"
+                android:textColor="@color/agento_on_surface_muted" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/terms_button"
+                style="@style/Widget.Agento.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/touch_min"
+                android:layout_marginStart="@dimen/space_s"
+                android:text="@string/settings_terms"
+                android:textColor="@color/agento_on_surface_muted" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

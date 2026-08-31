@@ -178,8 +178,14 @@ object Prefs {
     /** "Continuar sin cuenta": the core is the truth; mirrored for the launcher. */
     fun isGuest(ctx: Context): Boolean = sp(ctx).getBoolean("account_guest", false)
     fun setGuest(ctx: Context, on: Boolean) = sp(ctx).edit().putBoolean("account_guest", on).apply()
-    /** Anyone signed in, with or without an account. */
-    fun hasIdentity(ctx: Context): Boolean = accountEmail(ctx).isNotEmpty() || isGuest(ctx)
+    /** Anyone signed in, with or without an account. The account is the
+     *  verified phone since 1.19.1; email is optional. */
+    fun hasIdentity(ctx: Context): Boolean =
+        accountEmail(ctx).isNotEmpty() || accountPhone(ctx).isNotEmpty() || isGuest(ctx)
+
+    /** What to call the signed-in account: the email, else the verified phone. */
+    fun accountLabel(ctx: Context): String =
+        accountEmail(ctx).ifEmpty { accountPhone(ctx).let { if (it.isEmpty()) "" else "+$it" } }
 
     /** E.164 digits of the account's verified phone, "" when unknown. */
     fun accountPhone(ctx: Context): String = sp(ctx).getString("account_phone", "") ?: ""

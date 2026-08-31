@@ -103,6 +103,8 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<MaterialButton>(R.id.support_button).setOnClickListener { Support.open(this) }
         findViewById<MaterialButton>(R.id.audit_button).setOnClickListener { startActivity(Intent(this, AuditActivity::class.java)) }
+        findViewById<MaterialButton>(R.id.privacy_button).setOnClickListener { openUrl("https://agento.ceo/privacidad.html") }
+        findViewById<MaterialButton>(R.id.terms_button).setOnClickListener { openUrl("https://agento.ceo/terminos.html") }
         // D17: the owner's data into the OS. A switch asks for its permission;
         // the flag is only set once the permission is really granted.
         findViewById<MaterialSwitch>(R.id.sync_contacts_switch).setOnCheckedChangeListener { btn, on ->
@@ -234,6 +236,11 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun openUrl(url: String) {
+        try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+        catch (e: ActivityNotFoundException) { Toast.makeText(this, url, Toast.LENGTH_LONG).show() }
     }
 
     /** AI engine: blank = yaya.tech (free). Owners who want total control

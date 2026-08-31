@@ -26,6 +26,11 @@ import java.util.concurrent.Executors
 object ServerClient {
     private const val TAG = "AgenteServer"
 
+    /** Logcat-safe path: first two segments only — deeper ones can carry a
+     *  customer's chat key (e.g. /api/conversations/<peer>). */
+    private fun redact(path: String): String =
+        path.substringBefore('?').split('/').take(3).joinToString("/")
+
     /** Conversation lane: replies must stay in order, so one thread. */
     val EXECUTOR: ExecutorService = Executors.newSingleThreadExecutor()
 
@@ -153,7 +158,7 @@ object ServerClient {
             Thread.currentThread().interrupt()
             return first
         }
-        Log.i(TAG, "retrying $path after ${first.code}")
+        Log.i(TAG, "retrying ${redact(path)} after ${first.code}")
         return exchangeOnce(ctx, path, body, contentType, bearer, readTimeoutMs)
     }
 
@@ -183,13 +188,14 @@ object ServerClient {
                 val code = conn.responseCode
                 val text = (if (code in 200..299) conn.inputStream else conn.errorStream)
                     ?.bufferedReader()?.readText() ?: ""
-                if (code !in 200..299) Log.w(TAG, "$path -> $code: $text")
+                // Body stays out of logcat: error bodies can quote customer content.
+                if (code !in 200..299) Log.w(TAG, "${redact(path)} -> $code")
                 Response(code, runCatching { JSONObject(text) }.getOrNull(), text)
             } finally {
                 conn.disconnect()
             }
         } catch (e: Exception) {
-            Log.w(TAG, "$path failed", e)
+            Log.w(TAG, "${redact(path)} failed", e)
             Response(0, null)
         }
     }

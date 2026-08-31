@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Play flavor: the self-hosted update channel is dead code here
+     (UpdateCheck gates on BuildConfig.PLAY), but the strings are referenced
+     from the shared dashboard layout so the shrinker keeps them. Blank them
+     so no "install the latest version" text ships in the Play bundle. -->
+<resources>
+    <string name="update_channel"> </string>
+    <string name="update_available_title">%1$s</string>
+    <string name="update_required_title">%1$s</string>
+    <string name="update_tap_to_install"> </string>
+    <string name="update_install"> </string>
+    <string name="update_later"> </string>
+    <string name="update_downloading">%1$s</string>
+    <string name="update_size">%1$s</string>
+    <string name="update_required_body"> </string>
+    <string name="update_perm_needed"> </string>
+    <string name="update_started"> </string>
+</resources>

@@ -116,7 +116,7 @@ class AccountActivity : AppCompatActivity() {
             override fun afterTextChanged(s: Editable?) { phoneTil.error = null; updatePhonePreview() }
         })
 
-        if (intent.getBooleanExtra(EXTRA_MANAGE, false) && Prefs.accountEmail(this).isNotEmpty()) showSigned() else showForm()
+        if (intent.getBooleanExtra(EXTRA_MANAGE, false) && Prefs.accountLabel(this).isNotEmpty()) showSigned() else showForm()
         // A guest coming back here wants the real thing: hide the guest link.
         findViewById<View>(R.id.account_guest).visibility = if (Prefs.isGuest(this)) View.GONE else View.VISIBLE
     }
@@ -161,7 +161,7 @@ class AccountActivity : AppCompatActivity() {
         codeForm.visibility = View.GONE
         restoreCard.visibility = View.GONE
         signedCard.visibility = View.VISIBLE
-        findViewById<TextView>(R.id.account_signed_as).text = getString(R.string.account_signed_as, Prefs.accountEmail(this))
+        findViewById<TextView>(R.id.account_signed_as).text = getString(R.string.account_signed_as, Prefs.accountLabel(this))
     }
 
     private fun setBusy(b: Boolean) {
@@ -239,7 +239,7 @@ class AccountActivity : AppCompatActivity() {
                 setBusy(false)
                 val j = r.json
                 if (r.code in 200..299 && j?.optBoolean("signedIn") == true) {
-                    Prefs.setAccountEmail(this, j.optString("email", currentEmail()))
+                    Prefs.setAccountEmail(this, j.optString("email", currentEmail()).takeIf { it != "null" }.orEmpty())
                     Prefs.setAccountPhone(this, j.optString("phone").takeIf { it != "null" }.orEmpty())
                     Prefs.setGuest(this, false)
                     afterSignIn()
@@ -271,6 +271,7 @@ class AccountActivity : AppCompatActivity() {
                     if (r.code in 200..299) {
                         Prefs.setGuest(this, true)
                         Prefs.setAccountEmail(this, "")
+                        Prefs.setAccountPhone(this, "")
                         goHome()
                     } else showError(when (ServerClient.classify(r)) {
                         ServerClient.Kind.OFFLINE -> getString(R.string.account_error_offline)

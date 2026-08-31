@@ -40,7 +40,7 @@
                         android:layout_width="96dp"
                         android:layout_height="96dp"
                         android:layout_gravity="center"
-                        android:src="@drawable/ic_launcher_foreground"
+                        android:src="@mipmap/ic_launcher_foreground"
                         android:contentDescription="@string/app_name" />
                 </FrameLayout>
             </FrameLayout>

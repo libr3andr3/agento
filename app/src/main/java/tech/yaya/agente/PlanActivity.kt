@@ -35,7 +35,7 @@ class PlanActivity : AppCompatActivity() {
         usage = findViewById(R.id.plan_usage)
         tiers = findViewById(R.id.plan_tiers)
         note = findViewById(R.id.plan_note)
-        findViewById<TextView>(R.id.plan_account).text = getString(R.string.plan_account_line, Prefs.accountEmail(this).ifEmpty { getString(R.string.plan_no_account) })
+        findViewById<TextView>(R.id.plan_account).text = getString(R.string.plan_account_line, Prefs.accountLabel(this).ifEmpty { getString(R.string.plan_no_account) })
         findViewById<MaterialButton>(R.id.plan_logout).setOnClickListener {
             startActivity(Intent(this, AccountActivity::class.java).putExtra(AccountActivity.EXTRA_MANAGE, true))
         }

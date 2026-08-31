@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Play flavor: see values/strings_dashboard.xml. -->
+<resources>
+    <string name="update_channel"> </string>
+    <string name="update_available_title">%1$s</string>
+    <string name="update_required_title">%1$s</string>
+    <string name="update_tap_to_install"> </string>
+    <string name="update_install"> </string>
+    <string name="update_later"> </string>
+    <string name="update_downloading">%1$s</string>
+    <string name="update_size">%1$s</string>
+    <string name="update_required_body"> </string>
+    <string name="update_perm_needed"> </string>
+    <string name="update_started"> </string>
+</resources>
