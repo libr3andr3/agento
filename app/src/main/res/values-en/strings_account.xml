@@ -28,7 +28,7 @@
     <string name="plan_credits_line">Network credits: %1$s · each new customer who finds you through the network spends %2$s</string>
     <string name="plan_credits_hint">Paid plans return half their value as credits every month.</string>
     <string name="account_phone_hint">Mobile (WhatsApp)</string>
-    <string name="account_no_password">No passwords — we send you a code by WhatsApp and email.</string>
+    <string name="account_no_password">No passwords — we send you a code by WhatsApp.</string>
     <string name="account_error_phone">Enter your mobile number.</string>
     <string name="account_code_sent">We sent you a code by %1$s. Valid for 10 minutes.</string>
     <string name="account_code_sent_whatsapp">WhatsApp</string>
