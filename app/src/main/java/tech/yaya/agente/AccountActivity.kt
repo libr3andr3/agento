@@ -185,7 +185,7 @@ class AccountActivity : AppCompatActivity() {
     private fun sendCode(resend: Boolean = false) {
         val e = currentEmail(); val p = currentPhone()
         emailTil.error = null; phoneTil.error = null; error.visibility = View.GONE
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(e).matches()) { emailTil.error = getString(R.string.account_error_email); if (!resend) return }
+        if (e.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(e).matches()) { emailTil.error = getString(R.string.account_error_email); if (!resend) return }
         if (localDigits().length !in 6..12) { phoneTil.error = getString(R.string.account_error_phone); if (!resend) return }
         setBusy(true)
         val my = ++seq

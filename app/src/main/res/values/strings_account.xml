@@ -3,7 +3,7 @@
     <string name="account_title_signin">Continúa con Yaya</string>
     <string name="account_sub">Tu identidad es tuya: una cuenta para tu negocio, tus dispositivos y tu panel web.</string>
     <string name="account_name_hint">Tu nombre</string>
-    <string name="account_email_hint">Correo</string>
+    <string name="account_email_hint">Correo (opcional)</string>
     <string name="account_primary_signin">Continuar con Yaya</string>
     <string name="account_error_email">Escribe un correo válido.</string>
     <string name="account_error_wrong">Código incorrecto.</string>

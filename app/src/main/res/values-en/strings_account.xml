@@ -3,7 +3,7 @@
     <string name="account_title_signin">Continue with Yaya</string>
     <string name="account_sub">Your identity is yours: one account for your business, your devices and your web dashboard.</string>
     <string name="account_name_hint">Your name</string>
-    <string name="account_email_hint">Email</string>
+    <string name="account_email_hint">Email (optional)</string>
     <string name="account_primary_signin">Continue with Yaya</string>
     <string name="account_error_email">Enter a valid email.</string>
     <string name="account_error_wrong">Wrong code.</string>

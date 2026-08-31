@@ -64,7 +64,7 @@ consola (en inglés):
 | Fotos | sí, procesadas | no | funcionalidad | foto opcional del catálogo → ítems extraídos |
 
 Cifrado en tránsito: sí. Eliminación: en la app («Cerrar sesión» /
-desinstalar borra los datos del teléfono; eliminación de cuenta por correo al
+desinstalar borra los datos del teléfono; eliminación de cuenta en https://yaya.tech/eliminar-cuenta o por correo al
 contacto de privacidad). Política de privacidad:
 https://agento.ceo/privacidad.html — Términos: https://agento.ceo/terminos.html.
 
