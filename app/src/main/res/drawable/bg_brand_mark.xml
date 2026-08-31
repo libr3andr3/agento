@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Squircle tile behind the launcher glyph on Welcome; matches the
-     logo raster's own background so the square PNG blends into it. -->
+<!-- Squircle emerald-gradient tile behind the brand glyph on Welcome. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#E9EDF0" />
+    <gradient
+        android:startColor="@color/agento_hero_grad_start"
+        android:endColor="@color/agento_hero_grad_end"
+        android:angle="315" />
     <corners android:radius="28dp" />
 </shape>
