@@ -2,6 +2,8 @@
 
 **Una recepcionista con IA que vive en el teléfono Android del dueño del negocio.**
 
+[![ci](https://github.com/libr3andr3/agento/actions/workflows/ci.yml/badge.svg)](https://github.com/libr3andr3/agento/actions/workflows/ci.yml)
+
 agento lee los mensajes que el teléfono del negocio ya recibe — WhatsApp,
 WhatsApp Business, Instagram, Messenger, Telegram, SMS — a través del sistema
 de notificaciones de Android, y los responde como el negocio: cotiza precios,
@@ -9,7 +11,40 @@ agenda citas, toma pedidos y confirma pagos (Yape, Plin, cualquier billetera o
 banco que publique una notificación). Sin APIs de plataformas, sin scraping,
 sin un servidor que guarde las conversaciones. El teléfono *es* el servidor.
 
-[![ci](https://github.com/libr3andr3/agento/actions/workflows/ci.yml/badge.svg)](https://github.com/libr3andr3/agento/actions/workflows/ci.yml)
+Este repositorio es la app Android en producción ([agento.ceo](https://agento.ceo)):
+el caparazón en Kotlin, sus pantallas y una copia precompilada del núcleo del
+agente que las mueve — un runtime en Rust compuesto sobre el kernel de plugins
+[corazón](https://github.com/libr3andr3/corazon). Está hecho para gente que
+quiere entender, modificar y extender un agente real, en producción,
+construido sobre notificaciones.
+
+## Problemática
+
+Los pequeños negocios del Perú atienden por WhatsApp, y la oferta actual de
+«bots» para hacerlo les exige elegir entre tres riesgos:
+
+1. **Entrega de credenciales.** La mayoría de las soluciones opera secuestrando
+   una sesión de WhatsApp Web (código QR en un servidor ajeno) o pidiendo las
+   claves de las plataformas. El negocio pierde el control de su propia
+   identidad: quien tiene esa sesión puede leer y escribir como el negocio,
+   desde cualquier lugar, sin que el dueño lo vea.
+2. **Exfiltración de datos.** Las conversaciones con los clientes — datos
+   personales protegidos por la Ley 29733 — se copian y almacenan en la nube
+   de un tercero, fuera del alcance y de la jurisdicción del dueño.
+3. **IA sin transparencia ni rastro.** Un modelo de lenguaje responde *en
+   nombre del negocio* sin identificarse como IA (obligación de la Ley 31814,
+   vigente desde enero de 2026) y sin dejar un registro verificable de qué
+   dijo, cuándo y con qué herramientas.
+
+agento ataca los tres problemas a la vez: el agente corre **dentro del
+teléfono del negocio**, sin credenciales de plataformas ni sesiones remotas;
+los datos **no salen a servidores de terceros**; y cada acción del agente
+queda en una **cadena de auditoría firmada** verificable desde el propio
+teléfono, con el agente presentándose como IA desde el primer mensaje.
+
+## Solución y explicación
+
+### Cómo funciona
 
 ```
   el cliente escribe por WhatsApp
@@ -26,38 +61,211 @@ sin un servidor que guarde las conversaciones. El teléfono *es* el servidor.
   └──────────────┬───────────────┘
                  │ texto de respuesta
   ┌──────────────▼───────────────┐
-  │ respuesta inline de la       │  el mismo botón "Responder" que ves en
+  │ respuesta inline de la       │  el mismo botón «Responder» que ves en
   │ notificación (RemoteInput)   │  la bandeja de notificaciones
   └──────────────────────────────┘
 ```
 
-Este repositorio es la app Android: el caparazón en Kotlin, sus pantallas y
-una copia precompilada del núcleo del agente que las mueve. Está hecho para
-gente que quiere entender, modificar y extender un agente real, en
-producción, construido sobre notificaciones.
+La app usa el **acceso a notificaciones** de Android (`NotificationListenerService`)
+como única integración con las apps de chat: lee la notificación entrante y
+responde por la acción de respuesta inline de esa misma notificación — el
+mismo botón «Responder» que usaría el dueño. No hay APIs de Meta, no hay
+sesiones espejo, no hay automatización de UI.
 
-## Cumplimiento: Ley 31814 (Perú)
+### Funciones principales
 
-Perú es el primer país de América Latina con un marco regulatorio integral de
-inteligencia artificial en vigor: la **Ley N.° 31814** y su reglamento
-(**D.S. N.° 115-2025-PCM**, vigente desde enero de 2026). agento está diseñado
-para cumplir sus obligaciones de transparencia para sistemas de IA de riesgo
-aceptable, y varias de sus propiedades van más allá de lo exigido:
+- **Atención 24/7**: cotiza, agenda citas, toma pedidos y responde preguntas
+  con los datos que el dueño le enseñó en una entrevista de dos minutos (por
+  voz o texto; también extrae ítems de una foto de la carta o lista de precios).
+- **Confirmación de pagos**: detecta en el teléfono los avisos de pago del
+  banco o billetera del dueño (Yape, Plin y otras) y los asocia a la cita o
+  pedido. No mueve dinero; solo lee notificaciones entrantes.
+- **Panel del negocio**: Hoy (citas, pedidos, ingresos), Conversaciones,
+  Clientes, Cobros, y exportación de todo (.vcf, .csv, .ics) — los clientes a
+  los Contactos del teléfono y las citas a un calendario propio.
+- **Auditoría verificable**: cada turno, herramienta ejecutada y pago leído
+  queda en una cadena firmada (Ed25519) y encadenada por hash, con anclas
+  contrafirmadas por la pasarela — verificable en el teléfono (Ajustes →
+  Auditoría). Ver `docs/ARCHITECTURE.md` § «La cadena de auditoría».
+- **Transparencia de IA (Ley 31814 / D.S. 115-2025-PCM)**: el primer mensaje
+  al cliente se abre con «Hola, soy el asistente con IA de {negocio}» y el
+  agente tiene prohibido hacerse pasar por una persona. Vive en el núcleo como
+  el plugin `disclosure`, no como texto opcional que el dueño pueda quitar.
 
-- **El agente se presenta como IA.** Desde la versión 1.19.0, el primer
-  mensaje que un cliente recibe se abre con «Hola, soy el asistente con IA de
-  {negocio}», y el agente tiene prohibido hacerse pasar por una persona: si le
-  preguntan si es un bot, lo confirma. Esto vive en el núcleo como un plugin de
-  comportamiento (`disclosure`), no como texto opcional que el dueño pueda
-  quitar.
-- **Registro auditable.** Cada turno, herramienta ejecutada y pago leído queda
-  en una cadena de auditoría firmada (Ed25519) y encadenada por hash, con
-  anclas contrafirmadas por la pasarela — verificable desde el propio teléfono
-  (Ajustes → Auditoría). Ver `docs/ARCHITECTURE.md` § «La cadena de auditoría».
-- **Datos personales en el teléfono.** Las conversaciones y los datos de los
-  clientes no se almacenan en nuestros servidores (relevante también para la
-  Ley 29733 de protección de datos personales). Ver «Qué sale del teléfono»
-  más abajo y `docs/SECURITY.md`.
+### El núcleo y el kernel corazón
+
+`libagento_core.so` es el agente en sí: una biblioteca en Rust que corre
+dentro del proceso de la app, guarda cada conversación, cita, pago y dato
+aprendido en `filesDir/agento.db`, y expone una API HTTP pequeña en
+`127.0.0.1:<puerto aleatorio>`. El lado Kotlin nunca toca la base de datos;
+solo llama a esa API (`docs/CORE-API.md`).
+
+El núcleo está compuesto sobre **[corazón](https://github.com/libr3andr3/corazon)**,
+un kernel de plugins para runtimes de agentes en Rust, publicado aparte bajo
+MIT/Apache-2.0. En corazón, todo lo que forma el runtime — herramientas,
+adaptadores de modelo, hooks de ciclo de vida, el plugin `disclosure` — se
+monta como un **plugin con nombre y procedencia**: cada registro lleva a su
+dueño, los montajes son reversibles sin residuo, y `inspect()` devuelve la
+tabla completa de montajes, que es la superficie sobre la que se construyen la
+firma y la atestación de la cadena de auditoría. Los esquemas de datos que el
+agente sabe pedir (campos base + bundles por vertical: peluquería, pollería,
+taller…) viajan como assets en `assets/schemas/`.
+
+El núcleo viene precompilado aquí para `arm64-v8a`, `armeabi-v7a` y `x86_64`;
+`app/src/main/jniLibs/CORE.md` registra qué build está incluido (fecha,
+commits de origen y sha256 por ABI).
+
+### Alcance
+
+- La app Android completa (este repo, AGPL): listener, pantallas, cliente del
+  núcleo, detección de pagos, exportaciones, canal de actualización propio.
+- Dos canales del mismo código: `direct` (APK con autoactualización en
+  agento.ceo) y `play` (Google Play, paquete `yaya.tech.agento`, sin permisos
+  de instalación ni de visibilidad de paquetes).
+- Producto primero en español (Perú), inglés como segundo idioma.
+
+### Limitaciones actuales
+
+- **El código fuente del núcleo es privado**; aquí va precompilado. La
+  superficie JNI y cada endpoint que la app usa están documentados
+  (`docs/CORE-API.md`) para construir encima, y el kernel corazón sí es
+  público. Es la limitación más señalada por colaboradores.
+- **La llamada al modelo de lenguaje sale del teléfono** (a yaya.tech por
+  defecto, o a cualquier endpoint compatible con OpenAI con tu propia clave).
+  El turno que el modelo ve es lo único que viaja; ver «Qué sale del teléfono».
+- **Depende del acceso a notificaciones**: sin ese permiso el agente está
+  sordo, y los gestores de batería de algunos fabricantes matan el listener
+  (la app pide la exención de optimización de batería).
+- Solo responde apps de chat cuyas notificaciones exponen respuesta inline
+  (`SupportedApps.kt` lista las probadas); llamadas de voz y notas de voz de
+  clientes no se atienden.
+- El emulador no tiene WhatsApp; ahí el agente se prueba por el chat del
+  gerente en el panel.
+
+## Seguridad (cero credenciales)
+
+**Este repositorio no contiene ninguna credencial**: ni contraseñas, ni
+tokens, ni claves de API, ni keystores. Está diseñado para que no pueda
+contenerlas:
+
+- **Firma de releases por variables de entorno.** El keystore de subida vive
+  fuera del repo (`AGENTO_KEYSTORE`, `AGENTO_KEYSTORE_PASS`,
+  `AGENTO_KEY_ALIAS`, `AGENTO_KEY_PASS`); sin esas variables el build compila
+  igual pero sin firmar, así CI y colaboradores nunca las necesitan
+  (`app/build.gradle.kts`, `docs/RELEASE.md`).
+- **Cero credenciales de plataformas.** agento no pide ni almacena claves de
+  WhatsApp/Meta/Telegram: su única integración es el permiso de notificaciones
+  que el dueño concede en su propio teléfono.
+- **Secretos del usuario cifrados en el dispositivo.** El token de sesión del
+  dispositivo y la clave de API opcional del dueño se guardan cifrados con
+  AES-GCM bajo el Android Keystore (`SecureStore.kt`) y quedan excluidos de
+  los respaldos del sistema (`res/xml/data_extraction_rules.xml`).
+- **Tráfico**: todo lo que sale va por TLS; el único tráfico en claro
+  permitido es el loopback `127.0.0.1` hacia el núcleo
+  (`res/xml/network_security_config.xml`).
+- **Verificación de builds**: `scripts/verify-apk.sh` comprueba firma y sha256
+  de una descarga publicada de punta a punta; el digest del firmante esperado
+  está en `docs/RELEASE.md`.
+- **Reportes**: las vulnerabilidades NO van en un issue público — ver
+  `docs/SECURITY.md` § «Reportes».
+
+### Qué sale del teléfono
+
+- La llamada al modelo de lenguaje (medida, firmada con la clave propia del
+  agente) — a `yaya.tech` por defecto o a tu propio endpoint.
+- Voz y fotos del catálogo, para transcripción y extracción, por la misma vía.
+- Tu cuenta Yaya (inicio de sesión con código de un solo uso por WhatsApp,
+  plan) y, en planes pagados, un respaldo cifrado.
+
+Los mensajes de los clientes nunca se suben a ningún lado como tales; el
+modelo ve el turno que se le pide responder. Ver `docs/SECURITY.md`.
+
+## Inicio rápido
+
+Necesitas un JDK 17+ y Android Studio (o solo el Android SDK). Nada más: ni
+Rust, ni NDK, ni claves de API.
+
+```bash
+git clone https://github.com/libr3andr3/agento.git
+cd agento
+./gradlew assembleDirectDebug
+adb install -r app/build/outputs/apk/direct/debug/app-direct-debug.apk
+```
+
+Luego, en el teléfono:
+
+1. Abre **agento** e inicia sesión con tu número de WhatsApp (código de un
+   solo uso) — o toca «Continuar sin cuenta».
+2. Registra el negocio (nombre, rubro, teléfono del dueño).
+3. Deja que la entrevista de configuración haga sus preguntas — por voz o
+   escribiendo. También puedes fotografiar una carta o lista de precios y el
+   núcleo extrae los ítems.
+4. Concede el **Acceso a notificaciones** cuando lo pida. Ese permiso es el
+   que hace que todo funcione; sin él, el agente está sordo.
+5. Escríbele al teléfono del negocio desde otro teléfono. Mira llegar la
+   respuesta.
+
+Todo lo que el agente hace aparece en el panel y en
+**Ajustes → Registro de actividad**.
+
+## Dónde está cada cosa
+
+```
+app/src/main/
+  AndroidManifest.xml          permisos (cada uno explicado), pantallas, el servicio listener
+  java/tech/yaya/agente/
+    AgenteApp.kt               Application: arranca el núcleo temprano, crea los canales de notificación
+    AgentoCore.kt              puente JNI a libagento_core.so — start/stop, config, puerto
+    ServerClient.kt            el ÚNICO cliente HTTP hacia el núcleo en loopback (reglas de hilos adentro)
+    AgenteNotificationListener.kt  el corazón de la app: notificación entra → núcleo → respuesta inline sale
+    PaymentDetector.kt         reenvía notificaciones de bancos/billeteras al núcleo (detección de pagos)
+    UnknownAppObserver.kt      aprende apps de chat nuevas por la forma de sus notificaciones
+    NotificationProfile.kt, ProfileStore.kt   el estado de prueba de una app aprendida
+    Prefs.kt                   ajustes + estado local (SharedPreferences)
+    SecureStore.kt             AES-GCM bajo el Android Keystore para los secretos en Prefs
+    ReplyLog.kt                el registro de actividad (últimos 100 eventos)
+    OwnerAlerts.kt             notificaciones locales cuando el agente necesita al dueño
+    UpdateCheck.kt             canal de actualización propio (/dl/latest.json, solo canal direct)
+    DeviceAttestation.kt       atestación de clave por hardware entregada al núcleo (mejor esfuerzo)
+    LocationHelper.kt          ubicación aproximada → la ubicación pública del negocio
+    OsSync.kt                  clientes a Contactos, citas al calendario, exportaciones
+    Screens.kt                 qué pantalla es «home»
+    ── pantallas ──
+    WelcomeActivity.kt         launcher: un router sin UI
+    AccountActivity.kt         inicio de sesión Yaya ID (código de un uso por WhatsApp)
+    RegistrationActivity.kt    negocio → teléfono del dueño → código, paso a paso
+    OnboardingActivity.kt      la entrevista de configuración y, después, el chat del gerente
+    DashboardActivity.kt       home: estado, ingresos, agenda, conversaciones, preguntas abiertas
+    MainActivity.kt            Ajustes: interruptor maestro, apps conectadas, registro, privacidad
+    CrmListActivity.kt, ConversationActivity.kt   conversaciones y clientes
+    PayoutActivity.kt          Cobros: a dónde te pagan los clientes
+    PlanActivity.kt            planes de la cuenta Yaya
+    AuditActivity.kt           verificación de la cadena de auditoría en el teléfono
+    BackupUpsellActivity.kt    se muestra una vez tras la entrevista
+    Countries.kt, CountryPicker.kt, SupportedApps.kt   catálogos pequeños
+  res/                         layouts, strings (values = español, values-en = inglés), tokens de diseño
+  assets/schemas/              lo que el agente sabe preguntar: campos base + bundles por vertical
+  jniLibs/<abi>/libagento_core.so   el núcleo del agente (ver jniLibs/CORE.md)
+docs/                          ARCHITECTURE, CORE-API, DESIGN, SECURITY, RELEASE, PLAY
+scripts/                       verify-apk.sh (verificar una descarga), publish-apk.sh (canal de actualización)
+```
+
+Empieza por `AgenteNotificationListener.kt` — léelo de arriba abajo y
+entiendes el producto. Luego `ServerClient.kt` para ver cómo la app habla con
+el núcleo, y después `docs/ARCHITECTURE.md`.
+
+## Compilar un release
+
+```bash
+export AGENTO_KEYSTORE=~/.agento/upload-keystore.jks \
+       AGENTO_KEYSTORE_PASS=… AGENTO_KEY_ALIAS=agento-upload AGENTO_KEY_PASS=…
+./gradlew assembleDirectRelease     # → app/build/outputs/apk/direct/release/app-direct-release.apk
+./gradlew bundlePlayRelease         # → app/build/outputs/bundle/playRelease/app-play-release.aab (docs/PLAY.md)
+scripts/verify-apk.sh               # verifica una descarga publicada de punta a punta
+```
+
+Procedimiento completo, numeración de versiones y canal de actualización:
+`docs/RELEASE.md`; el envío a Google Play: `docs/PLAY.md`.
 
 ## Buscamos colaboradores
 
@@ -75,128 +283,7 @@ mano. Nos sirven especialmente:
 - **Traducciones** — los textos de usuario viven en `res/values` (español) y
   `res/values-en` (inglés).
 
-Abre un issue o un pull request; las reglas están en `CONTRIBUTING.md`. Las
-vulnerabilidades de seguridad NO van en un issue público — ver
-`docs/SECURITY.md` § «Reportes».
-
-## Inicio rápido
-
-Necesitas un JDK 17+ y Android Studio (o solo el Android SDK). Nada más: ni
-Rust, ni NDK, ni claves de API.
-
-```bash
-git clone https://github.com/libr3andr3/agento.git
-cd agento
-./gradlew assembleDirectDebug
-adb install -r app/build/outputs/apk/direct/debug/app-direct-debug.apk
-```
-
-Luego, en el teléfono:
-
-1. Abre **agento** e inicia sesión con un Yaya ID (nombre, correo, teléfono →
-   código de un solo uso).
-2. Registra el negocio (nombre, rubro, teléfono del dueño).
-3. Deja que la entrevista de configuración haga sus preguntas — por voz o
-   escribiendo. También puedes fotografiar una carta o lista de precios y el
-   núcleo extrae los ítems.
-4. Concede el **Acceso a notificaciones** cuando lo pida. Ese permiso es el
-   que hace que todo funcione; sin él, el agente está sordo.
-5. Escríbele al teléfono del negocio desde otro teléfono. Mira llegar la
-   respuesta.
-
-Todo lo que el agente hace aparece en el panel y en
-**Ajustes → Registro de actividad**.
-
-La app también funciona en el emulador (se incluye un núcleo `x86_64`), pero
-el emulador no tiene WhatsApp — usa el chat del gerente en el panel para
-hablar con el agente directamente.
-
-## Dónde está cada cosa
-
-```
-app/src/main/
-  AndroidManifest.xml          permisos (cada uno explicado), pantallas, el servicio listener
-  java/tech/yaya/agente/
-    AgenteApp.kt               Application: arranca el núcleo temprano, crea los canales de notificación
-    AgentoCore.kt              puente JNI a libagento_core.so — start/stop, config, puerto
-    ServerClient.kt            el ÚNICO cliente HTTP hacia el núcleo en loopback (reglas de hilos adentro)
-    AgenteNotificationListener.kt  el corazón: notificación entra → núcleo → respuesta inline sale
-    PaymentDetector.kt         reenvía notificaciones de bancos/billeteras al núcleo (detección de dinero)
-    UnknownAppObserver.kt      aprende apps de chat nuevas por la forma de sus notificaciones
-    NotificationProfile.kt, ProfileStore.kt   el estado de prueba de una app aprendida
-    Prefs.kt                   ajustes + estado local (SharedPreferences)
-    SecureStore.kt             AES-GCM bajo el Android Keystore para los secretos en Prefs
-    ReplyLog.kt                el registro de actividad (últimos 100 eventos)
-    OwnerAlerts.kt             notificaciones locales cuando el agente necesita al dueño
-    UpdateCheck.kt             canal de actualización propio (/dl/latest.json)
-    DeviceAttestation.kt       atestación de clave por hardware entregada al núcleo (mejor esfuerzo)
-    LocationHelper.kt          ubicación aproximada → la ubicación pública del negocio
-    Screens.kt                 qué pantalla es «home»
-    ── pantallas ──
-    WelcomeActivity.kt         launcher: un router sin UI
-    AccountActivity.kt         inicio de sesión Yaya ID (código de un uso por correo/WhatsApp)
-    RegistrationActivity.kt    negocio → teléfono del dueño → código, paso a paso
-    OnboardingActivity.kt      la entrevista de configuración y, después, el chat del gerente
-    DashboardActivity.kt       home: estado, ingresos, agenda, conversaciones, preguntas abiertas
-    MainActivity.kt            Ajustes: interruptor maestro, apps conectadas, respuesta fija, registro
-    CrmListActivity.kt, ConversationActivity.kt   conversaciones y clientes
-    PayoutActivity.kt          Cobros: a dónde te pagan los clientes
-    PlanActivity.kt            planes de la cuenta Yaya
-    BackupUpsellActivity.kt    se muestra una vez tras la entrevista
-    Countries.kt, CountryPicker.kt, SupportedApps.kt   catálogos pequeños
-  res/                         layouts, strings (values = español, values-en = inglés), tokens de diseño
-  assets/schemas/              lo que el agente sabe preguntar: campos base + bundles por vertical
-  jniLibs/<abi>/libagento_core.so   el núcleo del agente (ver jniLibs/CORE.md)
-docs/                          ARCHITECTURE, CORE-API, DESIGN, SECURITY, RELEASE
-scripts/                       verify-apk.sh (verificar una descarga), publish-apk.sh (canal de actualización)
-```
-
-Empieza por `AgenteNotificationListener.kt` — léelo de arriba abajo (430
-líneas) y entiendes el producto. Luego `ServerClient.kt` para ver cómo la app
-habla con el núcleo, y después `docs/ARCHITECTURE.md`.
-
-## El núcleo del agente
-
-`libagento_core.so` es el agente en sí: una biblioteca en Rust que corre
-dentro del proceso de la app, guarda cada conversación, cita, pago y dato
-aprendido en `filesDir/agento.db`, y expone una API HTTP pequeña en
-`127.0.0.1:<puerto aleatorio>`. El lado Kotlin nunca toca la base de datos;
-solo llama a esa API (`docs/CORE-API.md`).
-
-El núcleo viene precompilado aquí para `arm64-v8a`, `armeabi-v7a` y `x86_64`.
-Su código fuente depende de un kernel privado y no es parte de este repo; la
-superficie JNI y cada endpoint que la app usa están documentados para que
-puedas construir encima. `app/src/main/jniLibs/CORE.md` registra qué build
-está incluido (fecha, commit de origen y sha256 por ABI).
-
-## Qué sale del teléfono
-
-- La llamada al modelo de lenguaje, a `yaya.tech` por defecto (medida,
-  firmada con la clave propia del agente) o a cualquier endpoint compatible
-  con OpenAI con tu propia clave (Ajustes → mantén presionado el encabezado
-  *Motor de IA* en un build de debug).
-- Voz y fotos del catálogo, para transcripción y extracción, por la misma vía.
-- Tu cuenta Yaya (inicio de sesión, plan) y, en planes pagados, un respaldo
-  cifrado.
-
-Los mensajes de los clientes nunca se suben a ningún lado como tales; el
-modelo ve el turno que se le pide responder. Ver `docs/SECURITY.md`.
-
-## Compilar un release
-
-```bash
-export AGENTO_KEYSTORE=~/.agento/upload-keystore.jks \
-       AGENTO_KEYSTORE_PASS=… AGENTO_KEY_ALIAS=agento-upload AGENTO_KEY_PASS=…
-./gradlew assembleDirectRelease     # → app/build/outputs/apk/direct/release/app-direct-release.apk
-./gradlew bundlePlayRelease         # → app/build/outputs/bundle/playRelease/app-play-release.aab (docs/PLAY.md)
-scripts/verify-apk.sh               # verifica una descarga publicada de punta a punta
-```
-
-Dos canales se compilan del mismo código: `direct` (el APK en agento.ceo, con
-autoactualización) y `play` (Google Play, paquete `yaya.tech.agento`, sin
-permisos de instalación ni de visibilidad de paquetes). Procedimiento
-completo, numeración de versiones y canal de actualización: `docs/RELEASE.md`;
-el envío a Play: `docs/PLAY.md`.
+Abre un issue o un pull request; las reglas están en `CONTRIBUTING.md`.
 
 ## Licencia
 
@@ -204,17 +291,14 @@ el envío a Play: `docs/PLAY.md`.
 estudiarlo, modificarlo y redistribuirlo, y cualquiera a quien le des un
 build — o a quien se lo sirvas por red — recibe los mismos derechos y el
 código fuente. Las contribuciones se aceptan bajo la misma licencia.
+El kernel [corazón](https://github.com/libr3andr3/corazon) se publica aparte
+bajo MIT/Apache-2.0.
 
-## Idioma
+## Idioma y estado
 
 El producto es primero en español (Perú), con inglés como segundo idioma. La
 documentación está en español; los identificadores y comentarios del código
-están en inglés. Los textos de usuario viven en `res/values` (es) y
-`res/values-en`.
-
-## Estado
-
-Esta es la app que está en producción en [agento.ceo](https://agento.ceo).
-El paquete Kotlin sigue siendo `tech.yaya.agente` (el primer nombre de la
-app) — no se puede renombrar sin recompilar el núcleo, cuyos puntos de
-entrada JNI llevan ese nombre.
+están en inglés. Esta es la app en producción en
+[agento.ceo](https://agento.ceo). El paquete Kotlin sigue siendo
+`tech.yaya.agente` (el primer nombre de la app) — no se puede renombrar sin
+recompilar el núcleo, cuyos puntos de entrada JNI llevan ese nombre.
