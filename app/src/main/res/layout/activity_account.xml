@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Yaya ID, without passwords. Step 1: name · email · phone → "Continuar
-     con Yaya" sends a code by WhatsApp and email. Step 2: the code. Shown
+<!-- Yaya ID, without passwords. Step 1: name · phone → "Continuar
+     con Yaya" sends a code by WhatsApp. Step 2: the code. Shown
      before anything else in both editions; a business phone with nothing
      on it yet may then restore from the account's backup. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -75,28 +75,6 @@
                     android:layout_height="wrap_content"
                     android:autofillHints="name"
                     android:inputType="textPersonName|textCapWords" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/account_email_til"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                app:hintEnabled="true"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_s"
-                android:hint="@string/account_email_hint"
-                app:boxCornerRadiusBottomEnd="@dimen/corner_control"
-                app:boxCornerRadiusBottomStart="@dimen/corner_control"
-                app:boxCornerRadiusTopEnd="@dimen/corner_control"
-                app:boxCornerRadiusTopStart="@dimen/corner_control"
-                app:errorEnabled="true">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/account_email"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:autofillHints="emailAddress"
-                    android:inputType="textEmailAddress" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <LinearLayout

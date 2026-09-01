@@ -219,8 +219,8 @@
     <string name="plan_conv_usage">%1$d de %2$d conversaciones este mes</string>
     <string name="plan_conv_unlimited">%1$d conversaciones este mes · sin límite</string>
     <string name="plan_desc_free">14 días de Pro gratis. Después, 30 conversaciones al mes.</string>
-    <string name="plan_desc_pro">1 000 conversaciones al mes. Un teléfono. Boleta electrónica opcional.</string>
-    <string name="plan_desc_max">3 000 conversaciones al mes. Hasta 3 teléfonos o números en una sola cuenta. Boleta electrónica opcional.</string>
+    <string name="plan_desc_pro">1 000 conversaciones al mes. Un teléfono. Emite boletas electrónicas automáticamente desde tu agente.</string>
+    <string name="plan_desc_max">3 000 conversaciones al mes. Hasta 3 teléfonos o números en una sola cuenta. Emite boletas electrónicas automáticamente desde tu agente.</string>
     <string name="plan_upgrade_to">Subir a %1$s</string>
     <string name="plan_sales_cta">Hablar con ventas por WhatsApp</string>
     <string name="plan_sales_text">Estoy listo para vender en automático, estoy listo para subir a %1$s!</string>

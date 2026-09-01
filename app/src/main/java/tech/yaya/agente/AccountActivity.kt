@@ -37,8 +37,6 @@ class AccountActivity : AppCompatActivity() {
     private lateinit var codeForm: View
     private lateinit var nameTil: TextInputLayout
     private lateinit var name: TextInputEditText
-    private lateinit var emailTil: TextInputLayout
-    private lateinit var email: TextInputEditText
     private lateinit var phoneTil: TextInputLayout
     private lateinit var phone: TextInputEditText
     private lateinit var countryCard: MaterialCardView
@@ -69,8 +67,6 @@ class AccountActivity : AppCompatActivity() {
         codeForm = findViewById(R.id.account_code_form)
         nameTil = findViewById(R.id.account_name_til)
         name = findViewById(R.id.account_name)
-        emailTil = findViewById(R.id.account_email_til)
-        email = findViewById(R.id.account_email)
         phoneTil = findViewById(R.id.account_phone_til)
         phone = findViewById(R.id.account_phone)
         countryCard = findViewById(R.id.account_country_card)
@@ -177,20 +173,20 @@ class AccountActivity : AppCompatActivity() {
         error.visibility = View.VISIBLE
     }
 
-    private fun currentEmail() = email.text?.toString()?.trim().orEmpty()
     /** E.164 with '+', or "" when the local part is empty. */
     private fun currentPhone(): String = localDigits().let { if (it.isEmpty()) "" else "+" + country.dial + it }
     private fun currentName() = name.text?.toString()?.trim().orEmpty().ifEmpty { null }
 
     private fun sendCode(resend: Boolean = false) {
-        val e = currentEmail(); val p = currentPhone()
-        emailTil.error = null; phoneTil.error = null; error.visibility = View.GONE
-        if (e.isNotEmpty() && !android.util.Patterns.EMAIL_ADDRESS.matcher(e).matches()) { emailTil.error = getString(R.string.account_error_email); if (!resend) return }
+        val p = currentPhone()
+        phoneTil.error = null; error.visibility = View.GONE
         if (localDigits().length !in 6..12) { phoneTil.error = getString(R.string.account_error_phone); if (!resend) return }
         setBusy(true)
         val my = ++seq
         ServerClient.IO_EXECUTOR.execute {
-            val r = ServerClient.accountOtpStart(this, e, p, currentName())
+            // Email is not asked here: the account is the WhatsApp number. A
+            // billing email is collected at upgrade time (sales chat, boletas).
+            val r = ServerClient.accountOtpStart(this, "", p, currentName())
             runOnUiThread {
                 if (my != seq || isFinishing) return@runOnUiThread
                 setBusy(false)
@@ -233,13 +229,13 @@ class AccountActivity : AppCompatActivity() {
         setBusy(true)
         val my = ++seq
         ServerClient.IO_EXECUTOR.execute {
-            val r = ServerClient.accountOtpCheck(this, currentEmail(), currentPhone(), c, currentName())
+            val r = ServerClient.accountOtpCheck(this, "", currentPhone(), c, currentName())
             runOnUiThread {
                 if (my != seq || isFinishing) return@runOnUiThread
                 setBusy(false)
                 val j = r.json
                 if (r.code in 200..299 && j?.optBoolean("signedIn") == true) {
-                    Prefs.setAccountEmail(this, j.optString("email", currentEmail()).takeIf { it != "null" }.orEmpty())
+                    Prefs.setAccountEmail(this, j.optString("email").takeIf { it != "null" }.orEmpty())
                     Prefs.setAccountPhone(this, j.optString("phone").takeIf { it != "null" }.orEmpty())
                     Prefs.setGuest(this, false)
                     afterSignIn()
