@@ -29,11 +29,6 @@ object AgentoCore {
     @JvmStatic private external fun port(): Int
     @JvmStatic external fun version(): String
 
-    @Volatile private var lastError: String? = null
-
-    /** Boot-failure description for the UI, or null when the core is up. */
-    fun error(): String? = lastError
-
     /** Loopback port of the running core, booting it if needed. 0 = failed. */
     @Synchronized
     fun ensureStarted(ctx: Context): Int {
@@ -44,11 +39,9 @@ object AgentoCore {
             installSchemas(app)
             val code = start(config(app).toString())
             if (code <= 0) {
-                lastError = "core boot failed ($code)"
-                Log.e(TAG, lastError!!)
+                Log.e(TAG, "core boot failed ($code)")
                 0
             } else {
-                lastError = null
                 Log.i(TAG, "core ${version()} listening on 127.0.0.1:$code")
                 // Measured boot, off this thread: the core is up, so it can
                 // answer /api/agent; the chain goes back to it when ready.
@@ -56,7 +49,6 @@ object AgentoCore {
                 code
             }
         } catch (e: Throwable) {
-            lastError = e.toString()
             Log.e(TAG, "core boot threw", e)
             0
         }

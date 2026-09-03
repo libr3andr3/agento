@@ -10,8 +10,6 @@
     <string name="settings_sync_calendar">Guardar citas en el Calendario</string>
     <string name="settings_ossync_hint">Solo los clientes con número de teléfono. WhatsApp mostrará sus nombres. Se crea un calendario «agento» que puedes ver en tu app de calendario.</string>
     <string name="ossync_permission_denied">Sin ese permiso no puedo guardarlos. Puedes darlo en Ajustes del teléfono.</string>
-    <string name="ossync_contacts_added">%1$d clientes guardados en Contactos</string>
-    <string name="ossync_calendar_synced">Calendario actualizado: %1$d citas nuevas</string>
     <string name="ossync_contact_note">Cliente de %1$s · guardado por agento</string>
     <string name="ossync_calendar_name">agento · %1$s</string>
     <string name="ossync_event_note">Agendado por tu agente (agento)</string>

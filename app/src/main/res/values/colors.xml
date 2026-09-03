@@ -8,7 +8,6 @@
     <color name="agento_on_primary">#FFFFFF</color>
     <color name="agento_primary_container">#DDF3E7</color>
     <color name="agento_on_primary_container">#0A4632</color>
-    <color name="agento_primary_deep">#0A3D2C</color>
 
     <!-- Accent / pending -->
     <color name="agento_secondary">#A6650A</color>

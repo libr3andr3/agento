@@ -7,7 +7,6 @@
     <string name="crm_conversations_empty">Ainda não há conversas. Quando um cliente escrever, seu agente responde e você verá aqui.</string>
     <string name="crm_see_all">Ver todas</string>
     <string name="crm_kind_owner">Dono</string>
-    <string name="crm_kind_customer">Cliente</string>
     <string name="crm_source_network">Rede Yaya</string>
     <string name="crm_messages_count">%1$d mensagens</string>
     <string name="crm_unknown_name">Sem nome</string>
@@ -19,6 +18,4 @@
     <string name="crm_edit_notes">Notas</string>
     <string name="crm_save">Salvar</string>
     <string name="crm_saved">Contato salvo</string>
-    <string name="crm_open_chat">Abrir no %1$s</string>
-    <string name="dash_contacts">👥 Clientes</string>
 </resources>

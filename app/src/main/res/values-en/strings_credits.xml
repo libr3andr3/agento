@@ -7,7 +7,6 @@
     <string name="credits_state_ok">Enough for %1$d outcomes with new customers.</string>
     <string name="credits_state_low">Top up soon: your agent keeps serving everyone, but the balance is about to run out.</string>
     <string name="credits_topup">Top up credits</string>
-    <string name="credits_topup_text">Hi, I want to top up agento credits for my account %1$s</string>
     <string name="credits_rules_header">How they are spent</string>
     <string name="credits_rule_known">%1$s per confirmed booking or sale with a customer your business already knows</string>
     <string name="credits_rule_new">%1$s per confirmed booking or sale with a new customer</string>

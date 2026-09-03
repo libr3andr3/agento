@@ -3,7 +3,6 @@
 <resources>
     <string name="chat_header_status">Assistant online</string>
     <string name="chat_retry">Not sent · Retry</string>
-    <string name="chat_recording_hint">Recording — tap ⏹ to send</string>
 
     <!-- Hold-to-record gesture. -->
     <string name="chat_slide_cancel_hint">◀ Slide to cancel</string>

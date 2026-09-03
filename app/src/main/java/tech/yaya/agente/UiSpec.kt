@@ -17,10 +17,6 @@ class UiSpec(val home: String, val tabs: List<Tab>) {
 
     class Block(val type: String, val opts: JSONObject?)
 
-    fun has(type: String): Boolean = tabs.any { t -> t.blocks.any { it.type == type } }
-
-    fun tabOf(type: String): Int = tabs.indexOfFirst { t -> t.blocks.any { it.type == type } }
-
     fun homeIndex(): Int = tabs.indexOfFirst { it.id == home }.coerceAtLeast(0)
 
     /** A stable fingerprint so the bottom bar is rebuilt only when the design changed. */

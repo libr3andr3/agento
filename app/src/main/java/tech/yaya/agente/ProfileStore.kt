@@ -48,15 +48,6 @@ object ProfileStore {
         saveAll(ctx, all)
     }
 
-    /** Unmount: the package is unknown again, exactly as before it was learned. */
-    @Synchronized
-    fun drop(ctx: Context, pkg: String) {
-        val all = loadAll(ctx)
-        all.remove(pkg)
-        saveAll(ctx, all)
-        Prefs.setAppEnabled(ctx, pkg, false)
-    }
-
     fun isLive(ctx: Context, p: NotificationProfile): Boolean =
         !p.paused && p.eligible && Prefs.isAppEnabled(ctx, p.packageName)
 

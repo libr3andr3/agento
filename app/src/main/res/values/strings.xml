@@ -2,11 +2,6 @@
 <resources>
     <string name="app_title" translatable="false">agento</string>
     <string name="app_subtitle">Tu recepcionista con IA para tus apps de chat</string>
-
-    <!-- Welcome (first run) -->
-    <string name="welcome_tagline">agento contesta tus chats, agenda citas y cobra — por ti.</string>
-    <string name="welcome_cta">Crear mi agente</string>
-
     <!-- Permission -->
     <string name="permission_banner_text">Para responder por ti, agento necesita leer tus notificaciones. Nada sale de tu teléfono: las respuestas se envían con el botón de respuesta de cada app.</string>
     <string name="permission_title">Un permiso para empezar</string>
@@ -21,7 +16,6 @@
     <string name="cooldown_title">Esperar antes de repetir la respuesta</string>
     <string name="cooldown_value">Máximo una respuesta automática cada %1$d min por cliente</string>
     <string name="apps_header">Apps que atiende tu agente</string>
-    <string name="log_header">Actividad reciente</string>
     <string name="log_clear">Borrar</string>
     <string name="log_empty">Aún no hay mensajes. Cuando un cliente te escriba, verás aquí lo que respondió tu agente.</string>
 
@@ -31,7 +25,6 @@
     <string name="server_setup_chat_new">Crear mi agente</string>
     <string name="server_status_connected">✓ Tu agente está conectado</string>
     <string name="server_status_off">Tu agente aún no está creado — crea uno para empezar</string>
-    <string name="server_url_title">Motor de IA (avanzado)</string>
     <string name="ai_engine_title">Motor de IA</string>
     <string name="ai_engine_explainer">Tu agente y todos tus datos viven en este teléfono. Solo el modelo de lenguaje es remoto: por defecto usa yaya.tech (gratis). Si quieres control total, pon aquí tu propio proveedor compatible con OpenAI y tu clave. Se aplica al reiniciar la app.</string>
     <string name="ai_engine_url_hint">URL (vacío = yaya.tech)</string>
@@ -45,7 +38,6 @@
     <!-- Onboarding chat -->
     <string name="onboarding_title">Mi negocio</string>
     <string name="onboarding_input_hint">Escribe tu respuesta…</string>
-    <string name="onboarding_send">Enviar</string>
     <string name="onboarding_resume_hint">🟢 Tu negocio ya está registrado. Cuéntame si cambian tus horarios, precios o feriados y lo actualizo.</string>
     <string name="onboarding_saved">Perfil guardado — tu agente ya atiende a tus clientes.</string>
     <string name="typing_indicator">🟢 escribiendo…</string>
@@ -58,9 +50,6 @@
     <string name="done_cta">Vamos a tu calendario</string>
 
     <!-- Voice -->
-    <string name="voice_mic">🎤  Toca para hablar</string>
-    <string name="voice_stop">⏹  %1$s · Grabando — toca para enviar</string>
-    <string name="voice_sending">Enviando…</string>
     <string name="voice_too_short">Muy corto — mantén presionado mientras hablas</string>
     <string name="voice_replay" translatable="false">🔊</string>
     <string name="mic_perm_title">Permiso de micrófono</string>
@@ -69,12 +58,10 @@
     <string name="audio_error">No se pudo reproducir el audio. El texto está arriba.</string>
 
     <!-- Dashboard -->
-    <string name="dash_subtitle">agento · recepcionista con IA</string>
     <string name="dash_settings">Ajustes</string>
     <string name="dash_today">Hoy</string>
     <string name="dash_week">Esta semana</string>
     <string name="dash_month">Este mes</string>
-    <string name="dash_gaps">Tu agente necesita saber</string>
     <string name="notif_channel_name">Atención requerida</string>
     <string name="notif_attention_title">Tu agente necesita tu ayuda</string>
     <string name="notif_escalation_title">⚠️ Un cliente quiere hablar contigo</string>
@@ -85,19 +72,14 @@
     <string name="gap_answer_send">Enseñar a mi agente</string>
     <string name="gap_answered">Listo ✅ Tu agente ya lo sabe y responderá la próxima vez.</string>
     <string name="gap_answer_failed">No se pudo enviar. Revisa tu conexión e intenta de nuevo.</string>
-    <string name="dash_agenda">Próximas citas</string>
-    <string name="dash_today_header">Hoy · %1$s</string>
-    <string name="dash_empty">Aún no hay citas.\nComparte tu número y tu agente agendará la primera 💪</string>
     <string name="dash_paid">✓ pagado</string>
     <string name="dash_pending">pendiente</string>
     <string name="dash_convos">Conversaciones recientes</string>
     <string name="dash_convos_empty">Cuando un cliente escriba, verás aquí la conversación.</string>
     <string name="status_active">● Agente activo</string>
     <string name="status_active_last">● Agente activo · última respuesta %1$s</string>
-    <string name="status_offline">Sin conexión — mostrando datos guardados. Desliza para reintentar.</string>
     <string name="status_off_banner">Tu agente está apagado — tus clientes no reciben respuesta</string>
     <string name="status_activate">Activarlo</string>
-    <string name="status_today_count">Hoy: %1$d respuestas</string>
 
     <!-- Activity log (owner-readable) -->
     <string name="log_replied">✔ respondió</string>
@@ -107,7 +89,6 @@
     <string name="log_send_failed">No se pudo enviar — vuelve a intentar</string>
     <string name="log_fallback_sent">Sin conexión — se envió la respuesta de respaldo</string>
     <string name="log_payment_no_server">Pago detectado (crea tu agente para verificarlo)</string>
-    <string name="log_payment_unreachable">Pago detectado — sin conexión al servidor</string>
     <string name="log_payment_matched">Pago verificado y vinculado a la cita (%1$s)</string>
     <string name="log_payment_recorded">Pago registrado — sin cita pendiente que coincida</string>
 
@@ -127,7 +108,6 @@
     <string name="catalog_photo_unavailable">Función no disponible</string>
     <string name="catalog_photo_no_app">No se encontró una app de cámara o galería en tu teléfono</string>
 
-    <string name="dash_orders">Pedidos</string>
     <string name="order_paid">pagado</string>
     <string name="order_pending">por pagar</string>
     <string name="dash_talk_to_business">Habla con tu negocio</string>

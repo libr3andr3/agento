@@ -114,9 +114,4 @@ object DeviceAttestation {
         } finally { conn.disconnect() }
     }
 
-    /** Whether this build is the one the registry expects (debug builds still attest; the registry decides). */
-    @Suppress("unused")
-    fun packageName(ctx: Context): String = try {
-        ctx.packageManager.getPackageInfo(ctx.packageName, 0).packageName
-    } catch (_: PackageManager.NameNotFoundException) { ctx.packageName }
 }

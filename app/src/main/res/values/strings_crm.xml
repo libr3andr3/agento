@@ -7,7 +7,6 @@
     <string name="crm_conversations_empty">Todavía no hay conversaciones. Cuando un cliente te escriba, tu agente responde y lo verás aquí.</string>
     <string name="crm_see_all">Ver todas</string>
     <string name="crm_kind_owner">Dueño</string>
-    <string name="crm_kind_customer">Cliente</string>
     <string name="crm_source_network">Red Yaya</string>
     <string name="crm_messages_count">%1$d mensajes</string>
     <string name="crm_unknown_name">Sin nombre</string>
@@ -19,6 +18,4 @@
     <string name="crm_edit_notes">Notas</string>
     <string name="crm_save">Guardar</string>
     <string name="crm_saved">Contacto guardado</string>
-    <string name="crm_open_chat">Abrir en %1$s</string>
-    <string name="dash_contacts">👥 Clientes</string>
 </resources>

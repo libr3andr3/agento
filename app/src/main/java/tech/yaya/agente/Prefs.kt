@@ -145,9 +145,6 @@ object Prefs {
     fun learnedSourcesStale(ctx: Context): Boolean =
         System.currentTimeMillis() - sp(ctx).getLong("learned_pay_sources_at", 0L) > LEARNED_TTL_MS
 
-    fun invalidateLearnedSources(ctx: Context) =
-        sp(ctx).edit().putLong("learned_pay_sources_at", 0L).apply()
-
     /** Pulls the list if stale. Network: call from [ServerClient.IO_EXECUTOR]. */
     fun refreshLearnedSources(ctx: Context, force: Boolean = false) {
         if (!force && !learnedSourcesStale(ctx)) return
@@ -197,20 +194,6 @@ object Prefs {
             .apply()
         SecureStore.putString(sp(ctx), "llm_api_key_enc", apiKey.trim())
     }
-    fun llmIsCustom(ctx: Context) = llmBaseUrl(ctx).isNotBlank() || llmApiKey(ctx).isNotBlank()
-
-    /**
-     * Rejects anything that isn't HTTPS and reports whether it took the value.
-     * The device token, every customer conversation, and the payment feed all
-     * travel this URL; a plain-HTTP endpoint puts them on the wire in the clear
-     * and lets a network attacker rewrite the replies the business sends.
-     */
-    fun setServerUrl(ctx: Context, url: String): Boolean {
-        val clean = url.trim().trimEnd('/')
-        if (!clean.startsWith("https://") || clean.length <= "https://".length) return false
-        sp(ctx).edit().putString("server_url", clean).apply()
-        return true
-    }
 
     private const val KEY_DEVICE_TOKEN = "device_token_enc"
     private const val LEGACY_DEVICE_TOKEN = "device_token"
@@ -253,35 +236,11 @@ object Prefs {
     fun setAccountPhone(ctx: Context, phone: String) =
         sp(ctx).edit().putString("account_phone", phone).apply()
 
-    fun businessId(ctx: Context): String = sp(ctx).getString("business_id", "") ?: ""
     fun setBusinessId(ctx: Context, id: String) =
         sp(ctx).edit().putString("business_id", id).apply()
 
     /** Agent mode = registered business + reachable server; else canned replies. */
     fun serverConfigured(ctx: Context) = deviceToken(ctx).isNotEmpty()
-
-    /**
-     * Wipes everything tied to the paired business — for a future logout /
-     * "cambiar de negocio" flow. Nothing calls this yet; adding it now so the
-     * knowledge of WHICH keys make up an identity lives here, not in a
-     * settings screen. Clears the cached dashboard and transcript too: they
-     * are the previous business's data and must not greet the next login.
-     * (auto_reply settings and per-app toggles are device preferences and
-     * survive.)
-     */
-    fun clearIdentity(ctx: Context) {
-        sp(ctx).edit()
-            .remove(KEY_DEVICE_TOKEN)
-            .remove(LEGACY_DEVICE_TOKEN)
-            .remove("business_id")
-            .remove("dash_cache")
-            .remove("chat_transcript")
-            .remove("walkthrough_seen")
-            .remove("loc_country").remove("loc_currency").remove("loc_symbol").remove("loc_language")
-            .remove("learned_pay_sources").remove("learned_pay_sources_at")
-            .remove("credits_cache")
-            .apply()
-    }
 
     /** Last good dashboard payload, rendered while offline. */
     fun dashboardCache(ctx: Context): String? = sp(ctx).getString("dash_cache", null)

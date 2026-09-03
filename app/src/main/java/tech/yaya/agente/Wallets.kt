@@ -172,9 +172,6 @@ object Wallets {
     fun get(ctx: Context, packageName: String): Wallet? = all(ctx).firstOrNull { it.packageName == packageName }
     fun isKnown(ctx: Context, packageName: String): Boolean = get(ctx, packageName) != null
 
-    /** Wallets people use in [iso], most relevant first (catalog order). */
-    fun forCountry(ctx: Context, iso: String): List<Wallet> = all(ctx).filter { iso in it.countries }
-
     /**
      * What the end-of-onboarding screen shows: the country's wallets, then
      * any other catalog wallet that happens to be installed (a wallet from

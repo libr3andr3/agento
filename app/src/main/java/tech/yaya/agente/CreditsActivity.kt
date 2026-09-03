@@ -152,7 +152,6 @@ object Credits {
     fun volumeAfter(c: JSONObject?): Int = prices(c)?.optInt("volumeAfter", VOLUME_AFTER) ?: VOLUME_AFTER
     fun monthlyCap(c: JSONObject?): Double = prices(c)?.optDouble("monthlyCap", MONTHLY_CAP) ?: MONTHLY_CAP
     fun depositsEnabled(c: JSONObject?): Boolean = c?.optBoolean("depositsEnabled", true) ?: true
-    fun termsVersion(c: JSONObject?): String = c?.optString("termsVersion").takeIf { !it.isNullOrBlank() && it != "null" } ?: TERMS_VERSION
 
     /**
      * The gateway's word when it gave one; otherwise derived from the

@@ -7,7 +7,6 @@
     <string name="crm_conversations_empty">No conversations yet. When a customer writes, your agent replies and you\'ll see it here.</string>
     <string name="crm_see_all">See all</string>
     <string name="crm_kind_owner">Owner</string>
-    <string name="crm_kind_customer">Customer</string>
     <string name="crm_source_network">Yaya network</string>
     <string name="crm_messages_count">%1$d messages</string>
     <string name="crm_unknown_name">No name</string>
@@ -19,6 +18,4 @@
     <string name="crm_edit_notes">Notes</string>
     <string name="crm_save">Save</string>
     <string name="crm_saved">Contact saved</string>
-    <string name="crm_open_chat">Open in %1$s</string>
-    <string name="dash_contacts">👥 Customers</string>
 </resources>

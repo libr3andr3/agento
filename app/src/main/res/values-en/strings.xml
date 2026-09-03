@@ -2,8 +2,6 @@
 <resources>
     <string name="app_subtitle">Your AI receptionist for your chat apps</string>
 
-    <string name="welcome_tagline">agento answers your chats, books appointments and collects payments — for you.</string>
-    <string name="welcome_cta">Create my agent</string>
 
     <string name="permission_banner_text">To reply for you, agento needs to read your notifications. Nothing leaves your phone: replies go out through each app\'s own reply button.</string>
     <string name="permission_title">One permission to start</string>
@@ -17,7 +15,6 @@
     <string name="cooldown_title">Wait before repeating the reply</string>
     <string name="cooldown_value">At most one auto-reply every %1$d min per customer</string>
     <string name="apps_header">Apps your agent watches</string>
-    <string name="log_header">Recent activity</string>
     <string name="log_clear">Clear</string>
     <string name="log_empty">No messages yet. When a customer writes, you\'ll see your agent\'s replies here.</string>
 
@@ -27,7 +24,6 @@
     <string name="server_setup_chat_new">Create my agent</string>
     <string name="server_status_connected">✓ Your agent is connected</string>
     <string name="server_status_off">Your agent isn\'t created yet — create one to start</string>
-    <string name="server_url_title">AI engine (advanced)</string>
     <string name="ai_engine_title">AI engine</string>
     <string name="ai_engine_explainer">Your agent and all your data live on this phone. Only the language model is remote: by default it uses yaya.tech (free). For full control, enter your own OpenAI-compatible provider and key. Applies after restarting the app.</string>
     <string name="ai_engine_url_hint">URL (blank = yaya.tech)</string>
@@ -40,7 +36,6 @@
 
     <string name="onboarding_title">My business</string>
     <string name="onboarding_input_hint">Type your answer…</string>
-    <string name="onboarding_send">Send</string>
     <string name="onboarding_resume_hint">🟢 Your business is registered. Tell me about changed hours, prices or holidays and I\'ll update it.</string>
     <string name="onboarding_saved">Profile saved — your agent is now answering customers.</string>
     <string name="typing_indicator">🟢 typing…</string>
@@ -49,21 +44,16 @@
     <string name="done_title">All set! 🎉</string>
     <string name="done_cta">Let\'s see your calendar</string>
 
-    <string name="voice_mic">🎤  Tap to speak</string>
-    <string name="voice_stop">⏹  %1$s · Recording — tap to send</string>
-    <string name="voice_sending">Sending…</string>
     <string name="voice_too_short">Too short — keep holding while you speak</string>
     <string name="mic_perm_title">Microphone permission</string>
     <string name="mic_perm_msg">To talk with your assistant, allow the microphone. You can also type if you prefer.</string>
     <string name="mic_error">Couldn\'t use the microphone. You can type your answer.</string>
     <string name="audio_error">Couldn\'t play the audio. The text is above.</string>
 
-    <string name="dash_subtitle">agento · AI receptionist</string>
     <string name="dash_settings">Settings</string>
     <string name="dash_today">Today</string>
     <string name="dash_week">This week</string>
     <string name="dash_month">This month</string>
-    <string name="dash_gaps">Your agent needs to know</string>
     <string name="notif_channel_name">Attention needed</string>
     <string name="notif_attention_title">Your agent needs your help</string>
     <string name="notif_escalation_title">⚠️ A customer wants to talk to you</string>
@@ -74,19 +64,14 @@
     <string name="gap_answer_send">Teach my agent</string>
     <string name="gap_answered">Done ✅ Your agent knows it now and will answer next time.</string>
     <string name="gap_answer_failed">Couldn\'t send. Check your connection and try again.</string>
-    <string name="dash_agenda">Upcoming appointments</string>
-    <string name="dash_today_header">Today · %1$s</string>
-    <string name="dash_empty">No appointments yet.\nShare your number and your agent will book the first one 💪</string>
     <string name="dash_paid">✓ paid</string>
     <string name="dash_pending">pending</string>
     <string name="dash_convos">Recent conversations</string>
     <string name="dash_convos_empty">When a customer writes, you\'ll see the conversation here.</string>
     <string name="status_active">● Agent active</string>
     <string name="status_active_last">● Agent active · last reply %1$s</string>
-    <string name="status_offline">Offline — showing saved data. Swipe to retry.</string>
     <string name="status_off_banner">Your agent is off — customers are not getting replies</string>
     <string name="status_activate">Turn it on</string>
-    <string name="status_today_count">Today: %1$d replies</string>
 
     <string name="log_replied">✔ replied</string>
     <string name="log_skipped_group">Group skipped (groups are off)</string>
@@ -95,7 +80,6 @@
     <string name="log_send_failed">Couldn\'t send — try again</string>
     <string name="log_fallback_sent">Offline — backup reply was sent</string>
     <string name="log_payment_no_server">Payment detected (create your agent to verify it)</string>
-    <string name="log_payment_unreachable">Payment detected — server unreachable</string>
     <string name="log_payment_matched">Payment verified and linked to the booking (%1$s)</string>
     <string name="log_payment_recorded">Payment recorded — no matching pending booking</string>
 
@@ -113,7 +97,6 @@
     <string name="catalog_photo_unavailable">Feature not available</string>
     <string name="catalog_photo_no_app">No camera or gallery app found on your phone</string>
 
-    <string name="dash_orders">Orders</string>
     <string name="order_paid">paid</string>
     <string name="order_pending">unpaid</string>
     <string name="dash_talk_to_business">Talk to your business</string>

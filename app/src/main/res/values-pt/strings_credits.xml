@@ -7,7 +7,6 @@
     <string name="credits_state_ok">Dá para %1$d resultados com clientes novos.</string>
     <string name="credits_state_low">Recarregue em breve: seu agente continua atendendo todo mundo, mas o saldo está acabando.</string>
     <string name="credits_topup">Recarregar créditos</string>
-    <string name="credits_topup_text">Olá, quero recarregar créditos do agento para a minha conta %1$s</string>
     <string name="credits_rules_header">Como são usados</string>
     <string name="credits_rule_known">%1$s por cada agendamento ou venda confirmada com um cliente que seu negócio já conhece</string>
     <string name="credits_rule_new">%1$s por cada agendamento ou venda confirmada com um cliente novo</string>

@@ -2,8 +2,6 @@ package tech.yaya.agente
 
 import android.content.Context
 import android.net.Uri
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
 import android.util.Log
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -82,30 +80,6 @@ object ServerClient {
     }
 
     fun classify(r: Response): Kind = classify(r.code)
-
-    // ---------------------------------------------------------- connectivity
-
-    /**
-     * Best-effort "is there a network at all" — for callers that want to skip
-     * a doomed request or word an error as "sin conexión" instead of "error".
-     * NOT a gate inside this client: transport failures still come back as
-     * code 0 whatever this says, and it can be stale the moment it returns.
-     *
-     * Fails OPEN (returns true) when the answer is unknowable — including the
-     * current manifest, which does not declare ACCESS_NETWORK_STATE (only the
-     * manifest owner may add it). Never let this helper be the reason a
-     * request that would have succeeded was never sent.
-     */
-    fun isOnline(ctx: Context): Boolean {
-        return try {
-            val cm = ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-                ?: return true // unknowable → fail open
-            val caps = cm.getNetworkCapabilities(cm.activeNetwork)
-            caps != null && caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-        } catch (_: Exception) {
-            true // includes SecurityException while the permission is undeclared
-        }
-    }
 
     // ------------------------------------------------------------- transport
 
@@ -287,9 +261,6 @@ object ServerClient {
     fun accountLogout(ctx: Context): Boolean =
         postRaw(ctx, "/api/account/logout", JSONObject(), bearer = false).code in 200..299
 
-    /** Upload an encrypted snapshot now (every signed-in account). */
-    fun backupNow(ctx: Context): Response = postRaw(ctx, "/api/backup", JSONObject(), bearer = false)
-
     /** Bring the account's latest snapshot onto this phone. Slow: it downloads
      *  and rewrites every table. Side-effectful: never retried. */
     fun restore(ctx: Context, force: Boolean): Response = exchange(
@@ -467,12 +438,6 @@ object ServerClient {
 
     // D15: the owner's work queue, the catalog's photos, the UI spec. [IO_EXECUTOR].
 
-    /** The composed UI spec (also inside /api/dashboard). */
-    fun ui(ctx: Context): JSONObject? {
-        val r = exchange(ctx, "/api/ui", body = null, contentType = null, bearer = true, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
-        return if (r.code in 200..299) r.json else null
-    }
-
     /** done | undo | cancelled | paid. Side-effectful: never retried. */
     fun orderStatus(ctx: Context, id: String, status: String): JSONObject? =
         post(ctx, "/api/orders/" + Uri.encode(id), JSONObject().put("status", status), bearer = true)
@@ -480,11 +445,6 @@ object ServerClient {
     /** done | undo | cancelled | no_show | paid. Side-effectful: never retried. */
     fun appointmentStatus(ctx: Context, id: String, status: String): JSONObject? =
         post(ctx, "/api/appointments/" + Uri.encode(id), JSONObject().put("status", status), bearer = true)
-
-    fun mediaList(ctx: Context): JSONObject? {
-        val r = exchange(ctx, "/api/media", body = null, contentType = null, bearer = true, readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
-        return if (r.code in 200..299) r.json else null
-    }
 
     /** A resized JPEG up; `{id}` down. One shot (a retry would store it twice). */
     fun mediaUpload(ctx: Context, jpeg: ByteArray, product: String?, caption: String?): Response {
