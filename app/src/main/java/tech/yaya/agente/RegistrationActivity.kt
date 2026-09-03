@@ -64,6 +64,12 @@ class RegistrationActivity : AppCompatActivity() {
     private lateinit var nameInput: TextInputEditText
     private lateinit var industryTil: TextInputLayout
     private lateinit var industryInput: TextInputEditText
+    private lateinit var categoryTil: TextInputLayout
+    private lateinit var categoryInput: com.google.android.material.textfield.MaterialAutoCompleteTextView
+    private lateinit var terms: com.google.android.material.checkbox.MaterialCheckBox
+    private lateinit var termsError: TextView
+    /** The picked category's stable key (Categories.kt), "" until chosen. */
+    private var categoryKey = ""
     private lateinit var businessCta: MaterialButton
     private lateinit var businessSpin: CircularProgressIndicator
 
@@ -101,6 +107,7 @@ class RegistrationActivity : AppCompatActivity() {
         country = Countries.defaultFor(this)
         savedInstanceState?.let {
             country = Countries.byIso(it.getString("iso"))
+            categoryKey = it.getString("category", "")
             fullPhone = it.getString("phone", "")
             resendDeadline = it.getLong("deadline", 0L)
             step = it.getInt("step", 1).coerceIn(1, 3)
@@ -121,6 +128,7 @@ class RegistrationActivity : AppCompatActivity() {
         super.onSaveInstanceState(outState)
         outState.putInt("step", step)
         outState.putString("iso", country.iso)
+        outState.putString("category", categoryKey)
         outState.putString("phone", fullPhone)
         outState.putLong("deadline", resendDeadline)
         // EditText contents ride the default view state (they all have ids).
@@ -149,6 +157,10 @@ class RegistrationActivity : AppCompatActivity() {
         nameInput = findViewById(R.id.reg_name_input)
         industryTil = findViewById(R.id.reg_industry_til)
         industryInput = findViewById(R.id.reg_industry_input)
+        categoryTil = findViewById(R.id.reg_category_til)
+        categoryInput = findViewById(R.id.reg_category_input)
+        terms = findViewById(R.id.reg_terms)
+        termsError = findViewById(R.id.reg_terms_error)
         businessCta = findViewById(R.id.reg_business_cta)
         businessSpin = findViewById(R.id.reg_business_spin)
 
@@ -172,7 +184,18 @@ class RegistrationActivity : AppCompatActivity() {
     private fun wireStep1() {
         nameInput.clearErrorOnType(nameTil)
         industryInput.clearErrorOnType(industryTil)
-        industryInput.setOnEditorActionListener { _, _, _ -> businessCta.performClick(); true }
+        industryInput.setOnEditorActionListener { _, _, _ -> categoryInput.showDropDown(); true }
+        // The fixed category list, in the app's language. Prohibited
+        // categories are listed on purpose: picking one is what the gate
+        // reacts to (docs/CREDITS.md § 4).
+        val cats = Categories.all(this)
+        categoryInput.setSimpleItems(cats.map { it.label(this) }.toTypedArray())
+        categoryInput.setOnItemClickListener { _, _, pos, _ ->
+            categoryKey = cats.getOrNull(pos)?.key.orEmpty()
+            categoryTil.error = null
+        }
+        cats.firstOrNull { it.key == categoryKey }?.let { categoryInput.setText(it.label(this), false) }
+        terms.setOnCheckedChangeListener { _, on -> if (on) termsError.visibility = View.GONE }
         businessCta.setOnClickListener { submitBusiness() }
     }
 
@@ -216,23 +239,10 @@ class RegistrationActivity : AppCompatActivity() {
 
     // ------------------------------------------------------------ step machine
 
-    /** One step back everywhere; from step 1 this exits the app. */
-    /**
-     * One step back; from step 1, out. A guest ("Continuar sin cuenta") goes
-     * back to the sign-in screen so they can still pick a Yaya account —
-     * finishing here would drop them on the launcher, and the next launch
-     * would route straight back to this step with no way out (looked like a
-     * crash). A signed-in owner exits as before.
-     */
+    /** One step back everywhere; from step 1 this exits the app (the owner is
+     *  always signed in by now — there is no guest mode). */
     private fun stepBack() {
-        when {
-            step > 1 -> showStep(step - 1)
-            Prefs.isGuest(this) -> {
-                startActivity(Intent(this, AccountActivity::class.java))
-                finish()
-            }
-            else -> finish()
-        }
+        if (step > 1) showStep(step - 1) else finish()
     }
 
     private fun showStep(n: Int) {
@@ -271,7 +281,7 @@ class RegistrationActivity : AppCompatActivity() {
         spin.visibility = if (b) View.VISIBLE else View.GONE
         // backBtn stays enabled on purpose: back during a request cancels it (seq bump).
         when (step) {
-            1 -> { nameInput.isEnabled = !b; industryInput.isEnabled = !b }
+            1 -> { nameInput.isEnabled = !b; industryInput.isEnabled = !b; categoryInput.isEnabled = !b; terms.isEnabled = !b }
             2 -> { phoneInput.isEnabled = !b; countryCard.isEnabled = !b }
             3 -> {
                 codeInput.isEnabled = !b
@@ -298,7 +308,19 @@ class RegistrationActivity : AppCompatActivity() {
         var ok = true
         if (name.isEmpty()) { nameTil.error = getString(R.string.reg_business_name_error); ok = false }
         if (industry.isEmpty()) { industryTil.error = getString(R.string.reg_business_industry_error); ok = false }
-        if (ok) showStep(2)
+        if (categoryKey.isEmpty()) { categoryTil.error = getString(R.string.reg_category_error); ok = false }
+        if (!terms.isChecked) { termsError.visibility = View.VISIBLE; ok = false }
+        if (!ok) return
+        // The gate: a prohibited category stops here, on a neutral screen,
+        // before any business row or device token exists.
+        if (Categories.isProhibited(this, categoryKey)) {
+            startActivity(Intent(this, BlockedActivity::class.java))
+            return
+        }
+        if (Prefs.termsAcceptedAt(this).isEmpty()) {
+            Prefs.setTermsAcceptedAt(this, java.time.format.DateTimeFormatter.ISO_INSTANT.format(java.time.Instant.now()))
+        }
+        showStep(2)
     }
 
     // ------------------------------------------------------------ step 2
@@ -315,7 +337,7 @@ class RegistrationActivity : AppCompatActivity() {
         countryFlag.text = country.flag
         countryDial.text = "+" + country.dial
         countryCard.contentDescription =
-            getString(R.string.reg_country_cd, country.nameEs, "+" + country.dial)
+            getString(R.string.reg_country_cd, country.name(this), "+" + country.dial)
     }
 
     private fun submitPhone() {
@@ -425,9 +447,20 @@ class RegistrationActivity : AppCompatActivity() {
         val name = nameInput.text?.toString()?.trim().orEmpty()
         val industry = industryInput.text?.toString()?.trim().orEmpty()
         ServerClient.IO_EXECUTOR.execute {
-            val resp = ServerClient.onboardBusiness(this, name, industry, fullPhone, country.iso, verificationToken)
+            val r = ServerClient.onboardBusiness(
+                this, name, industry, fullPhone, country.iso, verificationToken,
+                category = categoryKey.ifEmpty { null }, termsAcceptedAt = Prefs.termsAcceptedAt(this).ifEmpty { null },
+            )
+            val resp = if (r.code in 200..299) r.json else null
             runOnUiThread {
                 if (my != seq || isFinishing) return@runOnUiThread
+                // The server keeps its own prohibited list: it may say no
+                // even when the bundled one let the category through.
+                if (r.code == 403 && r.json?.optString("error") == "prohibited_category") {
+                    setBusy(false)
+                    startActivity(Intent(this, BlockedActivity::class.java))
+                    return@runOnUiThread
+                }
                 val deviceToken = resp?.optString("deviceToken").orEmpty()
                 if (deviceToken.isNotEmpty()) {
                     Prefs.setDeviceToken(this, deviceToken)

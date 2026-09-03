@@ -230,12 +230,32 @@ object ServerClient {
 
     // -------------------------------------------------------------- endpoints
 
-    // Plan of the Yaya account (bearer when a business is paired; the core
-    // talks to the gateway with its own identity either way). [IO_EXECUTOR].
+    // Credits of the Yaya account — balance, prices, ledger (docs/CREDITS.md).
+    // Bearer when a business is paired; the core talks to the gateway with
+    // its own identity either way. [IO_EXECUTOR].
 
-    fun plan(ctx: Context): JSONObject? {
-        val r = exchange(ctx, "/api/plan", body = null, contentType = null,
+    fun credits(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/credits", body = null, contentType = null,
             bearer = Prefs.serverConfigured(ctx), readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    /** Opens a top-up: `{url}` for a card checkout (Dodo), or the Yape/Plin
+     *  reference in Perú. Side-effectful (a checkout session): never retried. */
+    fun topupSession(ctx: Context, amount: Int, method: String): Response =
+        postRaw(ctx, "/api/topup/session", JSONObject().put("amount", amount).put("method", method), bearer = Prefs.serverConfigured(ctx))
+
+    /** The money-app catalog the server pushes (`Wallets`). No bearer: fetched at launch. */
+    fun wallets(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/wallets", body = null, contentType = null, bearer = false,
+            readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
+        return if (r.code in 200..299) r.json else null
+    }
+
+    /** Business categories and the prohibited list (`Categories`). No bearer: needed before registration. */
+    fun categories(ctx: Context): JSONObject? {
+        val r = exchange(ctx, "/api/categories", body = null, contentType = null, bearer = false,
+            readTimeoutMs = 20_000, retry = Retry.IDEMPOTENT)
         return if (r.code in 200..299) r.json else null
     }
 
@@ -261,26 +281,13 @@ object ServerClient {
             JSONObject().put("email", email).put("phone", phone).put("code", code).apply { name?.let { put("name", it) } },
             bearer = false)
 
-    fun accountGuest(ctx: Context, share: Boolean): Response =
-        postRaw(ctx, "/api/account/guest", JSONObject().put("share", share), bearer = false)
-
     fun accountShare(ctx: Context, share: Boolean): Boolean =
         postRaw(ctx, "/api/account/share", JSONObject().put("share", share), bearer = false).code in 200..299
-
-    /** Opens a plan purchase for the account (months = 1 or 12): amount,
-     *  Yape/Plin numbers and the reference to write in the transfer. */
-    fun planRequest(ctx: Context, plan: String, months: Int): Response =
-        postRaw(ctx, "/api/account/plan/request", JSONObject().put("plan", plan).put("months", months), bearer = false)
-
-    /** Where a purchase stands (`pending` / `paid`). [IO_EXECUTOR]. */
-    fun planRequestStatus(ctx: Context, ref: String): Response =
-        exchange(ctx, "/api/account/plan/request/" + Uri.encode(ref), body = null, contentType = null, bearer = false,
-            readTimeoutMs = 30_000, retry = Retry.IDEMPOTENT)
 
     fun accountLogout(ctx: Context): Boolean =
         postRaw(ctx, "/api/account/logout", JSONObject(), bearer = false).code in 200..299
 
-    /** Upload an encrypted snapshot now (paid plans). */
+    /** Upload an encrypted snapshot now (every signed-in account). */
     fun backupNow(ctx: Context): Response = postRaw(ctx, "/api/backup", JSONObject(), bearer = false)
 
     /** Bring the account's latest snapshot onto this phone. Slow: it downloads
@@ -550,16 +557,20 @@ object ServerClient {
      */
     fun onboardBusiness(
         ctx: Context, name: String, industry: String, ownerPhone: String,
-        country: String, verificationToken: String? = null
-    ): JSONObject? =
-        post(
+        country: String, verificationToken: String? = null,
+        category: String? = null, termsAcceptedAt: String? = null,
+    ): Response =
+        postRaw(
             ctx, "/api/onboard_business",
             JSONObject()
                 .put("businessName", name)
                 .put("industry", industry)
                 .put("ownerPhone", ownerPhone)
                 .put("country", country)
-                .apply { verificationToken?.let { put("verificationToken", it) } },
+                .apply { verificationToken?.let { put("verificationToken", it) } }
+                .apply { category?.let { put("category", it) } }
+                // Closed-loop terms accepted on the registration screen (docs/CREDITS.md § 3).
+                .apply { termsAcceptedAt?.let { put("termsVersion", Credits.TERMS_VERSION).put("termsAcceptedAt", it) } },
             bearer = false
         )
 }

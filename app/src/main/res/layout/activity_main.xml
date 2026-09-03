@@ -203,6 +203,17 @@
                         app:cornerRadius="@dimen/corner_control" />
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/credits_button"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/touch_min"
+                        android:layout_marginStart="@dimen/space_s"
+                        android:text="@string/settings_credits"
+                        app:cornerRadius="@dimen/corner_control"
+                        app:strokeColor="@color/agento_outline" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/payout_button"
                         style="@style/Widget.Material3.Button.OutlinedButton"
                         android:layout_width="wrap_content"
@@ -286,6 +297,48 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_s"
                     android:orientation="vertical" />
+
+                <!-- Money apps: the agent reads their payment notices. -->
+                <TextView
+                    android:id="@+id/money_header"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_l"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="@color/agento_on_surface_muted" />
+
+                <LinearLayout
+                    android:id="@+id/money_toggles"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/money_empty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/apps_money_none"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/agento_on_surface_muted"
+                    android:visibility="gone" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/other_sources_switch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:minHeight="@dimen/touch_min"
+                    android:text="@string/apps_other_label"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="@color/agento_on_surface" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/apps_other_hint"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="@color/agento_on_surface_muted" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -421,6 +474,32 @@
 
                     <TextView
                         android:id="@+id/cooldown_preview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="@color/agento_on_surface_muted" />
+                </LinearLayout>
+
+                <!-- Idioma: the app's own texts (the agent follows the business's country). -->
+                <LinearLayout
+                    android:id="@+id/language_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="@dimen/touch_min"
+                    android:orientation="vertical"
+                    android:paddingVertical="@dimen/space_s"
+                    android:background="?android:attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_language"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textStyle="bold"
+                        android:textColor="@color/agento_on_surface" />
+
+                    <TextView
+                        android:id="@+id/language_preview"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textAppearance="?attr/textAppearanceBodyMedium"

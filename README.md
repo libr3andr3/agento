@@ -83,6 +83,14 @@ sesiones espejo, no hay automatización de UI.
 - **Panel del negocio**: Hoy (citas, pedidos, ingresos), Conversaciones,
   Clientes, Cobros, y exportación de todo (.vcf, .csv, .ics) — los clientes a
   los Contactos del teléfono y las citas a un calendario propio.
+- **Créditos, no planes**: solo se cobra cuando se confirma una cita o venta —
+  USD 1 si el cliente ya es conocido del negocio, USD 2 si es nuevo — y toda
+  cuenta nueva recibe USD 12 de regalo. Responder, cotizar y confirmar pagos
+  es gratis. Ver `docs/CREDITS.md`.
+- **Apps y billeteras a elección**: al terminar la entrevista, el dueño
+  decide en qué apps de chat responde el agente y de qué billeteras o bancos
+  lee los avisos de pago (los de su país aparecen primero; cualquier otra app
+  de dinero se reconoce igual). Todo se decide y se queda en el teléfono.
 - **Auditoría verificable**: cada turno, herramienta ejecutada y pago leído
   queda en una cadena firmada (Ed25519) y encadenada por hash, con anclas
   contrafirmadas por la pasarela — verificable en el teléfono (Ajustes →
@@ -122,7 +130,10 @@ commits de origen y sha256 por ABI).
 - Dos canales del mismo código: `direct` (APK con autoactualización en
   agento.ceo) y `play` (Google Play, paquete `yaya.tech.agento`, sin permisos
   de instalación ni de visibilidad de paquetes).
-- Producto primero en español (Perú), inglés como segundo idioma.
+- Lanzamiento en toda Latinoamérica desde el día uno: la app va en
+  español, portugués e inglés (sigue el idioma del teléfono o el que elija
+  el dueño en Ajustes), y reconoce las billeteras y bancos del país con el
+  que el dueño se registró (`Wallets.kt`).
 
 ### Limitaciones actuales
 
@@ -175,7 +186,7 @@ contenerlas:
   agente) — a `yaya.tech` por defecto o a tu propio endpoint.
 - Voz y fotos del catálogo, para transcripción y extracción, por la misma vía.
 - Tu cuenta Yaya (inicio de sesión con código de un solo uso por WhatsApp,
-  plan) y, en planes pagados, un respaldo cifrado.
+  saldo de créditos) y un respaldo cifrado de la cuenta.
 
 Los mensajes de los clientes nunca se suben a ningún lado como tales; el
 modelo ve el turno que se le pide responder. Ver `docs/SECURITY.md`.
@@ -195,11 +206,13 @@ adb install -r app/build/outputs/apk/direct/debug/app-direct-debug.apk
 Luego, en el teléfono:
 
 1. Abre **agento** e inicia sesión con tu número de WhatsApp (código de un
-   solo uso) — o toca «Continuar sin cuenta».
+   solo uso). La cuenta es obligatoria — no hay modo invitado — y al crearla
+   recibes USD 12 en créditos.
 2. Registra el negocio (nombre, rubro, teléfono del dueño).
 3. Deja que la entrevista de configuración haga sus preguntas — por voz o
    escribiendo. También puedes fotografiar una carta o lista de precios y el
-   núcleo extrae los ítems.
+   núcleo extrae los ítems. Al final eliges en qué apps responde el agente y
+   qué billeteras lee.
 4. Concede el **Acceso a notificaciones** cuando lo pida. Ese permiso es el
    que hace que todo funcione; sin él, el agente está sordo.
 5. Escríbele al teléfono del negocio desde otro teléfono. Mira llegar la
@@ -239,14 +252,15 @@ app/src/main/
     MainActivity.kt            Ajustes: interruptor maestro, apps conectadas, registro, privacidad
     CrmListActivity.kt, ConversationActivity.kt   conversaciones y clientes
     PayoutActivity.kt          Cobros: a dónde te pagan los clientes
-    PlanActivity.kt            planes de la cuenta Yaya
+    CreditsActivity.kt         créditos: saldo, precios por cita, ledger, recarga
+    AppsSetupActivity.kt       último paso de la entrevista: en qué apps responde y qué billeteras lee
     AuditActivity.kt           verificación de la cadena de auditoría en el teléfono
-    BackupUpsellActivity.kt    se muestra una vez tras la entrevista
-    Countries.kt, CountryPicker.kt, SupportedApps.kt   catálogos pequeños
-  res/                         layouts, strings (values = español, values-en = inglés), tokens de diseño
+    Countries.kt, CountryPicker.kt, SupportedApps.kt, Wallets.kt   catálogos pequeños (países, apps de chat, billeteras por país)
+    AppToggles.kt, AppLanguage.kt   filas de interruptor por app; idioma de la app (es / pt / en)
+  res/                         layouts, strings (values = español, values-pt = portugués, values-en = inglés), tokens de diseño
   assets/schemas/              lo que el agente sabe preguntar: campos base + bundles por vertical
   jniLibs/<abi>/libagento_core.so   el núcleo del agente (ver jniLibs/CORE.md)
-docs/                          ARCHITECTURE, CORE-API, DESIGN, SECURITY, RELEASE, PLAY
+docs/                          ARCHITECTURE, CORE-API, CREDITS, DESIGN, SECURITY, RELEASE, PLAY
 scripts/                       verify-apk.sh (verificar una descarga), publish-apk.sh (canal de actualización)
 ```
 
@@ -296,7 +310,7 @@ bajo MIT/Apache-2.0.
 
 ## Idioma y estado
 
-El producto es primero en español (Perú), con inglés como segundo idioma. La
+La app va en español (idioma por defecto), portugués e inglés. La
 documentación está en español; los identificadores y comentarios del código
 están en inglés. Esta es la app en producción en
 [agento.ceo](https://agento.ceo). El paquete Kotlin sigue siendo

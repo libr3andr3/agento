@@ -257,30 +257,35 @@ class AgenteNotificationListener : NotificationListenerService() {
                 }
             }
         }
-        // Daily cap hit: the server answered (not an outage — no canned
-        // fallback) with one holding line for the customer. Send it at most
-        // once per conversation per cooldown so a chatty customer isn't
-        // spammed, and tell the owner, throttled.
-        if (resp?.optString("action") == "limit_reached") {
-            val holding = resp.optString("agentResponse").takeIf { it.isNotBlank() && it != "null" }
+        // Manual mode: the account is past its grace floor, so the core did
+        // not run the agent (docs/CREDITS.md § 2). The customer's message was
+        // stored for the owner and rides in `attention` (raised above); the
+        // agent sends NOTHING — the chat is never blocked, the owner answers
+        // by hand. The owner is reminded at most every 6 h, with the top-up
+        // link. Cores older than the credits model said "limit_reached" with
+        // a holding line; that line is still sent once per hour per chat.
+        val action = resp?.optString("action")
+        if (action == "no_credits" || action == "limit_reached") {
+            val holding = resp!!.optString("agentResponse").takeIf { it.isNotBlank() && it != "null" }
             val convKey = "limit|${app.packageName}|${parsed.sender}"
             val now = System.currentTimeMillis()
-            val sendHolding = synchronized(lastReplied) {
+            val sendHolding = holding != null && synchronized(lastReplied) {
                 lastReplied.entries.removeAll { now - it.value > MAX_COOLDOWN_MS }
                 val fresh = now - (lastReplied[convKey] ?: 0L) > LIMIT_HOLDING_COOLDOWN_MS
                 if (fresh) lastReplied[convKey] = now
                 fresh
             }
             val sent = holding != null && sendHolding && sendReply(replyAction, holding)
-            log(app, parsed, sent = sent, detail = ctx.getString(R.string.log_limit_reached))
-            if (now - lastTrialAlert > TRIAL_ALERT_INTERVAL_MS) {
-                lastTrialAlert = now
+            log(app, parsed, sent = sent, detail = ctx.getString(R.string.log_manual_mode))
+            if (now - lastCreditsAlert > CREDITS_ALERT_INTERVAL_MS) {
+                lastCreditsAlert = now
                 OwnerAlerts.notify(
                     ctx,
                     urgent = true,
                     sender = ctx.getString(R.string.app_name),
-                    question = ctx.getString(R.string.limit_reached_alert),
-                    gapId = "limit_reached"
+                    question = ctx.getString(R.string.manual_mode_alert),
+                    gapId = "no_credits",
+                    url = resp.optJSONObject("actionData")?.optString("topupUrl")?.takeIf { it.startsWith("https://") }
                 )
             }
             return
@@ -289,8 +294,7 @@ class AgenteNotificationListener : NotificationListenerService() {
         val text = resp?.optString("agentResponse")?.takeIf { it.isNotBlank() }
         if (text != null) {
             val ok = sendReply(replyAction, text)
-            val action = resp.optString("action").takeIf { it.isNotEmpty() && it != "null" }
-            val suffix = action?.let { " [$it]" } ?: ""
+            val suffix = action?.takeIf { it.isNotEmpty() && it != "null" }?.let { " [$it]" } ?: ""
             log(app, parsed, sent = ok,
                 detail = if (ok) "$text$suffix" else ctx.getString(R.string.log_send_failed))
         } else {
@@ -426,9 +430,9 @@ class AgenteNotificationListener : NotificationListenerService() {
         private const val IDENTITY_WINDOW_MS = 10 * 60_000L
         /** Longest cooldown Settings allows (24 h) — prune horizon for lastReplied. */
         private const val MAX_COOLDOWN_MS = 25 * 60 * 60_000L
-        private const val TRIAL_ALERT_INTERVAL_MS = 6 * 60 * 60_000L
+        private const val CREDITS_ALERT_INTERVAL_MS = 6 * 60 * 60_000L
         /** One holding line per customer conversation per this window. */
         private const val LIMIT_HOLDING_COOLDOWN_MS = 60 * 60_000L
-        @Volatile private var lastTrialAlert = 0L
+        @Volatile private var lastCreditsAlert = 0L
     }
 }

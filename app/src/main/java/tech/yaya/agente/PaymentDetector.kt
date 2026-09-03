@@ -43,8 +43,15 @@ object PaymentDetector {
         val lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)?.map { it.toString() } ?: emptyList()
         val body = text.ifBlank { bigText ?: lines.joinToString(" ") }
         if (title.isBlank() && body.isBlank()) return null
-        // The agent already said this app carries no money: honour it until the mute lapses.
-        if (!Prefs.learnedPaymentSources(ctx).contains(pkg) && Prefs.isSourceMuted(ctx, pkg)) return null
+        // The owner's word first (end-of-onboarding toggles, Settings): a
+        // wallet switched off is never read; unknown apps are read only while
+        // "other apps" is on. Then the agent's own verdict: an app it already
+        // said carries no money stays quiet until the mute lapses.
+        val learned = Prefs.learnedPaymentSources(ctx).contains(pkg)
+        if (Wallets.isKnown(ctx, pkg) || learned) {
+            if (!Prefs.isMoneyAppEnabled(ctx, pkg)) return null
+        } else if (!Prefs.readOtherSources(ctx)) return null
+        if (!learned && Prefs.isSourceMuted(ctx, pkg)) return null
 
         val (channelId, channelName) = channelOf(listener, sbn)
         val appInfo = runCatching { ctx.packageManager.getApplicationInfo(pkg, 0) }.getOrNull()

@@ -259,47 +259,11 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Trial banner: secondary_container while active,
-                     error_container once expired (bound in code). -->
-                                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/backup_banner"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="@dimen/space_s"
-                    android:visibility="gone"
-                    app:cardBackgroundColor="@color/agento_secondary_container"
-                    app:cardCornerRadius="@dimen/corner_card"
-                    app:cardElevation="0dp"
-                    app:strokeWidth="0dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="@dimen/space_m">
-
-                        <TextView
-                            android:id="@+id/backup_banner_text"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="@string/dash_backup_banner"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:textColor="@color/agento_on_surface" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/backup_banner_button"
-                            style="@style/Widget.Agento.Button.Tonal"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/space_s"
-                            android:text="@string/dash_backup_button" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-<com.google.android.material.card.MaterialCardView
-                    android:id="@+id/trial_banner"
+                <!-- Credits banner: secondary_container while the agent can
+                     book, error_container when it is out of credits (bound
+                     in code, DashboardActivity.refreshCreditsBanner). -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/credits_banner"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="@dimen/space_s"
@@ -316,7 +280,7 @@
                         android:padding="@dimen/space_m">
 
                         <TextView
-                            android:id="@+id/trial_banner_text"
+                            android:id="@+id/credits_banner_text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text=""
@@ -324,12 +288,12 @@
                             android:textColor="@color/agento_on_secondary_container" />
 
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/sales_button"
+                            android:id="@+id/credits_button"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/space_s"
                             android:minHeight="@dimen/touch_min"
-                            android:text="@string/plan_upgrade_button" />
+                            android:text="@string/credits_banner_button" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

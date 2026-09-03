@@ -13,6 +13,12 @@ class AgenteApp : Application() {
         OwnerAlerts.ensureChannel(this)
         // Boot the on-device agent early so the first customer message does
         // not pay the startup cost. Safe to call again from any thread.
-        Thread({ AgentoCore.ensureStarted(this) }, "agento-core-boot").start()
+        Thread({
+            AgentoCore.ensureStarted(this)
+            // Server-pushed catalogs (money apps, business categories):
+            // refreshed at launch when stale, bundled defaults otherwise.
+            runCatching { Wallets.refresh(this) }
+            runCatching { Categories.refresh(this) }
+        }, "agento-core-boot").start()
     }
 }

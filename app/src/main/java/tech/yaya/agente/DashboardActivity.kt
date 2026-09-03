@@ -90,9 +90,7 @@ class DashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, OnboardingActivity::class.java))
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
-        findViewById<View>(R.id.backup_banner_button).setOnClickListener {
-            startActivity(Intent(this, if (Prefs.isGuest(this)) AccountActivity::class.java else BackupUpsellActivity::class.java))
-        }
+        findViewById<View>(R.id.credits_button).setOnClickListener { startActivity(Intent(this, CreditsActivity::class.java)) }
         findViewById<View>(R.id.off_banner_button).setOnClickListener { activateAgent() }
         findViewById<View>(R.id.ossync_enable).setOnClickListener {
             Prefs.setOsSyncOffered(this)
@@ -203,8 +201,8 @@ class DashboardActivity : AppCompatActivity() {
         refreshStatus(lastFetchOk)
     }
 
-    /** Last plan/usage payload from the server; null until the first good fetch. */
-    private var plan: JSONObject? = null
+    /** Last credits summary from the core (`dashboard.credits`); null until the first good fetch. */
+    private var credits: JSONObject? = null
 
     /** Tint an informational chip from color tokens. */
     fun styleChip(chip: Chip, bgRes: Int, fgRes: Int) {
@@ -262,52 +260,33 @@ class DashboardActivity : AppCompatActivity() {
     }
 
     /**
-     * Plan banner: always visible. Free tier shows this month's conversations
-     * against the cap with the upgrade button; a hit cap turns it red.
+     * Credits banner: visible once the core reported a balance. Green with
+     * the balance and prices; amber below USD 2 ("Recarga pronto"); red in
+     * the negative grace window; red "modo manual" past it, when the agent
+     * has stopped replying and hands conversations to the owner. The
+     * balance never decides who gets served (docs/CREDITS.md § 2).
      */
-    private fun refreshPlanBanner() {
+    private fun refreshCreditsBanner() {
         // D17: offered once, after the interview, until the owner decides.
         findViewById<View>(R.id.ossync_banner).visibility =
             if (!Prefs.osSyncOffered(this) && data?.optBoolean("onboarded") == true && !(Prefs.syncContacts(this) && Prefs.syncCalendar(this))) View.VISIBLE else View.GONE
-        val guest = Prefs.isGuest(this)
-        findViewById<View>(R.id.backup_banner).visibility =
-            if (guest || (plan?.optString("plan") ?: "free") == "free") View.VISIBLE else View.GONE
-        findViewById<TextView>(R.id.backup_banner_text).setText(if (guest) R.string.dash_guest_banner else R.string.dash_backup_banner)
-        findViewById<TextView>(R.id.backup_banner_button).setText(if (guest) R.string.dash_guest_button else R.string.dash_backup_button)
-        val p = plan
-        val banner = findViewById<MaterialCardView>(R.id.trial_banner)
-        if (p == null) { banner.visibility = View.GONE; return }
+        val c = credits
+        val banner = findViewById<MaterialCardView>(R.id.credits_banner)
+        if (c == null) { banner.visibility = View.GONE; return }
         banner.visibility = View.VISIBLE
-        val text = findViewById<TextView>(R.id.trial_banner_text)
-        val name = p.optString("name", "free")
-        val cu = p.optInt("conversationsUsed"); val cc = p.optInt("conversationsCap")
-        val limit = p.optBoolean("limitReached", false)
-        when {
-            limit -> {
-                text.text = getString(R.string.plan_banner_limit2)
-                text.setTextColor(getColor(R.color.agento_error))
-                banner.setCardBackgroundColor(getColor(R.color.agento_error_container))
-            }
-            name == "trial" -> {
-                text.text = getString(R.string.plan_banner_trial2, cu)
-                text.setTextColor(getColor(R.color.agento_on_secondary_container))
-                banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
-            }
-            name == "free" -> {
-                text.text = getString(R.string.plan_banner_free2, cu, cc)
-                text.setTextColor(getColor(R.color.agento_on_secondary_container))
-                banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
-            }
-            else -> {
-                val shown = if (name == "custom" || name == "enterprise") "Max" else name.replaceFirstChar { it.uppercase() }
-                text.text = getString(R.string.plan_banner_paid2, shown, cu)
-                text.setTextColor(getColor(R.color.agento_on_secondary_container))
-                banner.setCardBackgroundColor(getColor(R.color.agento_secondary_container))
-            }
+        val text = findViewById<TextView>(R.id.credits_banner_text)
+        val bal = Credits.money(c, Credits.balance(c))
+        val (line, red) = when (Credits.state(c)) {
+            Credits.State.MANUAL -> getString(R.string.credits_banner_manual, bal) to true
+            Credits.State.GRACE -> getString(R.string.credits_banner_grace, bal) to true
+            Credits.State.LOW -> getString(R.string.credits_banner_low, bal) to false
+            else -> getString(R.string.credits_banner_ok, bal, Credits.money(c, Credits.priceKnown(c)), Credits.money(c, Credits.priceNew(c))) to false
         }
-        val button = findViewById<View>(R.id.sales_button)
-        button.visibility = View.VISIBLE
-        button.setOnClickListener { startActivity(Intent(this, PlanActivity::class.java)) }
+        val deposits = if (Credits.depositsEnabled(c)) "" else "\n" + getString(R.string.credits_deposits_soon)
+        text.text = line + deposits
+        val amber = Credits.state(c) == Credits.State.LOW
+        text.setTextColor(getColor(when { red -> R.color.agento_error; else -> R.color.agento_on_secondary_container }))
+        banner.setCardBackgroundColor(getColor(when { red -> R.color.agento_error_container; amber -> R.color.agento_warning_container; else -> R.color.agento_secondary_container }))
     }
 
     /** The truth chip: is the agent actually able to answer right now? */
@@ -315,8 +294,7 @@ class DashboardActivity : AppCompatActivity() {
         val alive = hasNotificationAccess() && Prefs.isEnabled(this)
         agentSwitch.isChecked = alive
         offBanner.visibility = if (alive) View.GONE else View.VISIBLE
-        refreshPlanBanner()
-        val p = plan
+        refreshCreditsBanner()
         when {
             !alive -> {
                 statusChip.text = getString(R.string.status_off_banner)
@@ -326,17 +304,15 @@ class DashboardActivity : AppCompatActivity() {
                 statusChip.text = getString(R.string.dash_offline_chip)
                 styleChip(statusChip, R.color.agento_secondary_container, R.color.agento_on_secondary_container)
             }
-            p != null && p.optBoolean("limitReached", false) -> {
-                statusChip.text = getString(R.string.status_limit_reached)
+            Credits.manual(credits) -> {
+                statusChip.text = getString(R.string.status_manual_mode)
                 styleChip(statusChip, R.color.agento_error_container, R.color.agento_error)
             }
             else -> {
                 val lastReply = ReplyLog.load(this).firstOrNull { it.replySent }
-                val base = if (lastReply != null) getString(
+                statusChip.text = if (lastReply != null) getString(
                     R.string.status_active_last, DateUtils.getRelativeTimeSpanString(lastReply.timestamp).toString()
                 ) else getString(R.string.status_active)
-                val cap = p?.optInt("messagesCap") ?: 0
-                statusChip.text = if (cap > 0) getString(R.string.status_plan_usage, base, p!!.optInt("messagesUsed"), cap) else base
                 styleChip(statusChip, R.color.agento_primary_container, R.color.agento_on_primary_container)
             }
         }
@@ -381,7 +357,7 @@ class DashboardActivity : AppCompatActivity() {
     private fun render(d: JSONObject) {
         d.optJSONObject("locale")?.let { Prefs.setLocale(this, it) }
         businessName.text = d.optString("businessName", getString(R.string.app_name))
-        plan = d.optJSONObject("plan")
+        credits = d.optJSONObject("credits")
         data = d
         val s = UiSpec.parse(d.optJSONObject("ui")) ?: UiSpec.fallback(this, d.optString("businessKind"))
         val redesigned = spec != null && s.signature() != navSignature

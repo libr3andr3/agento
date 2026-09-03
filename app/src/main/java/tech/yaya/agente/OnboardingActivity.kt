@@ -1270,9 +1270,12 @@ class OnboardingActivity : AppCompatActivity() {
         // Setup is complete: the agent must actually be on.
         if (hasNotificationAccess()) Prefs.setEnabled(this, true)
         player?.release(); player = null
-        // The owner just trained their agent: the one moment the backup
-        // pitch lands. Once; the dashboard banner carries it afterwards.
-        val next = if (BackupUpsellActivity.shouldShow(this)) BackupUpsellActivity::class.java else DashboardActivity::class.java
+        // Last step: which apps the agent answers on and which money apps it
+        // reads — decided on the phone, once, right after the interview.
+        val next = if (Prefs.appsSetupDone(this)) DashboardActivity::class.java else {
+            Prefs.setAppsSetupPending(this)
+            AppsSetupActivity::class.java
+        }
         startActivity(Intent(this, next))
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()

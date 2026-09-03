@@ -14,14 +14,15 @@ android {
     defaultConfig {
         minSdk = 26
         targetSdk = 36
-        versionCode = 65
-        versionName = "1.21.0"
+        versionCode = 66
+        versionName = "1.22.0"
 
         resValue("string", "app_name", "agento")
         // Where accounts and plans are managed (the gateway's web app).
         val webApp = System.getenv("AGENTO_WEB_APP") ?: "https://agento.ceo/app"
         buildConfigField("String", "WEB_APP_URL", "\"$webApp\"")
-        // D14: plans are sold in a WhatsApp chat with agento's own sales agent.
+        // Credit top-ups fall back to a WhatsApp chat with agento's own sales
+        // agent until the core names a web top-up (CreditsActivity).
         val sales = System.getenv("AGENTO_SALES_PHONE") ?: "51913879819"
         buildConfigField("String", "SALES_WHATSAPP", "\"$sales\"")
         // The support line the app opens until the server tells it otherwise
@@ -32,6 +33,12 @@ android {
 
     buildFeatures {
         buildConfig = true
+    }
+
+    // The app ships in Spanish (res/values), Portuguese and English; library
+    // resources in any other language are dropped from the APK.
+    androidResources {
+        localeFilters += listOf("es", "pt", "en")
     }
 
     // One app, two ways to get it. `direct` is the APK from agento.ceo/dl
@@ -105,4 +112,6 @@ dependencies {
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    // Card top-ups open the Dodo checkout in a Custom Tab (CreditsActivity).
+    implementation("androidx.browser:browser:1.8.0")
 }

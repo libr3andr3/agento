@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Last onboarding step + money apps in Settings. English; see values/strings_apps.xml. -->
+<resources>
+    <string name="apps_step">Last step</string>
+    <string name="apps_headline">Where does your agent work?</string>
+    <string name="apps_sub">Pick the apps it answers on and the wallets it reads to confirm payments. All of this is decided on your phone and never leaves it.</string>
+
+    <string name="apps_chat_header">Apps it answers on</string>
+    <string name="apps_chat_sub">Your agent replies to customers who message you through these apps.</string>
+    <string name="apps_chat_none">We see no chat app on this phone. Install WhatsApp Business (or WhatsApp) and come back to Settings → Connected apps.</string>
+    <string name="apps_chat_more">It can also read %1$s if you install them.</string>
+
+    <string name="apps_money_header">Wallets and banks · %1$s %2$s</string>
+    <string name="apps_money_sub">Your agent reads the payment notices from these apps to confirm what you were paid. It never moves money.</string>
+    <string name="apps_money_none">We see no wallet or bank on this phone. If your payments land on another phone, install agento there too.</string>
+    <string name="apps_money_none_known">We see no wallet on this phone. In your country agento recognises %1$s, among others.</string>
+    <string name="apps_money_all">Every wallet agento knows in your country is here.</string>
+    <string name="apps_money_more">It also recognises %1$s if you install them.</string>
+    <string name="apps_other_label">Read notices from other apps</string>
+    <string name="apps_other_hint">For wallets and banks not on the list, from any country. Your agent decides on the phone whether a notice is a payment; an app that never carries money stops being read on its own.</string>
+    <string name="apps_privacy_note">🔒 Notifications are read and processed on your phone. They are not copied to any server.</string>
+
+    <string name="apps_done">Done, take me to my business</string>
+    <string name="apps_save">Save</string>
+</resources>

@@ -45,7 +45,7 @@ núcleo dice «aquí no hay dinero». Nada se envía a ningún otro servidor.
 
 - Llamadas de LLM, voz y visión, firmadas con la clave del agente. El prompt
   contiene lo que el agente necesita para responder el turno actual.
-- Llamadas de cuenta y plan; respaldos cifrados en planes pagados.
+- Llamadas de cuenta y créditos (saldo, ledger); respaldos cifrados de la cuenta.
 - La tarjeta pública del agente (nombre del negocio, oferta, ubicación,
   atestación).
 

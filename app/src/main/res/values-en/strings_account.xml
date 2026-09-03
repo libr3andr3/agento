@@ -9,7 +9,7 @@
     <string name="account_error_offline">No connection. Check your internet.</string>
     <string name="account_error_generic">Could not complete: %1$s</string>
     <string name="account_restore_title">Coming from another phone?</string>
-    <string name="account_restore_body">If your plan includes backups, we bring your business back exactly as you left it.</string>
+    <string name="account_restore_body">If your account has a backup, we bring your business back just as you left it.</string>
     <string name="account_restore">Restore my business</string>
     <string name="account_fresh">Start fresh</string>
     <string name="account_restore_none">There is no backup on this account. Let\'s start fresh.</string>
@@ -18,13 +18,7 @@
     <string name="account_logout">Sign out</string>
     <string name="account_continue">Continue</string>
     <string name="account_manage_web">Manage my account on the web</string>
-    <string name="plan_web_only">Plans are managed from your Yaya account on the web, for all your devices.</string>
-    <string name="plan_client_web_only">Plans can\'t be changed from the app.</string>
     <string name="plan_account_line">Account: %1$s</string>
-    <string name="plan_enterprise_name">Enterprise</string>
-    <string name="plan_biz_enterprise_desc">No limits, priority support and several locations.</string>
-    <string name="plan_credits_line">Network credits: %1$s · each new customer who finds you through the network spends %2$s</string>
-    <string name="plan_credits_hint">Paid plans return half their value as credits every month.</string>
     <string name="account_phone_hint">Mobile (WhatsApp)</string>
     <string name="account_no_password">No passwords — we send you a code by WhatsApp.</string>
     <string name="account_error_phone">Enter your mobile number.</string>
@@ -39,17 +33,6 @@
     <string name="account_change">Change details</string>
     <string name="account_error_expired">The code expired. Request another.</string>
     <string name="account_error_delivery">We couldn\'t send the code right now. Try again in a minute.</string>
-    <string name="account_guest_link">Continue without an account</string>
-    <string name="guest_title">No account, a fair deal</string>
-    <string name="guest_body">Your agent answers on your channels all the same. In exchange you help make agento better: what your agent learns (no personal data) trains the agents in your trade.</string>
-    <string name="guest_get">✓ AI receptionist in your chats, free</string>
-    <string name="guest_lose">✗ No Yaya network (no new customers, no reputation), no backup, no web dashboard</string>
-    <string name="guest_share_label">Help make agento better</string>
-    <string name="guest_share_hint">You share how your agent reasons (no numbers, amounts or dates) so agents in your trade learn. Turn it off in Settings.</string>
-    <string name="guest_cta">Continue without an account</string>
     <string name="settings_share_label">Help make agento better</string>
     <string name="settings_share_hint">Shares how your agent reasons, without numbers, amounts or dates. Agents in your trade learn from what works.</string>
-    <string name="dash_guest_banner">You\'re without an account: no Yaya network, no backup. Create your Yaya account whenever you like.</string>
-    <string name="dash_guest_button">Create account</string>
-    <string name="upsell_cta_guest">Create my Yaya account</string>
 </resources>

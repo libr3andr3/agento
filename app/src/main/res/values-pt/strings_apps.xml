@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Último passo do onboarding + apps de dinheiro nos Ajustes. Português. -->
+<resources>
+    <string name="apps_step">Último passo</string>
+    <string name="apps_headline">Onde seu agente atende?</string>
+    <string name="apps_sub">Escolha em quais apps ele responde e quais carteiras ele lê para confirmar pagamentos. Tudo isso é decidido no seu celular e não sai dele.</string>
+
+    <string name="apps_chat_header">Apps onde ele responde</string>
+    <string name="apps_chat_sub">Seu agente responde aos clientes que escrevem por estes apps.</string>
+    <string name="apps_chat_none">Não vemos nenhum app de chat neste celular. Instale o WhatsApp Business (ou o WhatsApp) e volte em Ajustes → Apps conectados.</string>
+    <string name="apps_chat_more">Ele também sabe ler %1$s se você instalar.</string>
+
+    <string name="apps_money_header">Carteiras e bancos · %1$s %2$s</string>
+    <string name="apps_money_sub">Seu agente lê os avisos de pagamento destes apps para confirmar recebimentos. Ele nunca movimenta dinheiro.</string>
+    <string name="apps_money_none">Não vemos carteiras nem bancos neste celular. Se seus pagamentos chegam em outro celular, instale o agento lá também.</string>
+    <string name="apps_money_none_known">Não vemos carteiras neste celular. No seu país o agento reconhece %1$s, entre outras.</string>
+    <string name="apps_money_all">Todas as carteiras que o agento conhece no seu país estão aqui.</string>
+    <string name="apps_money_more">Ele também reconhece %1$s se você instalar.</string>
+    <string name="apps_other_label">Ler avisos de outros apps</string>
+    <string name="apps_other_hint">Para carteiras e bancos que não estão na lista, de qualquer país. Seu agente decide no celular se um aviso é um pagamento; se um app nunca traz dinheiro, ele para de ler sozinho.</string>
+    <string name="apps_privacy_note">🔒 As notificações são lidas e processadas no seu celular. Não são copiadas para nenhum servidor.</string>
+
+    <string name="apps_done">Pronto, vamos ao meu negócio</string>
+    <string name="apps_save">Salvar</string>
+</resources>

@@ -45,14 +45,6 @@
     <string name="onboarding_saved">Profile saved — your agent is now answering customers.</string>
     <string name="typing_indicator">🟢 typing…</string>
 
-    <string name="reg_title">Register your business</string>
-    <string name="reg_message">The assistant will then interview you to learn how your business works.</string>
-    <string name="reg_business_name">Business name</string>
-    <string name="reg_industry">Type of business (e.g. barbershop, dental clinic)</string>
-    <string name="reg_owner_phone">Your phone</string>
-    <string name="reg_start">Start</string>
-    <string name="reg_registering">Registering your business…</string>
-    <string name="reg_error_empty">This field is required</string>
 
     <string name="done_title">All set! 🎉</string>
     <string name="done_cta">Let\'s see your calendar</string>
@@ -109,30 +101,8 @@
 
     <string name="default_reply">Hi! Thanks for writing. We got your message and will reply in a moment. 🙌</string>
     <!-- App toggles + free plan limits -->
-    <string name="app_not_installed">%1$s (not installed)</string>
-    <string name="log_limit_reached">Today\'s free limit reached — the agent did not reply</string>
-    <string name="limit_reached_alert">You hit today\'s free limit. Your customers get a holding message; upgrade your plan to keep replying.</string>
-    <string name="status_limit_reached">Daily limit reached — back tomorrow</string>
-    <string name="status_plan_usage">%1$s · %2$d/%3$d today</string>
     <!-- Phone verification (OTP) + talk-to-sales -->
-    <string name="verify_sending">Sending verification code…</string>
-    <string name="verify_sent">Code sent by message to %1$s</string>
-    <string name="verify_skipped">Verification unavailable — continuing</string>
-    <string name="verify_bad_phone">Invalid number — include the country code (+51…)</string>
     <string name="verify_throttled">Too many attempts — wait a moment and try again</string>
-    <string name="verify_title">Verify your number</string>
-    <string name="verify_message">We sent a 6-digit code by message to %1$s</string>
-    <string name="verify_code_hint">6-digit code</string>
-    <string name="verify_confirm">Verify</string>
-    <string name="verify_resend">Resend</string>
-    <string name="verify_ok">Number verified</string>
-    <string name="verify_wrong_code">Wrong code</string>
-    <string name="plan_banner_limit">Today\'s free limit reached — your agent replies again tomorrow</string>
-    <string name="plan_upgrade_button">⭐ See plans and raise limits</string>
-    <string name="plan_sales_message">Hi! I use agento at %1$s and want to raise my limits and get the web dashboard.</string>
-    <string name="plan_banner_usage">Free plan · Today %1$d/%2$d messages · %3$d/%4$d customers</string>
-    <string name="plan_banner_customers_full">Today\'s new-customer slots are full (%1$d) — today\'s customers are still served</string>
-    <string name="plan_banner_paid">%1$s plan · Today %2$d messages · %3$d customers</string>
     <!-- Catalog photo (onboarding) -->
     <string name="catalog_photo_title">Photo of your catalog or menu</string>
     <string name="catalog_photo_take">Take a photo</string>
@@ -149,74 +119,9 @@
     <string name="dash_talk_to_business">Talk to your business</string>
 
     <!-- Plans (both editions) -->
-    <string name="plan_menu">My plan</string>
-    <string name="plan_title">Plans</string>
-    <string name="plan_current">Your plan: %1$s</string>
-    <string name="plan_current_until">Your plan: %1$s · until %2$s</string>
-    <string name="plan_usage_today">Today: %1$d of %2$d calls</string>
-    <string name="plan_usage_unlimited">Today: %1$d calls · unlimited</string>
-    <string name="plan_free_name">Free</string>
-    <string name="plan_pro_name">Pro</string>
-    <string name="plan_max_name">Max</string>
-    <string name="plan_per_month">%1$s / month</string>
-    <string name="plan_per_year_line">or %1$s a year · 2 months free</string>
-    <string name="plan_options_title">Payment options</string>
-    <string name="plan_options_sub">%1$s plan · Choose monthly or yearly payment</string>
-    <string name="plan_option_monthly">Monthly payment of %1$s</string>
-    <string name="plan_option_monthly_note">No commitment. Pay month by month.</string>
-    <string name="plan_option_annual">Yearly payment of %1$s</string>
-    <string name="plan_option_annual_save">Paying the whole year saves you %1$s</string>
-    <string name="plan_option_or">or</string>
-    <string name="plan_options_pay">Pay %1$s by Yape or Plin</string>
-    <string name="plan_options_cancel">Cancel</string>
-    <string name="plan_pay_period_month">%1$s plan for one month.</string>
-    <string name="plan_pay_period_year">%1$s plan for one year.</string>
-    <string name="plan_pay_reused">This payment was already pending; use the same reference.</string>
-    <string name="plan_pay_hint">Pay from the app by Yape or Plin. The plan belongs to your Yaya account: it counts on every device.</string>
-    <string name="plan_pay_error">Could not open the payment: %1$s</string>
-    <string name="plan_sign_in_first">Create your Yaya account to buy a plan.</string>
-    <string name="plan_pay_opening">Opening payment…</string>
-    <string name="plan_choose">Choose %1$s</string>
-    <string name="plan_active">Active</string>
-    <string name="plan_client_free_desc">Personal assistant with voice, memory and the yaya business network. %1$d messages a day.</string>
-    <string name="plan_client_pro_desc">For all-day use: %1$d messages a day, bookings and orders without waiting.</string>
-    <string name="plan_client_max_desc">No daily limits and priority at peak hours. For people who delegate everything to their agent.</string>
-    <string name="plan_biz_free_desc">Your AI receptionist: %1$d messages and %2$d new customers a day, presence on the yaya network.</string>
-    <string name="plan_biz_pro_desc">%1$d messages and %2$d new customers a day. For busy businesses.</string>
-    <string name="plan_biz_max_desc">No limits: every message, every customer, every day. Priority support.</string>
-    <string name="plan_pay_title">Pay by Yape or Plin</string>
-    <string name="plan_pay_body">Send %1$s to %2$s and write this reference in the message:</string>
-    <string name="plan_pay_yape">Yape: %1$s</string>
-    <string name="plan_pay_plin">Plin: %1$s</string>
-    <string name="plan_pay_payee">Payee: %1$s</string>
-    <string name="plan_pay_unconfigured">Message us on WhatsApp and we activate the plan right away.</string>
-    <string name="plan_pay_copy">Copy reference</string>
-    <string name="plan_pay_copied">Reference copied</string>
-    <string name="plan_pay_check">I paid — verify</string>
-    <string name="plan_pay_pending">We don\'t see the payment yet. It usually confirms within the hour; we\'ll tell you here.</string>
-    <string name="plan_pay_paid">Payment confirmed! Your %1$s plan is active.</string>
-    <string name="plan_sales_whatsapp">Questions? Message us on WhatsApp</string>
     <string name="plan_error">Could not load the plan. Check your connection.</string>
-    <string name="assistant_status_plan">%1$s plan</string>
 
     <!-- D14: three plans, conversations as the metric, sales over WhatsApp -->
-    <string name="plan_trial_name">Free trial</string>
-    <string name="plan_trial_left">Free Pro trial · %1$d days left</string>
-    <string name="plan_conv_usage">%1$d of %2$d conversations this month</string>
-    <string name="plan_conv_unlimited">%1$d conversations this month · no limit</string>
-    <string name="plan_desc_free">14 days of Pro, free. Then 30 conversations a month.</string>
-    <string name="plan_desc_pro">1,000 conversations a month. One phone. Issues electronic receipts (boletas) automatically from your agent.</string>
-    <string name="plan_desc_max">3,000 conversations a month. Up to 3 phones or numbers on one account. Issues electronic receipts (boletas) automatically from your agent.</string>
-    <string name="plan_upgrade_to">Upgrade to %1$s</string>
-    <string name="plan_sales_cta">Talk to sales on WhatsApp</string>
-    <string name="plan_sales_text">I\'m ready to sell on autopilot — I\'m ready to move up to %1$s!</string>
-    <string name="plan_pay_note2">A conversation is one customer your agent answered this month. You pay by Yape or Plin in a chat with our sales agent; the plan turns on instantly on your Yaya account.</string>
-    <string name="plan_no_account">no Yaya account</string>
-    <string name="plan_banner_trial2">Free Pro trial · %1$d conversations this month</string>
-    <string name="plan_banner_free2">Free plan · %1$d/%2$d conversations this month</string>
-    <string name="plan_banner_paid2">%1$s plan · %2$d conversations this month</string>
-    <string name="plan_banner_limit2">You reached this month\'s conversations: existing customers are still answered; new ones once you upgrade.</string>
-    <string name="upsell_tier_line2">%1$s · %2$s a month</string>
     <string name="crm_plan_pro">⭐ Pro</string>
     <string name="crm_plan_max">⭐ Max</string>
     <string name="crm_plan_trial">Free trial</string>

@@ -45,6 +45,65 @@ object Prefs {
     fun setReplyToGroups(ctx: Context, on: Boolean) =
         sp(ctx).edit().putBoolean(KEY_REPLY_GROUPS, on).apply()
 
+    // ------------------------------------------------------------ money apps
+    //
+    // Which apps the local agent may read payment notices from. Every
+    // decision is taken on the phone and stays on the phone: the toggles
+    // below are the owner's word, the agent's own verdicts are the mutes
+    // further down, and neither is ever uploaded.
+
+    private const val KEY_MONEY_PREFIX = "money_enabled_"
+    private const val KEY_OTHER_SOURCES = "read_other_sources"
+    private const val KEY_APPS_SETUP_DONE = "apps_setup_done"
+
+    /** A wallet/bank the owner switched off is never forwarded. Default on. */
+    fun isMoneyAppEnabled(ctx: Context, pkg: String) = sp(ctx).getBoolean(KEY_MONEY_PREFIX + pkg, true)
+    fun setMoneyAppEnabled(ctx: Context, pkg: String, on: Boolean) =
+        sp(ctx).edit().putBoolean(KEY_MONEY_PREFIX + pkg, on).apply()
+
+    /** Notices from apps that are neither chat apps nor listed wallets —
+     *  how a wallet from any country gets recognised. Default on. */
+    fun readOtherSources(ctx: Context) = sp(ctx).getBoolean(KEY_OTHER_SOURCES, true)
+    fun setReadOtherSources(ctx: Context, on: Boolean) =
+        sp(ctx).edit().putBoolean(KEY_OTHER_SOURCES, on).apply()
+
+    /** The end-of-onboarding apps screen was completed once on this phone. */
+    fun appsSetupDone(ctx: Context) = sp(ctx).getBoolean(KEY_APPS_SETUP_DONE, false)
+    fun setAppsSetupDone(ctx: Context) =
+        sp(ctx).edit().putBoolean(KEY_APPS_SETUP_DONE, true).remove(KEY_APPS_SETUP_PENDING).apply()
+
+    private const val KEY_APPS_SETUP_PENDING = "apps_setup_pending"
+
+    /** The interview just ended and the apps screen has not been completed:
+     *  the launcher routes there until it is. Installs that predate the
+     *  screen never set this, so they land on the dashboard as before. */
+    fun appsSetupPending(ctx: Context) = sp(ctx).getBoolean(KEY_APPS_SETUP_PENDING, false) && !appsSetupDone(ctx)
+    fun setAppsSetupPending(ctx: Context) = sp(ctx).edit().putBoolean(KEY_APPS_SETUP_PENDING, true).apply()
+
+    /** Last good `/api/credits` payload, rendered while offline. */
+    fun creditsCache(ctx: Context): String? = sp(ctx).getString("credits_cache", null)
+    fun setCreditsCache(ctx: Context, json: String) = sp(ctx).edit().putString("credits_cache", json).apply()
+
+    // ------------------------------------------------------------ server-pushed catalogs
+    //
+    // The money-app catalog (`Wallets`) and the business categories
+    // (`Categories`) ship bundled and are refreshed from the server at
+    // launch; what the server last said is kept here, with when.
+
+    fun walletsJson(ctx: Context): String? = sp(ctx).getString("wallets_json", null)
+    fun walletsAt(ctx: Context): Long = sp(ctx).getLong("wallets_at", 0L)
+    fun setWalletsJson(ctx: Context, json: String) =
+        sp(ctx).edit().putString("wallets_json", json).putLong("wallets_at", System.currentTimeMillis()).apply()
+
+    fun categoriesJson(ctx: Context): String? = sp(ctx).getString("categories_json", null)
+    fun categoriesAt(ctx: Context): Long = sp(ctx).getLong("categories_at", 0L)
+    fun setCategoriesJson(ctx: Context, json: String) =
+        sp(ctx).edit().putString("categories_json", json).putLong("categories_at", System.currentTimeMillis()).apply()
+
+    /** When the owner accepted the closed-loop credit terms (RFC 3339), mirrored from the account. */
+    fun termsAcceptedAt(ctx: Context): String = sp(ctx).getString("terms_accepted_at", "") ?: ""
+    fun setTermsAcceptedAt(ctx: Context, at: String) = sp(ctx).edit().putString("terms_accepted_at", at).apply()
+
     // ------------------------------------------------------------ locale
 
     /** Server-declared locale for this business (registration + dashboard). */
@@ -175,13 +234,15 @@ object Prefs {
     fun accountEmail(ctx: Context): String = sp(ctx).getString("account_email", "") ?: ""
     fun setAccountEmail(ctx: Context, email: String) =
         sp(ctx).edit().putString("account_email", email).apply()
-    /** "Continuar sin cuenta": the core is the truth; mirrored for the launcher. */
-    fun isGuest(ctx: Context): Boolean = sp(ctx).getBoolean("account_guest", false)
-    fun setGuest(ctx: Context, on: Boolean) = sp(ctx).edit().putBoolean("account_guest", on).apply()
-    /** Anyone signed in, with or without an account. The account is the
-     *  verified phone since 1.19.1; email is optional. */
+    /**
+     * A signed-in account. The account is the verified WhatsApp number since
+     * 1.19.1 (email is optional), and since 1.22.0 there is no guest mode:
+     * an install that "continued without an account" under an older build
+     * is routed back to sign-in — its business and device token survive,
+     * the OTP just links them to a real account.
+     */
     fun hasIdentity(ctx: Context): Boolean =
-        accountEmail(ctx).isNotEmpty() || accountPhone(ctx).isNotEmpty() || isGuest(ctx)
+        accountEmail(ctx).isNotEmpty() || accountPhone(ctx).isNotEmpty()
 
     /** What to call the signed-in account: the email, else the verified phone. */
     fun accountLabel(ctx: Context): String =
@@ -218,6 +279,7 @@ object Prefs {
             .remove("walkthrough_seen")
             .remove("loc_country").remove("loc_currency").remove("loc_symbol").remove("loc_language")
             .remove("learned_pay_sources").remove("learned_pay_sources_at")
+            .remove("credits_cache")
             .apply()
     }
 

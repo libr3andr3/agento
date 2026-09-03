@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tela de ajustes (A5). Português. -->
+<resources>
+    <string name="settings_section_status">Estado do agente</string>
+    <string name="settings_section_apps">Apps conectados</string>
+    <string name="settings_section_replies">Respostas</string>
+    <string name="settings_section_log">Registro de atividade</string>
+
+    <string name="settings_app_not_installed">Não instalado</string>
+
+    <string name="battery_card_title">Que seu agente não durma 🔋</string>
+    <string name="battery_card_body">Alguns celulares (Xiaomi, Huawei, Oppo…) fecham os apps em segundo plano para economizar bateria, e seu agente pararia de responder sem avisar. Deixe o agento livre da economia de bateria para que atenda sempre.</string>
+    <string name="battery_card_allow">Manter ativo</string>
+    <string name="battery_card_dismiss">Agora não</string>
+
+    <string name="log_relative_now">agora</string>
+</resources>

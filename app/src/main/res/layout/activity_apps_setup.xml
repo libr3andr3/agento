@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- End of onboarding: which chat apps the agent answers on, which money
+     apps it reads. Everything here is decided on the phone (AppsSetupActivity). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/agento_surface"
+    android:orientation="vertical">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/space_m">
+
+            <TextView
+                android:id="@+id/apps_step"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/apps_step"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="@color/agento_primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:text="@string/apps_headline"
+                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                android:textColor="@color/agento_on_surface" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:text="@string/apps_sub"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/agento_on_surface_muted" />
+
+            <!-- Chat apps -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_m"
+                app:cardBackgroundColor="@color/agento_surface_card"
+                app:cardCornerRadius="@dimen/corner_card"
+                app:cardElevation="@dimen/card_elevation"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_m">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/apps_chat_header"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="@color/agento_on_surface" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:text="@string/apps_chat_sub"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="@color/agento_on_surface_muted" />
+
+                    <LinearLayout
+                        android:id="@+id/apps_chat_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_s"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/apps_chat_note"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_s"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="@color/agento_on_surface_muted" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Money apps -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_m"
+                app:cardBackgroundColor="@color/agento_surface_card"
+                app:cardCornerRadius="@dimen/corner_card"
+                app:cardElevation="@dimen/card_elevation"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_m">
+
+                    <TextView
+                        android:id="@+id/apps_money_header"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="@color/agento_on_surface" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:text="@string/apps_money_sub"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="@color/agento_on_surface_muted" />
+
+                    <LinearLayout
+                        android:id="@+id/apps_money_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_s"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/apps_money_note"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_s"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="@color/agento_on_surface_muted" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="@dimen/space_s"
+                        android:background="@color/agento_outline" />
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/apps_other_switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/apps_other_label"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="@color/agento_on_surface" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/apps_other_hint"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="@color/agento_on_surface_muted" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_m"
+                android:text="@string/apps_privacy_note"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="@color/agento_on_surface_muted" />
+        </LinearLayout>
+    </ScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/apps_cta"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/space_m"
+        android:minHeight="@dimen/cta_height"
+        android:text="@string/apps_done" />
+</LinearLayout>

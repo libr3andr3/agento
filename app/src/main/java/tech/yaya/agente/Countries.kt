@@ -1,26 +1,38 @@
 package tech.yaya.agente
 
+import android.content.Context
 import java.text.Collator
 import java.text.Normalizer
 import java.util.Locale
 
 /**
- * One country the owner can register a phone from: Spanish display name,
- * ISO 3166-1 alpha-2 code, and E.164 dial code (digits only, no '+').
+ * One country the owner can register a phone from: ISO 3166-1 alpha-2 code,
+ * a Spanish fallback name, and the E.164 dial code (digits only, no '+').
  * The flag is derived from the ISO code (regional indicator pair), so it can
- * never disagree with the country it labels.
+ * never disagree with the country it labels. The display name comes from
+ * the phone's own locale data ([name]), so a Portuguese phone reads
+ * «Brasil» and an English one «Brazil» without a table per language.
  */
 data class Country(val iso: String, val nameEs: String, val dial: String) {
     val flag: String = iso.uppercase(Locale.US).map {
         String(Character.toChars(0x1F1E6 + (it.code - 'A'.code)))
     }.joinToString("")
+
+    /** The country's name in the app's current language. */
+    fun name(ctx: Context): String = name(ctx.resources.configuration.locales[0])
+
+    fun name(locale: Locale): String {
+        val n = runCatching { Locale("", iso).getDisplayCountry(locale) }.getOrDefault("")
+        return if (n.isBlank() || n.equals(iso, ignoreCase = true)) nameEs else n
+    }
 }
 
 /**
  * Registration country list. All of Latin America plus the top world markets —
  * enough that a migrant owner or a traveling customer never hits a wall.
- * Sorted with Spanish collation so "España" files where a Spanish speaker
- * expects it. Perú is the default (our first market).
+ * Sorted with the current language's collation so «España» files where a
+ * Spanish speaker expects it and "Spain" where an English one does. Perú is
+ * the default (our first market).
  */
 object Countries {
 
@@ -107,6 +119,7 @@ object Countries {
         Country("NZ", "Nueva Zelanda", "64"),
     )
 
+    /** Every country, in Spanish order (use [all] for the current language). */
     val ALL: List<Country> = RAW.sortedWith(
         compareBy(Collator.getInstance(Locale("es"))) { it.nameEs }
     )
@@ -120,19 +133,31 @@ object Countries {
      * roaming or on a foreign SIM should still open on +51. The picker is one
      * tap away for everyone else.
      */
-    fun defaultFor(@Suppress("UNUSED_PARAMETER") ctx: android.content.Context): Country = DEFAULT
+    fun defaultFor(@Suppress("UNUSED_PARAMETER") ctx: Context): Country = DEFAULT
+
+    private fun locale(ctx: Context): Locale = ctx.resources.configuration.locales[0]
+
+    /** Every country, sorted for the app's current language. */
+    fun all(ctx: Context): List<Country> {
+        val loc = locale(ctx)
+        return RAW.sortedWith(compareBy(Collator.getInstance(loc)) { it.name(loc) })
+    }
 
     /** Accent-insensitive lowercase for search ("peru" finds "Perú"). */
     private fun fold(s: String): String =
-        Normalizer.normalize(s.lowercase(Locale("es")), Normalizer.Form.NFD)
+        Normalizer.normalize(s.lowercase(Locale.ROOT), Normalizer.Form.NFD)
             .replace(Regex("\\p{Mn}+"), "")
 
-    /** Matches by name (accent-insensitive), dial code (with or without '+'), or ISO. */
-    fun search(query: String): List<Country> {
+    /** Matches by name in the current language or Spanish (accent-insensitive),
+     *  dial code (with or without '+'), or ISO. */
+    fun search(ctx: Context, query: String): List<Country> {
         val q = fold(query.trim().removePrefix("+"))
-        if (q.isEmpty()) return ALL
-        return ALL.filter {
-            fold(it.nameEs).contains(q) ||
+        val list = all(ctx)
+        if (q.isEmpty()) return list
+        val loc = locale(ctx)
+        return list.filter {
+            fold(it.name(loc)).contains(q) ||
+                fold(it.nameEs).contains(q) ||
                 it.dial.startsWith(q) ||
                 it.iso.lowercase(Locale.US).startsWith(q)
         }

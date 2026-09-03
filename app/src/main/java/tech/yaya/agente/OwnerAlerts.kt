@@ -42,12 +42,13 @@ object OwnerAlerts {
             ctx.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
 
-    fun notify(ctx: Context, urgent: Boolean, sender: String, question: String, gapId: String) {
+    /** `url`: when set (a top-up link), tapping opens it instead of the dashboard. */
+    fun notify(ctx: Context, urgent: Boolean, sender: String, question: String, gapId: String, url: String? = null) {
         if (!canPost(ctx)) return
         // Defensive: the channel is created at app start, but the listener
         // process can outlive data-clears and OEM restarts — recreate if gone.
         ensureChannel(ctx)
-        val intent = Intent(ctx, Screens.HOME)
+        val intent = (if (url != null) Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)) else Intent(ctx, Screens.HOME))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pi = PendingIntent.getActivity(
             ctx, gapId.hashCode(), intent,

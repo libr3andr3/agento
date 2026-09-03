@@ -30,14 +30,14 @@ object CountryPicker {
         val list = view.findViewById<RecyclerView>(R.id.country_list)
         val empty = view.findViewById<TextView>(R.id.country_empty)
         val search = view.findViewById<TextInputEditText>(R.id.country_search_input)
-        val adapter = Adapter(Countries.ALL) { picked -> dialog.dismiss(); onPick(picked) }
+        val adapter = Adapter(Countries.all(activity)) { picked -> dialog.dismiss(); onPick(picked) }
         list.layoutManager = LinearLayoutManager(activity)
         list.adapter = adapter
         search.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                val results = Countries.search(s?.toString().orEmpty())
+                val results = Countries.search(activity, s?.toString().orEmpty())
                 adapter.submit(results)
                 empty.visibility = if (results.isEmpty()) View.VISIBLE else View.GONE
                 list.visibility = if (results.isEmpty()) View.GONE else View.VISIBLE
@@ -68,7 +68,7 @@ object CountryPicker {
         override fun onBindViewHolder(holder: Holder, position: Int) {
             val c = items[position]
             holder.flag.text = c.flag
-            holder.name.text = c.nameEs
+            holder.name.text = c.name(holder.itemView.context)
             holder.dial.text = "+" + c.dial
             holder.itemView.setOnClickListener { onPick(c) }
         }

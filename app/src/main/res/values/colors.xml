@@ -15,6 +15,9 @@
     <color name="agento_secondary_container">#FCEED3</color>
     <color name="agento_on_secondary_container">#6E4408</color>
 
+    <!-- Warning: low credits ("Recarga pronto") -->
+    <color name="agento_warning_container">#FFF3C4</color>
+
     <!-- Error / off -->
     <color name="agento_error">#BA342A</color>
     <color name="agento_error_container">#FBEAE7</color>

@@ -120,13 +120,20 @@ class MainActivity : AppCompatActivity() {
             else requestPermissions(OsSync.CALENDAR_PERMS, OsSync.RC_CALENDAR)
         }
         // Keep the support line fresh: the server can switch it at any time.
-        ServerClient.IO_EXECUTOR.execute { Prefs.rememberSupport(this, ServerClient.plan(this)) }
+        ServerClient.IO_EXECUTOR.execute { Prefs.rememberSupport(this, ServerClient.credits(this)) }
         findViewById<MaterialButton>(R.id.onboarding_button).setOnClickListener {
             startActivity(Intent(this, OnboardingActivity::class.java))
+        }
+        findViewById<MaterialButton>(R.id.credits_button).setOnClickListener {
+            startActivity(Intent(this, CreditsActivity::class.java))
         }
 
         findViewById<View>(R.id.reply_row).setOnClickListener { editReplyText() }
         findViewById<View>(R.id.cooldown_row).setOnClickListener { editCooldown() }
+        findViewById<View>(R.id.language_row).setOnClickListener { pickLanguage() }
+        val other = findViewById<MaterialSwitch>(R.id.other_sources_switch)
+        other.isChecked = Prefs.readOtherSources(this)
+        other.setOnCheckedChangeListener { _, on -> Prefs.setReadOtherSources(this, on) }
         findViewById<MaterialButton>(R.id.clear_log_button).setOnClickListener {
             ReplyLog.clear(this)
         }
@@ -137,6 +144,7 @@ class MainActivity : AppCompatActivity() {
         logList.adapter = logAdapter
 
         buildAppToggles()
+        buildMoneyToggles()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -180,6 +188,7 @@ class MainActivity : AppCompatActivity() {
         groupSwitch.isChecked = Prefs.replyToGroups(this)
         replyPreview.text = Prefs.replyText(this)
         cooldownPreview.text = getString(R.string.cooldown_value, Prefs.cooldownMinutes(this))
+        findViewById<TextView>(R.id.language_preview).text = AppLanguage.currentLabel(this)
         findViewById<TextView>(R.id.server_status).text =
             if (Prefs.serverConfigured(this)) getString(R.string.server_status_connected)
             else getString(R.string.server_status_off)
@@ -307,6 +316,20 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    /** Ajustes → Idioma: follow the phone, or one of the three the app ships. */
+    private fun pickLanguage() {
+        val labels = AppLanguage.OPTIONS.map { getString(it.second) }.toTypedArray()
+        val current = AppLanguage.OPTIONS.indexOfFirst { it.first == AppLanguage.currentTag() }.coerceAtLeast(0)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_language)
+            .setSingleChoiceItems(labels, current) { d, which ->
+                AppLanguage.apply(AppLanguage.OPTIONS[which].first)
+                d.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     private fun editCooldown() {
         val input = EditText(this).apply {
             setText(Prefs.cooldownMinutes(this@MainActivity).toString())
@@ -329,126 +352,63 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildAppToggles() {
         appTogglesContainer.removeAllViews()
-        val iconSize = resources.getDimensionPixelSize(R.dimen.space_xl)
-        val gap = resources.getDimensionPixelSize(R.dimen.space_m)
-        val minH = resources.getDimensionPixelSize(R.dimen.touch_min)
         // Installed apps first — those are the ones the user came to configure.
         // Uninstalled ones stay visible (so the catalog is discoverable) but
         // inert: a toggle for an app that can't produce notifications is a lie.
-        val (installed, missing) = SupportedApps.ALL.partition { isInstalled(it.packageName) }
+        val (installed, missing) = SupportedApps.ALL.partition { AppToggles.isInstalled(this, it.packageName) }
         (installed + missing).forEach { app ->
-            val here = isInstalled(app.packageName)
-            addAppRow(
-                app, here, iconSize, gap, minH,
+            val here = AppToggles.isInstalled(this, app.packageName)
+            AppToggles.addRow(
+                this, appTogglesContainer, app.packageName, app.displayName, installed = here,
                 subLabel = if (here) null else getString(R.string.settings_app_not_installed),
-                switchEnabled = here,
-                onToggle = { on -> Prefs.setAppEnabled(this, app.packageName, on) }
-            )
+                checked = Prefs.isAppEnabled(this, app.packageName),
+            ) { on -> Prefs.setAppEnabled(this, app.packageName, on) }
         }
         // Apps this phone taught itself (UnknownAppObserver). The switch is
         // offered once the profile earned it; flipping it on after a pause
         // gives the profile a clean window.
         ProfileStore.all(this).forEach { p ->
-            val app = SupportedApp(p.packageName, p.displayName)
-            val here = isInstalled(p.packageName)
+            val here = AppToggles.isInstalled(this, p.packageName)
             val sub = when {
                 !here -> getString(R.string.settings_app_not_installed)
                 p.paused -> getString(R.string.settings_app_learned_paused)
                 p.eligible -> getString(R.string.settings_app_learned_ready)
                 else -> getString(R.string.settings_app_learned_observing, p.parsedOk, NotificationProfile.GRADUATE_OK)
             }
-            addAppRow(
-                app, here, iconSize, gap, minH,
+            AppToggles.addRow(
+                this, appTogglesContainer, p.packageName, p.displayName, installed = here,
                 subLabel = sub,
+                checked = Prefs.isAppEnabled(this, p.packageName),
                 switchEnabled = here && (p.eligible || p.paused),
-                onToggle = { on ->
-                    if (on && p.paused) ProfileStore.resume(this, p.packageName)
-                    Prefs.setAppEnabled(this, p.packageName, on)
-                    if (on && p.paused) appTogglesContainer.post { buildAppToggles() }
-                }
-            )
+            ) { on ->
+                if (on && p.paused) ProfileStore.resume(this, p.packageName)
+                Prefs.setAppEnabled(this, p.packageName, on)
+                if (on && p.paused) appTogglesContainer.post { buildAppToggles() }
+            }
         }
     }
 
-    private fun addAppRow(
-        app: SupportedApp,
-        here: Boolean,
-        iconSize: Int,
-        gap: Int,
-        minH: Int,
-        subLabel: String?,
-        switchEnabled: Boolean,
-        onToggle: (Boolean) -> Unit
-    ) {
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            minimumHeight = minH
-            alpha = if (here) 1f else 0.45f
+    /** Wallets and banks of the owner's country (plus any installed from
+     *  elsewhere): the agent reads their payment notices unless switched off. */
+    private fun buildMoneyToggles() {
+        val box = findViewById<LinearLayout>(R.id.money_toggles)
+        box.removeAllViews()
+        val iso = Prefs.country(this)
+        val country = Countries.byIso(iso)
+        findViewById<TextView>(R.id.money_header).text = getString(R.string.apps_money_header, country.flag, country.name(this))
+        val wallets = Wallets.candidates(this, iso).filter { AppToggles.isInstalled(this, it.packageName) }
+        findViewById<View>(R.id.money_empty).visibility = if (wallets.isEmpty()) View.VISIBLE else View.GONE
+        wallets.forEach { w ->
+            AppToggles.addRow(
+                this, box, w.packageName, w.displayName, installed = true, subLabel = null,
+                checked = Prefs.isMoneyAppEnabled(this, w.packageName),
+            ) { on -> Prefs.setMoneyAppEnabled(this, w.packageName, on) }
         }
-
-        val icon = ImageView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(iconSize, iconSize)
-                .apply { marginEnd = gap }
-            setImageDrawable(appIcon(app.packageName))
-            // Decorative: the name TextView right next to it carries the label.
-            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        }
-        row.addView(icon)
-
-        val labels = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
-            )
-        }
-        labels.addView(TextView(this).apply {
-            text = app.displayName
-            setTextAppearance(R.style.TextAppearance_Agento_Body)
-            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface))
-        })
-        if (subLabel != null) {
-            labels.addView(TextView(this).apply {
-                text = subLabel
-                setTextAppearance(R.style.TextAppearance_Agento_Label)
-                setTextColor(
-                    ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface_muted)
-                )
-            })
-        }
-        row.addView(labels)
-
-        val sw = MaterialSwitch(this).apply {
-            isEnabled = switchEnabled
-            isChecked = here && Prefs.isAppEnabled(this@MainActivity, app.packageName)
-            contentDescription = app.displayName
-            setOnCheckedChangeListener { _, on -> onToggle(on) }
-        }
-        row.addView(sw)
-
-        appTogglesContainer.addView(row)
-    }
-
-    private fun isInstalled(pkg: String): Boolean = try {
-        packageManager.getPackageInfo(pkg, 0)
-        true
-    } catch (e: android.content.pm.PackageManager.NameNotFoundException) {
-        // Not visible to us (Android 11+ package visibility): an app this
-        // phone learned proved it exists by posting notifications.
-        ProfileStore.get(this, pkg) != null
     }
 
     private val iconCache = HashMap<String, Drawable?>()
 
-    private fun appIcon(pkg: String): Drawable? = iconCache.getOrPut(pkg) {
-        try {
-            packageManager.getApplicationIcon(pkg)
-        } catch (_: Exception) {
-            ContextCompat.getDrawable(this, R.drawable.ic_bell)?.apply {
-                setTint(ContextCompat.getColor(this@MainActivity, R.color.agento_on_surface_muted))
-            }
-        }
-    }
+    private fun appIcon(pkg: String): Drawable? = iconCache.getOrPut(pkg) { AppToggles.appIcon(this, pkg) }
 
     // ------------------------------------------------------------ log adapter
 

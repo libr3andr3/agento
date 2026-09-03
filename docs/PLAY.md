@@ -9,7 +9,7 @@ el APK directo, menos lo que Play no permite o hace por su cuenta:
 | id de paquete | `yaya.tech.agento.business` | `yaya.tech.agento` |
 | actualizaciones | propias (`latest.json`, `REQUEST_INSTALL_PACKAGES`) | Play |
 | `QUERY_ALL_PACKAGES` | sí (Cobros: «¿esa billetera está en este teléfono?») | no — las billeteras comunes van en `<queries>`, el resto no se verifica |
-| planes | un chat de WhatsApp con el agente de ventas de agento (D14) | el mismo chat de WhatsApp — no hay flujo de compra en ningún build |
+| créditos | se recargan fuera de la app (web de la cuenta Yaya o WhatsApp con ventas) | igual — no hay flujo de compra en ningún build (`docs/CREDITS.md`) |
 
 Compilar y verificar:
 
@@ -71,11 +71,11 @@ https://agento.ceo/privacidad.html — Términos: https://agento.ceo/terminos.ht
 - **Anuncios**: ninguno. **Público objetivo**: 18+ (dueños de negocio).
   **Categoría**: Empresa. **Clasificación de contenido**: utilidad, sin
   contenido público generado por usuarios.
-- **App access**: los revisores pueden tocar **«Continuar sin cuenta»** para
-  entrar sin cuenta y registrar cualquier nombre de negocio; el paso de
-  verificación del número se salta cuando el servidor responde 503 — si no,
-  provee un teléfono de prueba que reciba WhatsApp. Esto va en *App access →
-  instructions*.
+- **App access**: no hay modo invitado — toda cuenta se crea con un código
+  por WhatsApp. Provee en *App access → instructions* un teléfono de prueba
+  que reciba WhatsApp (o un número con código fijo configurado en la
+  pasarela) y cualquier nombre de negocio; el paso de verificación del
+  número del negocio se salta cuando el servidor responde 503.
 - **Funciones financieras**: ninguna (la app detecta las notificaciones de
   pago entrantes del dueño; no mueve dinero).
 

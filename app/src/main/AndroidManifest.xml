@@ -44,13 +44,90 @@
         <package android:name="org.thoughtcrime.securesms" />
         <package android:name="com.zhiliaoapp.musically" />
         <package android:name="com.google.android.apps.messaging" />
-        <!-- Wallets and banks people in Peru name under Cobros, so the
-             "is it on this phone" hint works on the Play build too. -->
+        <!-- Money apps (Wallets.kt): so the end-of-onboarding apps screen and
+             Cobros can tell which wallets are on THIS phone on the Play build
+             too (no QUERY_ALL_PACKAGES there). Detection itself never needs
+             this list — any app's notification reaches the local agent. -->
         <package android:name="com.bcp.innovacxion.yapeapp" />
         <package android:name="com.bcp.bank.bcp" />
         <package android:name="pe.com.interbank.mobilebanking" />
         <package android:name="com.bbva.nxt_peru" />
         <package android:name="pe.com.scotiabank.blpm.android.client" />
+        <package android:name="pe.com.bn.bnmovil" />
+        <package android:name="com.bancomer.mbanking" />
+        <package android:name="com.banorte.movil" />
+        <package android:name="mx.com.santander.supermovil" />
+        <package android:name="com.banamex.mobile" />
+        <package android:name="com.oxxo.spin" />
+        <package android:name="com.nequi.MobileApp" />
+        <package android:name="com.davivienda.daviplataapp" />
+        <package android:name="com.todo1.mobile" />
+        <package android:name="com.bbva.bbvacolombia" />
+        <package android:name="co.movii" />
+        <package android:name="ar.com.uala" />
+        <package android:name="ar.com.modo" />
+        <package android:name="com.brubank" />
+        <package android:name="ar.com.bancoprovincia.cuentadni" />
+        <package android:name="com.naranja.nx" />
+        <package android:name="ar.com.personalpay" />
+        <package android:name="cl.bci.mach" />
+        <package android:name="cl.tenpo.app" />
+        <package android:name="cl.bancoestado.app" />
+        <package android:name="cl.bancochile.mobile" />
+        <package android:name="cl.santander.smartphone" />
+        <package android:name="com.nu.production" />
+        <package android:name="com.picpay" />
+        <package android:name="br.com.bb.android" />
+        <package android:name="com.itau" />
+        <package android:name="com.bradesco" />
+        <package android:name="br.gov.caixa.tem" />
+        <package android:name="br.com.intermedium" />
+        <package android:name="com.c6bank.app" />
+        <package android:name="com.santander.app" />
+        <package android:name="br.com.uol.ps.myaccount" />
+        <package android:name="com.pichincha.deuna" />
+        <package android:name="com.bancopichincha.bancamovil" />
+        <package android:name="com.bancoguayaquil.app" />
+        <package android:name="com.produbanco.app" />
+        <package android:name="bo.com.bnb.app" />
+        <package android:name="bo.com.bancounion.app" />
+        <package android:name="com.tigo.money.bo" />
+        <package android:name="uy.com.prex" />
+        <package android:name="uy.com.brou.app" />
+        <package android:name="uy.com.oca.app" />
+        <package android:name="py.com.tigo.money" />
+        <package android:name="py.com.personal.pay" />
+        <package android:name="py.com.ueno.app" />
+        <package android:name="py.com.zimple" />
+        <package android:name="com.banesco.banescomovil" />
+        <package android:name="com.mercantil.mercantilmovil" />
+        <package android:name="com.bdv.bdvapp" />
+        <package android:name="com.bbva.provinet" />
+        <package android:name="com.bi.bienlinea" />
+        <package android:name="com.banrural.app" />
+        <package android:name="com.bac.credomatic" />
+        <package android:name="cr.bncr.app" />
+        <package android:name="cr.bancobcr.app" />
+        <package android:name="com.bgeneral.yappy" />
+        <package android:name="com.bgeneral.app" />
+        <package android:name="com.bpd.app" />
+        <package android:name="com.banreservas.app" />
+        <package android:name="com.bancoagricola.app" />
+        <package android:name="com.tigo.money.hn" />
+        <package android:name="com.banpro.app" />
+        <package android:name="com.mercadopago.wallet" />
+        <package android:name="com.paypal.android.p2pmobile" />
+        <package android:name="com.venmo" />
+        <package android:name="com.squareup.cash" />
+        <package android:name="com.zellepay.zelle" />
+        <package android:name="com.chase.sig.android" />
+        <package android:name="com.infonow.bofa" />
+        <package android:name="com.wf.wellsfargomobile" />
+        <package android:name="es.lacaixa.mobile.android.newwapicon" />
+        <package android:name="com.bbva.bbvacontigo" />
+        <package android:name="es.bancosantander.apps" />
+        <package android:name="com.revolut.revolut" />
+        <package android:name="pt.sibs.android.mbway" />
     </queries>
 
     <!-- Cleartext is off in release and permitted only for debug builds (local
@@ -65,6 +142,7 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
+        android:localeConfig="@xml/locales_config"
         android:theme="@style/Theme.Agente">
 
         <!-- Launcher: a router with no UI (see WelcomeActivity). -->
@@ -77,7 +155,18 @@
             </intent-filter>
         </activity>
 
-        <!-- Yaya ID: sign in / create account, before anything else. -->
+        <!-- Per-app language (Ajustes → Idioma) on Android 12 and below:
+             AppCompat stores the choice itself when this service is declared. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
+        <!-- Yaya ID: sign in / create account, before anything else. No guest mode. -->
         <activity
             android:name=".AccountActivity"
             android:exported="false"
@@ -109,9 +198,22 @@
             android:name=".MainActivity"
             android:exported="false" />
 
+        <!-- Prohibited business category: the neutral stop. -->
         <activity
-            android:name=".PlanActivity"
+            android:name=".BlockedActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Credits: balance, prices, ledger. -->
+        <activity
+            android:name=".CreditsActivity"
             android:exported="false" />
+
+        <!-- Last onboarding step: which apps the agent answers on / reads. -->
+        <activity
+            android:name=".AppsSetupActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".AuditActivity"
@@ -124,11 +226,6 @@
         <activity
             android:name=".ConversationActivity"
             android:exported="false" />
-
-        <activity
-            android:name=".BackupUpsellActivity"
-            android:exported="false"
-            android:screenOrientation="portrait" />
 
         <!-- Cobros: where customers send money. -->
         <activity

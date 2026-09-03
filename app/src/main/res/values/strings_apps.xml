@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Last onboarding step (AppsSetupActivity) and the money-apps section of
+     Settings: which apps the agent answers on, which it reads. Spanish
+     default; values-pt, values-en. -->
+<resources>
+    <string name="apps_step">Último paso</string>
+    <string name="apps_headline">¿Dónde atiende tu agente?</string>
+    <string name="apps_sub">Elige en qué apps responde y qué billeteras lee para confirmar pagos. Todo esto se decide en tu teléfono y no sale de él.</string>
+
+    <string name="apps_chat_header">Apps donde responde</string>
+    <string name="apps_chat_sub">Tu agente contesta a los clientes que te escriben por estas apps.</string>
+    <string name="apps_chat_none">No vemos ninguna app de chat en este teléfono. Instala WhatsApp Business (o WhatsApp) y vuelve a Ajustes → Apps conectadas.</string>
+    <string name="apps_chat_more">También sabe leer %1$s si las instalas.</string>
+
+    <string name="apps_money_header">Billeteras y bancos · %1$s %2$s</string>
+    <string name="apps_money_sub">Tu agente lee los avisos de pago de estas apps para confirmar cobros. Nunca mueve dinero.</string>
+    <string name="apps_money_none">No vemos billeteras ni bancos en este teléfono. Si tus pagos llegan a otro celular, instala agento allí también.</string>
+    <string name="apps_money_none_known">No vemos billeteras en este teléfono. En tu país agento reconoce %1$s, entre otras.</string>
+    <string name="apps_money_all">Todas las billeteras que agento conoce en tu país están aquí.</string>
+    <string name="apps_money_more">También reconoce %1$s si las instalas.</string>
+    <string name="apps_other_label">Leer avisos de otras apps</string>
+    <string name="apps_other_hint">Para billeteras y bancos que no están en la lista, de cualquier país. Tu agente decide en el teléfono si un aviso es un pago; si una app nunca trae dinero, deja de leerla sola.</string>
+    <string name="apps_privacy_note">🔒 Las notificaciones se leen y se procesan en tu teléfono. No se copian a ningún servidor.</string>
+
+    <string name="apps_done">Listo, vamos a mi negocio</string>
+    <string name="apps_save">Guardar</string>
+</resources>

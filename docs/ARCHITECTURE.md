@@ -26,7 +26,7 @@ servidores no es una brecha del negocio.
                                 │ HTTPS, peticiones firmadas por la identidad
                        ┌────────▼────────┐
                        │  yaya.tech      │  proxy medido de LLM / voz / visión
-                       │  pasarela       │  cuentas Yaya ID, planes, respaldos
+                       │  pasarela       │  cuentas Yaya ID, créditos, respaldos
                        └─────────────────┘  un relay que no puede leer el correo
 ```
 
@@ -210,15 +210,15 @@ secundarios.
 |---|---|
 | `filesDir/agento.db` | el SQLite del núcleo: conversaciones, citas, pedidos, pagos, contactos, el esquema por capas del negocio, la identidad sellada del agente, la sesión de la cuenta |
 | `filesDir/schemas/` | copia de `assets/schemas` (campos base + bundles por vertical), refrescada por versión de la app |
-| SharedPreferences `agente_prefs` (`Prefs`) | interruptor maestro, toggles por app, respuesta fija, cooldown, idioma, panel cacheado, transcripción del chat, estado del canal de actualización; entradas **cifradas**: device token, clave LLM propia, el app key del núcleo y el KEK de identidad |
+| SharedPreferences `agente_prefs` (`Prefs`) | interruptor maestro, toggles por app de chat y por app de dinero, respuesta fija, cooldown, idioma, panel cacheado, transcripción del chat, estado del canal de actualización; entradas **cifradas**: device token, clave LLM propia, el app key del núcleo y el KEK de identidad |
 | `agente_log` (`ReplyLog`) | últimos 100 eventos del registro de actividad |
 | `agente_observer`, `ProfileStore` | formas en observación, perfiles aprendidos |
 | Android Keystore | la clave AES con la que `SecureStore` envuelve los secretos; la clave de atestación |
 
 El respaldo del sistema está deshabilitado (`allowBackup=false`,
 `data_extraction_rules`) porque el token y las conversaciones de clientes no
-deben viajar en un respaldo del dispositivo. Los planes pagados tienen en su
-lugar un respaldo *cifrado* a través del núcleo (`POST /api/backup`,
+deben viajar en un respaldo del dispositivo. Toda cuenta con sesión tiene en
+su lugar un respaldo *cifrado* a través del núcleo (`POST /api/backup`,
 `POST /api/restore`).
 
 ## Fronteras de confianza

@@ -77,7 +77,7 @@ scripts/verify-apk.sh https://agento.ceo/dl/latest.json --install
       entrevista, un mensaje de WhatsApp respondido, una notificación de
       Yape registrada
 - [ ] `latest.json` publicado; `scripts/verify-apk.sh` pasa
-- [ ] si cambió la API del núcleo: `minVersionCode` subido
+- [ ] si cambió la API del núcleo: `minVersionCode` subido (1.22.0 → 66, ver `CHANGELOG.md`)
 
 ## Refrescar el núcleo del agente
 
