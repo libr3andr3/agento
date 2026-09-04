@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.23.1 · versionCode 69 · 2026-09-04
+
+- Registro: el interruptor «Participar del internet de los agentes» ahora
+  cumple lo prometido en 1.23.0 — solo el «no» explícito viaja (`network:
+  false`); encendido, la app no manda nada y el núcleo queda con su
+  `networkPublish: true`. El estado del interruptor se lee en el hilo de la
+  interfaz, junto a los demás campos, antes de llamar al servidor.
+
 ## 1.23.0 · versionCode 68 · 2026-09-04
 
 **Una sola app: el internet de los agentes vuelve al núcleo** (D18 en el
