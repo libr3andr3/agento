@@ -448,11 +448,12 @@ class RegistrationActivity : AppCompatActivity() {
         val my = ++seq
         val name = nameInput.text?.toString()?.trim().orEmpty()
         val industry = industryInput.text?.toString()?.trim().orEmpty()
+        val network = networkSwitch.isChecked
         ServerClient.IO_EXECUTOR.execute {
             val r = ServerClient.onboardBusiness(
                 this, name, industry, fullPhone, country.iso, verificationToken,
                 category = categoryKey.ifEmpty { null }, termsAcceptedAt = Prefs.termsAcceptedAt(this).ifEmpty { null },
-                network = networkSwitch.isChecked,
+                network = network,
             )
             val resp = if (r.code in 200..299) r.json else null
             runOnUiThread {

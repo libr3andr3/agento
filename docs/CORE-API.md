@@ -47,7 +47,7 @@ mapea los demás códigos con `ServerClient.classify()`:
 |---|---|---|
 | `POST /api/verify/start` | `{phone}` | 200 código enviado · 503 verificación apagada (saltar el paso) · 429 · 400 |
 | `POST /api/verify/check` | `{phone, code}` | → `{verificationToken}` |
-| `POST /api/onboard_business` | `{businessName, industry, ownerPhone, country, verificationToken?, category, termsVersion, termsAcceptedAt}` | crea el negocio, devuelve el **device token** y el locale; `403 {"error":"prohibited_category"}` |
+| `POST /api/onboard_business` | `{businessName, industry, ownerPhone, country, verificationToken?, category, termsVersion, termsAcceptedAt, network?}` | crea el negocio, devuelve el **device token** y el locale; `network: false` solo viaja cuando el dueño apagó el interruptor de la red (ausente = `networkPublish: true`); `403 {"error":"prohibited_category"}` |
 
 ### El negocio — bearer
 

@@ -527,8 +527,10 @@ object ServerClient {
                 .put("industry", industry)
                 .put("ownerPhone", ownerPhone)
                 .put("country", country)
-                // "Participar del internet de los agentes" — the registration toggle (default on).
-                .put("network", network)
+                // "Participar del internet de los agentes" — the registration toggle
+                // (default on). Only the explicit "no" travels: the core defaults
+                // networkPublish to true and later changes go through the agent.
+                .apply { if (!network) put("network", false) }
                 .apply { verificationToken?.let { put("verificationToken", it) } }
                 .apply { category?.let { put("category", it) } }
                 // Closed-loop terms accepted on the registration screen (docs/CREDITS.md § 3).
