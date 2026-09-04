@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.22.1 · versionCode 67 · 2026-09-04
+
+- Núcleo: cuando el cliente avisa que ya pagó una cita reservada sin depósito
+  (estado `confirmed`, sin pago), `collect_payment` ahora la encuentra y
+  verifica la notificación real en vez de responder "nada pendiente"; antes
+  el agente volvía a revisar disponibilidad, re-reservaba y re-cobraba (4
+  llamadas al modelo y 18k tokens por un "gracias"). Una llamada idéntica
+  repetida dentro del mismo turno devuelve el resultado ya obtenido.
+  Conversación típica de 6 mensajes: 13 → 10 llamadas, 55k → 42k tokens.
+
 ## 1.22.0 · versionCode 66 · 2026-09-03
 
 **La API del loopback cambió: `minVersionCode` sube a 66** (los builds

@@ -7,14 +7,14 @@ El núcleo del agente, precompilado. Lo carga `AgentoCore.kt`
 | | |
 |---|---|
 | versión del núcleo | 0.2.0 (`AgentoCore.version()`) |
-| compilado | 2026-08-31, `cargo ndk --release`, NDK 27.2.12479018 |
-| origen | crate del núcleo de agento @ `b783612` (plugin `disclosure` — transparencia de IA en el primer contacto, Ley 31814), kernel corazón @ `a69fbe7+` (privado) |
+| compilado | 2026-09-04, `cargo ndk --release` en node.yaya.tech, NDK 27.2.12479018 |
+| origen | crate del núcleo de agento @ `c4f7a59` + parches locales del 2026-09-04: `collect_payment` ve citas confirmadas sin pagar, guardia de llamadas repetidas por turno, cierre veraz al agotar rondas, salida del bucle tras una llamada repetida, cliente LLM nativo Qwen (tool calls XML, `LLM_THINKING`), regla de hierro del asistente (una reserva existe solo con resultado de herramienta en este turno); kernel corazón @ `a69fbe7+` (privado) |
 
 | ABI | sha256 |
 |---|---|
-| `arm64-v8a` | `605acde29b42a5b8e192ba5a9720473090ccc2d790d66506195195d8ea470638` |
-| `armeabi-v7a` | `a8b8731b92b9a3eb138d22fc9d10d6388c000f5b7e94d934d0f04783beabbd5b` |
-| `x86_64` | `a1cecccd0006e2f877c35a0bd6456478b80d8643f013a32ec948241e93a3ab7f` |
+| `arm64-v8a` | `97d408930cca769354bbaa255922ec6fcc7d5b94596202624e11d1c8633d8417` |
+| `armeabi-v7a` | `1363bc1fd85292910f0b8e5fc7510a9959bd3c56baa9e236120b118791c69c85` |
+| `x86_64` | `de4494fadfd28ec5e65bdde9779e73888c4251866e3fe65adc7628eca5d64d19` |
 
 `sha256sum app/src/main/jniLibs/*/libagento_core.so` debe coincidir con esta
 tabla. Procedimiento de refresco: `docs/RELEASE.md` → «Refrescar el núcleo
