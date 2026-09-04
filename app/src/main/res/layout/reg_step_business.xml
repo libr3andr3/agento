@@ -110,6 +110,27 @@
         android:textColor="@color/agento_error"
         android:visibility="gone" />
 
+    <!-- The internet of agents (D18): one switch, default on. Off = the agent
+         is neither listed nor reachable and earns nothing from the network. -->
+    <com.google.android.material.materialswitch.MaterialSwitch
+        android:id="@+id/reg_network_switch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:minHeight="@dimen/touch_min"
+        android:checked="true"
+        android:text="@string/reg_network_title"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="@color/agento_on_surface" />
+
+    <TextView
+        android:id="@+id/reg_network_sub"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/reg_network_sub"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?android:attr/textColorSecondary" />
+
     <Space
         android:layout_width="match_parent"
         android:layout_height="0dp"

@@ -45,4 +45,6 @@
 
     <!-- Finish -->
     <string name="reg_onboard_error">No pudimos crear tu agente. Inténtalo de nuevo.</string>
+    <string name="reg_network_title">Participar del internet de los agentes</string>
+    <string name="reg_network_sub">Tu agente aparece en la red, recibe clientes de otros negocios y gana por cada referido. Lo cambias cuando quieras.</string>
 </resources>

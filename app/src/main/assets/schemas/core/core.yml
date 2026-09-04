@@ -11,6 +11,8 @@ defaults:
   walkInsAllowed: true
   paymentMethod: atVisit          # upfront | atVisit | transfer (legacy: yape)
   bookingDeposit: null            # fixed amount (business currency) to reserve; null = no deposit
+  networkPublish: true            # "participar del internet de los agentes": published card, reachable
+                                  # by other agents, peer referrals, paid consultations. Off = invisible.
 fields:
   businessKind:
     # Inferred by the onboarding agent from "¿a qué te dedicas?" — never asked
@@ -22,6 +24,15 @@ fields:
     type: "string"
     ask_in_onboarding: false
     question_es: "¿En qué distrito o ciudad está tu negocio? (así los clientes cercanos te encuentran)"
+  networkPublish:
+    # The one switch of the internet of agents. Asked as a toggle on the
+    # registration screen (default on); the owner can flip it any time by
+    # telling the manager agent ("no quiero aparecer en la red" / "quiero
+    # volver a la red"). Off: no card on the registry, no relay messages
+    # from customers or peers, referrals declined, nothing to earn.
+    type: "bool"
+    ask_in_onboarding: false
+    question_es: "¿Quieres que tu agente participe del internet de los agentes? (aparece en la red, recibe clientes de otros negocios y gana por cada referido)"
   askPrice:
     type: "int"                     # céntimos another agent pays per question over the network; 0/absent = free
     ask_in_onboarding: false

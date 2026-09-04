@@ -67,6 +67,7 @@ class RegistrationActivity : AppCompatActivity() {
     private lateinit var categoryTil: TextInputLayout
     private lateinit var categoryInput: com.google.android.material.textfield.MaterialAutoCompleteTextView
     private lateinit var terms: com.google.android.material.checkbox.MaterialCheckBox
+    private lateinit var networkSwitch: com.google.android.material.materialswitch.MaterialSwitch
     private lateinit var termsError: TextView
     /** The picked category's stable key (Categories.kt), "" until chosen. */
     private var categoryKey = ""
@@ -160,6 +161,7 @@ class RegistrationActivity : AppCompatActivity() {
         categoryTil = findViewById(R.id.reg_category_til)
         categoryInput = findViewById(R.id.reg_category_input)
         terms = findViewById(R.id.reg_terms)
+        networkSwitch = findViewById(R.id.reg_network_switch)
         termsError = findViewById(R.id.reg_terms_error)
         businessCta = findViewById(R.id.reg_business_cta)
         businessSpin = findViewById(R.id.reg_business_spin)
@@ -281,7 +283,7 @@ class RegistrationActivity : AppCompatActivity() {
         spin.visibility = if (b) View.VISIBLE else View.GONE
         // backBtn stays enabled on purpose: back during a request cancels it (seq bump).
         when (step) {
-            1 -> { nameInput.isEnabled = !b; industryInput.isEnabled = !b; categoryInput.isEnabled = !b; terms.isEnabled = !b }
+            1 -> { nameInput.isEnabled = !b; industryInput.isEnabled = !b; categoryInput.isEnabled = !b; terms.isEnabled = !b; networkSwitch.isEnabled = !b }
             2 -> { phoneInput.isEnabled = !b; countryCard.isEnabled = !b }
             3 -> {
                 codeInput.isEnabled = !b
@@ -450,6 +452,7 @@ class RegistrationActivity : AppCompatActivity() {
             val r = ServerClient.onboardBusiness(
                 this, name, industry, fullPhone, country.iso, verificationToken,
                 category = categoryKey.ifEmpty { null }, termsAcceptedAt = Prefs.termsAcceptedAt(this).ifEmpty { null },
+                network = networkSwitch.isChecked,
             )
             val resp = if (r.code in 200..299) r.json else null
             runOnUiThread {

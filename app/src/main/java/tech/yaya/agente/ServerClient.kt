@@ -518,7 +518,7 @@ object ServerClient {
     fun onboardBusiness(
         ctx: Context, name: String, industry: String, ownerPhone: String,
         country: String, verificationToken: String? = null,
-        category: String? = null, termsAcceptedAt: String? = null,
+        category: String? = null, termsAcceptedAt: String? = null, network: Boolean = true,
     ): Response =
         postRaw(
             ctx, "/api/onboard_business",
@@ -527,6 +527,8 @@ object ServerClient {
                 .put("industry", industry)
                 .put("ownerPhone", ownerPhone)
                 .put("country", country)
+                // "Participar del internet de los agentes" — the registration toggle (default on).
+                .put("network", network)
                 .apply { verificationToken?.let { put("verificationToken", it) } }
                 .apply { category?.let { put("category", it) } }
                 // Closed-loop terms accepted on the registration screen (docs/CREDITS.md § 3).

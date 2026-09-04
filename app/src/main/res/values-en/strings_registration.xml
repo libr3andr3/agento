@@ -45,4 +45,6 @@
 
     <!-- Finish -->
     <string name="reg_onboard_error">We couldn\'t create your agent. Please try again.</string>
+    <string name="reg_network_title">Join the internet of agents</string>
+    <string name="reg_network_sub">Your agent is listed on the network, receives customers from other businesses and earns for every referral. Change it any time.</string>
 </resources>

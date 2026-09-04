@@ -39,4 +39,6 @@
     <string name="reg_code_wrong_error">Código incorreto. Confira e tente de novo.</string>
 
     <string name="reg_onboard_error">Não conseguimos criar seu agente. Tente de novo.</string>
+    <string name="reg_network_title">Participar da internet dos agentes</string>
+    <string name="reg_network_sub">Seu agente aparece na rede, recebe clientes de outros negócios e ganha por cada indicação. Mude quando quiser.</string>
 </resources>

@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.23.0 · versionCode 68 · 2026-09-04
+
+**Una sola app: el internet de los agentes vuelve al núcleo** (D18 en el
+repo del núcleo). El interruptor es uno solo, en el registro: «Participar
+del internet de los agentes», encendido por defecto.
+
+- Registro: nuevo interruptor bajo los términos. Encendido, el agente del
+  negocio se publica en la red yaya, otros agentes lo alcanzan cifrado de
+  extremo a extremo, los negocios cercanos del mismo rubro le refieren
+  clientes y gana el precio del lead por cada referido que registra. Apagado,
+  el agente no aparece, no recibe mensajes de la red ni referidos, y no gana
+  nada por ella. Solo el «no» explícito viaja (`network: false` en
+  `/api/onboard_business`); el valor `networkPublish` se cambia después
+  hablando con el agente («no quiero aparecer en la red» / «quiero volver a
+  la red»).
+- Núcleo: el mismo crate que ya corría (parches del 2026-09-04 incluidos)
+  con los módulos de red restaurados y montados en todo núcleo de negocio:
+  comunidad (referidos entre pares), mercado, billetera, monedas, malla
+  post-cuántica, nodo WhatsApp. Rutas nuevas en el loopback: `/api/mesh/*`,
+  `/api/coins/*`, `/api/node/*`. Esquema `core.yml` con `networkPublish`.
+- Nada de D14–D17 cambia: planes, vendedor, transparencia IA, cadena de
+  auditoría, fotos del catálogo, diseño de la app, exportación de contactos.
+
 ## 1.22.1 · versionCode 67 · 2026-09-04
 
 - Núcleo: cuando el cliente avisa que ya pagó una cita reservada sin depósito
