@@ -56,4 +56,5 @@
     <string name="reg_terms_error">You need to accept the terms to continue.</string>
     <string name="blocked_title">Agento is not available for this type of business</string>
     <string name="blocked_body">No business account was created. If you think this is a mistake, write to us.</string>
+    <string name="credits_topup_play">Credit top-ups are managed from your Yaya account, outside the app.</string>
 </resources>

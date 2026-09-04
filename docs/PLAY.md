@@ -9,7 +9,7 @@ el APK directo, menos lo que Play no permite o hace por su cuenta:
 | id de paquete | `yaya.tech.agento.business` | `yaya.tech.agento` |
 | actualizaciones | propias (`latest.json`, `REQUEST_INSTALL_PACKAGES`) | Play |
 | `QUERY_ALL_PACKAGES` | sí (Cobros: «¿esa billetera está en este teléfono?») | no — las billeteras comunes van en `<queries>`, el resto no se verifica |
-| créditos | se recargan fuera de la app (web de la cuenta Yaya o WhatsApp con ventas) | igual — no hay flujo de compra en ningún build (`docs/CREDITS.md`) |
+| créditos | recarga en la app (Dodo en Custom Tab, Yape/Plin en Perú) | **sin recarga ni enlace a una** (`BuildConfig.PLAY` oculta el botón y el enlace del aviso «modo manual»): política de pagos de Play; se recargan desde la cuenta Yaya (`docs/CREDITS.md`) |
 
 Compilar y verificar:
 
@@ -22,9 +22,11 @@ jarsigner -verify app/build/outputs/bundle/playRelease/app-play-release.aab
 $ANDROID_HOME/build-tools/<ver>/aapt2 dump badging app/build/outputs/apk/play/release/app-play-release.apk | grep -E "^package|uses-permission"
 ```
 
-Permisos esperados en el build de Play: `POST_NOTIFICATIONS`, `INTERNET`,
-`ACCESS_NETWORK_STATE`, `RECORD_AUDIO`, `ACCESS_COARSE_LOCATION`,
-`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, más el servicio del listener de
+Permisos esperados en el build de Play (verificado 1.23.2/70): `POST_NOTIFICATIONS`,
+`INTERNET`, `ACCESS_NETWORK_STATE`, `RECORD_AUDIO`, `ACCESS_COARSE_LOCATION`,
+`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `READ/WRITE_CONTACTS` (clientes en la
+agenda del teléfono), `READ/WRITE_CALENDAR` (citas en el calendario del dueño),
+más el servicio del listener de
 notificaciones (`BIND_NOTIFICATION_LISTENER_SERVICE` en el servicio, no un
 `uses-permission`).
 
@@ -62,6 +64,8 @@ consola (en inglés):
 | Ubicación aproximada | sí | no | funcionalidad | opcional |
 | IDs de dispositivo u otros | sí | no | funcionalidad | clave de agente por instalación + atestación por hardware |
 | Fotos | sí, procesadas | no | funcionalidad | foto opcional del catálogo → ítems extraídos |
+| Contactos | sí | no | funcionalidad | opcional: guardar clientes en la agenda del teléfono; se quedan en el teléfono |
+| Calendario | sí | no | funcionalidad | opcional: citas en el calendario del dueño; se quedan en el teléfono |
 
 Cifrado en tránsito: sí. Eliminación: en la app («Cerrar sesión» /
 desinstalar borra los datos del teléfono; eliminación de cuenta en https://yaya.tech/eliminar-cuenta o por correo al
@@ -107,7 +111,7 @@ PRIVACIDAD PRIMERO
 • Solo lee notificaciones de las apps que tú elijas, y solo después de que le des el permiso.
 • Código abierto (AGPL): github.com/libr3andr3/agento
 
-14 días gratis con todo. Después, Gratis (30 conversaciones al mes), Pro S/150 (1 000) o Max S/300 (3 000 y hasta 3 teléfonos) — sin permanencia, con boleta electrónica opcional.
+Empiezas con US$ 12 de créditos de bienvenida. Solo pagas por resultados: US$ 1 por cada cita o venta confirmada con un cliente que ya conocías y US$ 2 con uno nuevo; la mitad después de 100 al mes y nunca más de US$ 199 mensuales. Sin suscripción ni permanencia. Los créditos se gestionan desde tu cuenta Yaya.
 agento es de Yaya Tech PBC.
 
 **Completo (en)**
@@ -131,7 +135,7 @@ PRIVACY FIRST
 • It only reads notifications from the apps you choose, and only after you grant access.
 • Open source (AGPL): github.com/libr3andr3/agento
 
-14 days free with everything. Then Free (30 conversations a month), Pro (1,000) or Max (3,000, up to 3 phones) — no commitment, optional e-invoicing.
+You start with US$ 12 in welcome credits. You only pay for results: US$ 1 per confirmed booking or sale with a customer you already had, US$ 2 with a new one; half price after 100 a month and never more than US$ 199 a month. No subscription, no commitment. Credits are managed from your Yaya account.
 agento is made by Yaya Tech PBC.
 
 **Capturas**: teléfono, 9:16, mínimo cuatro — inicio de sesión, la

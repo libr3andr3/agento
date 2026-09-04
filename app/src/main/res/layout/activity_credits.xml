@@ -66,6 +66,15 @@
                     android:minHeight="@dimen/cta_height"
                     android:text="@string/credits_topup" />
 
+                <!-- Play flavor only (BuildConfig.PLAY): shown instead of the button. -->
+                <TextView
+                    android:id="@+id/credits_topup_note"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:visibility="gone"
+                    android:text="@string/credits_topup_play" />
+
                 <!-- Closed-loop terms: always under the top-up button (docs/CREDITS.md § 3). -->
                 <TextView
                     android:layout_width="match_parent"

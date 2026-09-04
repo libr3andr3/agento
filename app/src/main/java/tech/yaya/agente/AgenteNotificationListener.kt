@@ -285,7 +285,7 @@ class AgenteNotificationListener : NotificationListenerService() {
                     sender = ctx.getString(R.string.app_name),
                     question = ctx.getString(R.string.manual_mode_alert),
                     gapId = "no_credits",
-                    url = resp.optJSONObject("actionData")?.optString("topupUrl")?.takeIf { it.startsWith("https://") }
+                    url = resp.optJSONObject("actionData")?.optString("topupUrl")?.takeIf { !BuildConfig.PLAY && it.startsWith("https://") }
                 )
             }
             return

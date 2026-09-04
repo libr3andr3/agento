@@ -53,7 +53,16 @@ class CreditsActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.credits_manage).setOnClickListener {
             startActivity(Intent(this, AccountActivity::class.java).putExtra(AccountActivity.EXTRA_MANAGE, true))
         }
-        findViewById<MaterialButton>(R.id.credits_topup).setOnClickListener { TopUp.sheet(this, info) }
+        // Play build: no checkout and no link to one (Google Play payments
+        // policy, docs/PLAY.md); credits are managed from the Yaya account.
+        val topupButton = findViewById<MaterialButton>(R.id.credits_topup)
+        val topupNote = findViewById<TextView>(R.id.credits_topup_note)
+        if (BuildConfig.PLAY) {
+            topupButton.visibility = View.GONE
+            topupNote.visibility = View.VISIBLE
+        } else {
+            topupButton.setOnClickListener { TopUp.sheet(this, info) }
+        }
         findViewById<MaterialButton>(R.id.credits_support).setOnClickListener { Support.open(this) }
         Prefs.creditsCache(this)?.let { info = runCatching { JSONObject(it) }.getOrNull() }
         render()

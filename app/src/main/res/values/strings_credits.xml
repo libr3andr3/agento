@@ -64,4 +64,5 @@
     <string name="reg_terms_error">Necesitas aceptar los términos para continuar.</string>
     <string name="blocked_title">Agento no está disponible para este tipo de negocio</string>
     <string name="blocked_body">No se creó ninguna cuenta de negocio. Si crees que es un error, escríbenos.</string>
+    <string name="credits_topup_play">Las recargas de créditos se gestionan desde tu cuenta Yaya, fuera de la app.</string>
 </resources>
